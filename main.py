@@ -57,7 +57,9 @@ def main():
     
     # Create output directories
     os.makedirs('results', exist_ok=True)
+    os.makedirs('results/reports', exist_ok=True)
     os.makedirs('models', exist_ok=True)
+    os.makedirs('logs', exist_ok=True)
     
     logger.info("Starting Speech Emotion Classification")
     logger.info(f"Model type: {args.model_type}")
@@ -69,6 +71,18 @@ def main():
     dataset = data_loader.load_dataset()
     train_data, val_data, test_data = data_loader.split_dataset()
     
+    # Get the correct label column name
+    label_column = None
+    for col in train_data.columns:
+        if col in ['labels', 'label', 'emotion', 'emotion_id']:
+            label_column = col
+            break
+    
+    if label_column is None:
+        logger.warning("Label column not found in dataset. The feature extractor will attempt to detect it.")
+    else:
+        logger.info(f"Using '{label_column}' as the label column")
+    
     # Step 2: Extract features
     logger.info("Step 2: Extracting features")
     feature_extractor = FeatureExtractor()
@@ -77,16 +91,22 @@ def main():
     feature_type = 'mfcc' if args.model_type == 'mlp' else 'spectrogram'
     logger.info(f"Extracting {feature_type} features for {args.model_type.upper()} model")
     
-    # Process training data
+    # Process training data first and get the max spectrogram length
     train_features = feature_extractor.process_dataset(train_data, feature_type=feature_type)
+    
+    # Use the same max spectrogram length for validation and test sets to ensure consistent shapes
+    max_length = train_features.get('max_length', None)
+    if max_length:
+        logger.info(f"Using consistent spectrogram length of {max_length} across all data splits")
+    
+    # Normalize training features
     train_features = feature_extractor.normalize_features(train_features, feature_type=feature_type, fit=True)
     
-    # Process validation data
-    val_features = feature_extractor.process_dataset(val_data, feature_type=feature_type)
+    # Process validation and test data with the same max_length
+    val_features = feature_extractor.process_dataset(val_data, feature_type=feature_type, max_length=max_length)
     val_features = feature_extractor.normalize_features(val_features, feature_type=feature_type, fit=False)
     
-    # Process test data
-    test_features = feature_extractor.process_dataset(test_data, feature_type=feature_type)
+    test_features = feature_extractor.process_dataset(test_data, feature_type=feature_type, max_length=max_length)
     test_features = feature_extractor.normalize_features(test_features, feature_type=feature_type, fit=False)
     
     # Get features and labels
@@ -98,6 +118,11 @@ def main():
     y_test = test_features['labels']
     
     logger.info(f"Training set: {X_train.shape}, Validation set: {X_val.shape}, Test set: {X_test.shape}")
+    
+    # Save the test features and labels for later analysis
+    np.save(f'results/{args.model_type}_X_test.npy', X_test)
+    np.save(f'results/{args.model_type}_y_test.npy', y_test)
+    logger.info(f"Test features and labels saved to results/{args.model_type}_X_test.npy and results/{args.model_type}_y_test.npy")
     
     # Step 3: Build model
     logger.info("Step 3: Building model")
@@ -141,15 +166,22 @@ def main():
     # Step 5: Train model
     logger.info("Step 5: Training model")
     trainer = ModelTrainer(model, model_type=args.model_type)
-    callbacks = emotion_model.get_callbacks(patience=5)
+    callbacks = emotion_model.get_callbacks(patience=10)
     
-    trainer.train(
+    history = trainer.train(
         X_train, y_train,
         X_val, y_val,
         batch_size=args.batch_size,
         epochs=args.epochs,
         callbacks=callbacks
     )
+    
+    # Save training history as JSON for visualization
+    import json
+    history_path = f'results/{args.model_type}_training_history.json'
+    with open(history_path, 'w') as f:
+        json.dump(history.history, f)
+    logger.info(f"Training history saved to {history_path}")
     
     # Step 6: Evaluate model
     logger.info("Step 6: Evaluating model")
@@ -164,9 +196,50 @@ def main():
     
     # Step 7: Save model
     logger.info("Step 7: Saving model")
-    model_path = f"models/{args.model_type}_emotion_model.h5"
+    
+    # Save in .keras format (newer format)
+    model_path = f"models/{args.model_type}_emotion_model.keras"
     trainer.save_model(model_path)
     logger.info(f"Model saved to {model_path}")
+    
+    # Legacy .h5 format for compatibility
+    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
+    trainer.save_model(h5_model_path)
+    
+    # Step 8: Run visualizations
+    logger.info("Step 8: Generating advanced visualizations")
+    
+    # Import the visualizer
+    from visualize_results import ResultsVisualizer
+    
+    # Create visualizer
+    visualizer = ResultsVisualizer(
+        model_path=model_path,
+        results_dir='results',
+        interactive=True
+    )
+    
+    # Visualize model architecture
+    visualizer.visualize_model_architecture()
+    
+    # Visualize confusion matrix
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+    visualizer.visualize_confusion_matrix(y_test, y_pred_classes)
+    
+    # Visualize t-SNE
+    visualizer.visualize_tsne(X_test, y_test)
+    
+    # Visualize training history
+    visualizer.visualize_history(history_path)
+    
+    # Analyze misclassifications
+    misclassified_df = visualizer.analyze_misclassifications(X_test, y_test)
+    
+    # Generate comprehensive HTML report
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+    
+    visualizer.generate_report(metrics, misclassified_df)
     
     logger.info("Speech Emotion Classification completed successfully")
 

@@ -124,13 +124,14 @@ class FeatureExtractor:
             logger.error(f"Error processing audio file {file_path}: {e}")
             raise
     
-    def process_dataset(self, dataset, feature_type='both'):
+    def process_dataset(self, dataset, feature_type='both', max_length=None):
         """
         Process a dataset to extract features from all audio files.
         
         Args:
             dataset (pandas.DataFrame): Dataset containing audio paths and labels.
             feature_type (str): Type of features to extract ('mfcc', 'spectrogram', or 'both').
+            max_length (int): Maximum length for spectrograms. If None, will use the longest found.
             
         Returns:
             tuple: Tuple containing features and labels.
@@ -138,14 +139,38 @@ class FeatureExtractor:
         mfcc_features = []
         spec_features = []
         labels = []
+        spec_lengths = []
         
         try:
+            # Identify the label column
+            label_column = None
+            for potential_col in ['labels', 'label', 'emotion', 'emotion_id']:
+                if potential_col in dataset.columns:
+                    label_column = potential_col
+                    break
+            
+            if label_column is None:
+                logger.warning("No label column found in dataset. Using the first column as a fallback.")
+                label_column = dataset.columns[0]
+            
+            logger.info(f"Using '{label_column}' as the label column for feature extraction")
+            
+            # First pass to extract features and determine max spectrogram length if needed
             for idx, row in dataset.iterrows():
                 if idx % 100 == 0:
                     logger.info(f"Processing audio {idx+1}/{len(dataset)}")
                 
-                audio_path = row['audio']['path']
-                label = row['labels']
+                # Handle different audio path formats
+                if isinstance(row['audio'], dict) and 'path' in row['audio']:
+                    audio_path = row['audio']['path']
+                elif isinstance(row['audio'], str):
+                    audio_path = row['audio']
+                else:
+                    logger.warning(f"Unexpected audio format for row {idx}, skipping")
+                    continue
+                
+                # Get label from the identified column
+                label = row[label_column]
                 
                 features = self.process_audio_file(audio_path, feature_type)
                 
@@ -153,7 +178,9 @@ class FeatureExtractor:
                     mfcc_features.append(features['mfcc'])
                 
                 if 'spectrogram' in features:
-                    spec_features.append(features['spectrogram'])
+                    spec = features['spectrogram']
+                    spec_features.append(spec)
+                    spec_lengths.append(spec.shape[1])  # Store the length for padding later
                 
                 labels.append(label)
             
@@ -167,8 +194,13 @@ class FeatureExtractor:
                 result['mfcc'] = mfcc_features
                 
             if spec_features:
+                # Determine the max length to use for padding
+                if max_length is None:
+                    max_length = max(spec_lengths)
+                
+                logger.info(f"Padding spectrograms to length {max_length}")
+                
                 # Pad spectrograms to the same length
-                max_length = max(spec.shape[1] for spec in spec_features)
                 padded_specs = []
                 
                 for spec in spec_features:
@@ -178,6 +210,9 @@ class FeatureExtractor:
                             ((0, 0), (0, max_length - spec.shape[1]), (0, 0)),
                             mode='constant'
                         )
+                    elif spec.shape[1] > max_length:
+                        # If the spectrogram is longer than max_length, truncate it
+                        padded_spec = spec[:, :max_length, :]
                     else:
                         padded_spec = spec
                     
@@ -185,6 +220,7 @@ class FeatureExtractor:
                 
                 spec_features = np.array(padded_specs)
                 result['spectrogram'] = spec_features
+                result['max_length'] = max_length  # Store the max_length for future use
             
             result['labels'] = labels
             

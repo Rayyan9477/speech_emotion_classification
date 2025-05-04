@@ -5,6 +5,8 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 import logging
+import os
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -101,45 +103,48 @@ class EmotionModel:
             }
         
         try:
-            model = Sequential()
+            # Use functional API instead of Sequential to handle variable input shapes
+            inputs = Input(shape=input_shape)
             
             # First convolutional layer
-            model.add(Conv2D(
+            x = Conv2D(
                 filters=params['filters'][0],
                 kernel_size=params['kernel_size'],
                 padding='same',
-                input_shape=input_shape,
                 activation='relu'
-            ))
-            model.add(BatchNormalization())
-            model.add(MaxPooling2D(pool_size=params['pool_size']))
-            model.add(Dropout(params['dropout_rate']))
+            )(inputs)
+            x = BatchNormalization()(x)
+            x = MaxPooling2D(pool_size=params['pool_size'])(x)
+            x = Dropout(params['dropout_rate'])(x)
             
             # Additional convolutional layers
             for i in range(1, params['num_conv_layers']):
                 filters = params['filters'][i] if i < len(params['filters']) else 64
-                model.add(Conv2D(
+                x = Conv2D(
                     filters=filters,
                     kernel_size=params['kernel_size'],
                     padding='same',
                     activation='relu'
-                ))
-                model.add(BatchNormalization())
-                model.add(MaxPooling2D(pool_size=params['pool_size']))
-                model.add(Dropout(params['dropout_rate']))
+                )(x)
+                x = BatchNormalization()(x)
+                x = MaxPooling2D(pool_size=params['pool_size'])(x)
+                x = Dropout(params['dropout_rate'])(x)
             
-            # Flatten layer
-            model.add(Flatten())
+            # Flatten layer - this handles the variable input shape
+            x = Flatten()(x)
             
             # Dense layers
             for i in range(params['num_dense_layers']):
                 units = params['dense_units'][i] if i < len(params['dense_units']) else 64
-                model.add(Dense(units, activation='relu'))
-                model.add(BatchNormalization())
-                model.add(Dropout(params['dropout_rate']))
+                x = Dense(units, activation='relu')(x)
+                x = BatchNormalization()(x)
+                x = Dropout(params['dropout_rate'])(x)
             
             # Output layer
-            model.add(Dense(self.num_classes, activation='softmax'))
+            outputs = Dense(self.num_classes, activation='softmax')(x)
+            
+            # Create model
+            model = Model(inputs=inputs, outputs=outputs)
             
             # Compile model
             model.compile(
@@ -157,21 +162,48 @@ class EmotionModel:
             logger.error(f"Error building CNN model: {e}")
             raise
     
-    def get_callbacks(self, patience=5):
+    def get_callbacks(self, patience=5, log_dir='logs'):
         """
         Get callbacks for model training.
         
         Args:
             patience (int): Number of epochs with no improvement after which training will be stopped.
+            log_dir (str): Directory to save TensorBoard logs.
             
         Returns:
             list: List of callbacks.
         """
+        # Create logs directory if it doesn't exist
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Create a unique log directory for each run
+        run_id = time.strftime('run_%Y%m%d_%H%M%S')
+        log_dir = os.path.join(log_dir, run_id)
+        
         return [
             EarlyStopping(
                 monitor='val_loss',
                 patience=patience,
                 restore_best_weights=True,
+                verbose=1
+            ),
+            tf.keras.callbacks.TensorBoard(
+                log_dir=log_dir,
+                histogram_freq=1,
+                update_freq='epoch',
+                profile_batch=0  # No profiling for faster training
+            ),
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=os.path.join(log_dir, 'best_model.keras'),
+                save_best_only=True,
+                monitor='val_loss',
+                verbose=1
+            ),
+            tf.keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=patience // 2,
+                min_lr=1e-6,
                 verbose=1
             )
         ]

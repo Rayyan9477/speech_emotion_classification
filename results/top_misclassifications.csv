@@ -1,0 +1,4 @@
+Sample,True Emotion,Predicted Emotion,Confidence
+201,happy,angry,0.6129043
+99,happy,angry,0.5916294
+37,neutral,angry,0.58487654
