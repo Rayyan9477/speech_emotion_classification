@@ -1,9 +1,18 @@
 import os
 import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
 import argparse
 import logging
+import sys
+
+# Try to import TensorFlow with error handling
+try:
+    import tensorflow as tf
+    tensorflow_available = True
+except ImportError as e:
+    tensorflow_available = False
+    tensorflow_error = str(e)
+    
+import matplotlib.pyplot as plt
 
 from data_loader import DataLoader
 from feature_extractor import FeatureExtractor
@@ -25,7 +34,8 @@ logger = logging.getLogger(__name__)
 # Set random seeds for reproducibility
 def set_seeds(seed=42):
     np.random.seed(seed)
-    tf.random.set_seed(seed)
+    if tensorflow_available:
+        tf.random.set_seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
@@ -49,6 +59,13 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
+    # Check if TensorFlow is available
+    if not tensorflow_available:
+        logger.error(f"TensorFlow is not available. Error: {tensorflow_error}")
+        logger.error("Cannot proceed with speech emotion classification without TensorFlow.")
+        logger.error("Please reinstall TensorFlow with 'pip install tensorflow==2.16.1'")
+        sys.exit(1)
+        
     # Parse command-line arguments
     args = parse_arguments()
     

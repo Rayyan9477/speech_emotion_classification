@@ -3,11 +3,22 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import tensorflow as tf
+
+# Try to import TensorFlow with error handling
+try:
+    import tensorflow as tf
+    tensorflow_available = True
+except ImportError as e:
+    tensorflow_available = False
+    tensorflow_error = str(e)
+
 import librosa
 import librosa.display
 import soundfile as sf
 import time
+import subprocess
+import threading
+import queue
 from pathlib import Path
 from streamlit_option_menu import option_menu
 from streamlit_extras.colored_header import colored_header
@@ -15,6 +26,17 @@ from streamlit_extras.app_logo import add_logo
 from streamlit_extras.card import card
 from streamlit_extras.stylable_container import stylable_container
 import plotly.express as px
+import tempfile
+import webbrowser
+import socket
+import plotly.graph_objects as go
+
+# Import the audiorecorder component
+try:
+    from streamlit_audiorecorder import st_audiorecorder
+    audiorecorder_available = True
+except ImportError:
+    audiorecorder_available = False
 
 # Import custom modules
 from model import EmotionModel
@@ -77,6 +99,43 @@ st.markdown("""
         gap: 1rem;
         padding: 1rem;
     }
+    .gauge-chart {
+        margin: 0 auto;
+        text-align: center;
+    }
+    .stAlert {
+        transition: all 0.3s ease-in-out;
+    }
+    .css-nahz7x {
+        transform: scale(1.02);
+        transition: transform 0.3s ease;
+    }
+    .css-nahz7x:hover {
+        transform: scale(1.05);
+    }
+    .tb-launcher {
+        background-color: #f0e6ff;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #d0c0ff;
+        margin-top: 10px;
+    }
+    .real-time-indicator {
+        color: #4CAF50;
+        font-weight: bold;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% {
+            opacity: 0.6;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0.6;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,6 +162,90 @@ EMOTION_DESCRIPTIONS = {
     "surprised": "A feeling of being startled or astonished by something unexpected."
 }
 
+# Global queues for real-time processing
+audio_queue = queue.Queue()
+result_queue = queue.Queue()
+
+# Check if port is available
+def is_port_available(port):
+    """Check if a port is available for use"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) != 0
+
+# Find an available port for TensorBoard
+def find_available_port(start_port=6006):
+    """Find an available port starting from the given port"""
+    port = start_port
+    while not is_port_available(port):
+        port += 1
+    return port
+
+# Start TensorBoard process
+def start_tensorboard(logdir, port=6006):
+    """Start TensorBoard server in a new process"""
+    try:
+        # Kill any existing TensorBoard processes
+        subprocess.run(["taskkill", "/f", "/im", "tensorboard.exe"], 
+                      stdout=subprocess.DEVNULL, 
+                      stderr=subprocess.DEVNULL)
+    except:
+        pass
+    
+    # Start new TensorBoard process
+    try:
+        process = subprocess.Popen(
+            ["tensorboard", "--logdir", logdir, "--port", str(port)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return process, port
+    except Exception as e:
+        st.error(f"Failed to start TensorBoard: {e}")
+        return None, None
+
+# Real-time audio processing thread
+def process_audio_thread(model, feature_extractor, emotion_labels):
+    """Background thread for processing audio in real-time"""
+    while True:
+        audio_data = audio_queue.get()
+        if audio_data is None:  # Signal to stop the thread
+            break
+            
+        try:
+            # Process the audio
+            y, sr = audio_data
+            
+            # Extract features
+            mel_spec = librosa.feature.melspectrogram(
+                y=y, sr=sr, n_fft=2048, hop_length=512, n_mels=128, fmax=8000
+            )
+            
+            # Convert to decibels
+            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            
+            # Reshape for model input (adding batch and channel dimensions)
+            mel_spec_db = mel_spec_db.reshape(1, mel_spec_db.shape[0], mel_spec_db.shape[1], 1)
+            
+            # Make prediction
+            prediction = model.predict(mel_spec_db, verbose=0)
+            predicted_class = np.argmax(prediction[0])
+            emotion = emotion_labels[predicted_class] if predicted_class < len(emotion_labels) else "unknown"
+            
+            # Get confidence scores
+            confidence_scores = {}
+            for i, label in enumerate(emotion_labels[:len(prediction[0])]):
+                confidence_scores[label] = float(prediction[0][i]) * 100
+                
+            # Put results in the queue
+            result_queue.put((emotion, confidence_scores, y, sr))
+            
+        except Exception as e:
+            print(f"Error in audio processing thread: {e}")
+        
+        finally:
+            audio_queue.task_done()
+
 class EmotionAnalyzer:
     """Main class for the Emotion Analysis Application"""
     
@@ -114,6 +257,11 @@ class EmotionAnalyzer:
         self.emotion_labels = ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised']
         self.loaded = False
         self.upload_folder = "uploads"
+        self.tensorboard_process = None
+        self.tensorboard_port = None
+        self.real_time_processing = False
+        self.processing_thread = None
+        self.tensorflow_available = tensorflow_available
         self.ensure_upload_dir()
         
     def ensure_upload_dir(self):
@@ -122,6 +270,11 @@ class EmotionAnalyzer:
     
     def load_model(self):
         """Load the pre-trained emotion model"""
+        if not self.tensorflow_available:
+            st.error(f"TensorFlow is not available. Error: {tensorflow_error}")
+            st.info("Please reinstall TensorFlow or fix the DLL loading issue to use this application.")
+            st.stop()
+            
         try:
             with st.spinner("Loading model... Please wait."):
                 try:
@@ -137,6 +290,16 @@ class EmotionAnalyzer:
                         st.stop()
             
             self.loaded = True
+            
+            # Start the real-time processing thread if not already running
+            if self.processing_thread is None or not self.processing_thread.is_alive():
+                self.processing_thread = threading.Thread(
+                    target=process_audio_thread, 
+                    args=(self.model, self.feature_extractor, self.emotion_labels),
+                    daemon=True
+                )
+                self.processing_thread.start()
+                
         except Exception as e:
             st.error(f"Error loading model: {e}")
             st.stop()
@@ -181,7 +344,7 @@ class EmotionAnalyzer:
         try:
             with st.spinner("Predicting emotion..."):
                 # Make prediction
-                prediction = self.model.predict(features)
+                prediction = self.model.predict(features, verbose=0)
                 predicted_class = np.argmax(prediction[0])
                 emotion = self.emotion_labels[predicted_class] if predicted_class < len(self.emotion_labels) else "unknown"
                 
@@ -250,6 +413,47 @@ class EmotionAnalyzer:
             st.error(f"Error creating visualization: {e}")
             return None
     
+    def create_gauge_chart(self, confidence, emotion):
+        """Create a gauge chart to show confidence level"""
+        try:
+            color = EMOTION_COLORS.get(emotion, "#607D8B")
+            
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=confidence,
+                domain={"x": [0, 1], "y": [0, 1]},
+                title={"text": f"{emotion.capitalize()} Confidence", "font": {"size": 24, "color": color}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "darkblue"},
+                    "bar": {"color": color},
+                    "bgcolor": "white",
+                    "borderwidth": 2,
+                    "bordercolor": "gray",
+                    "steps": [
+                        {"range": [0, 30], "color": "#E0E0E0"},
+                        {"range": [30, 70], "color": "#BDBDBD"},
+                        {"range": [70, 100], "color": color + "30"}
+                    ],
+                    "threshold": {
+                        "line": {"color": "red", "width": 4},
+                        "thickness": 0.75,
+                        "value": 90
+                    }
+                }
+            ))
+            
+            fig.update_layout(
+                height=250,
+                margin=dict(l=20, r=20, t=30, b=20),
+                paper_bgcolor="rgba(0,0,0,0)",
+                font={"color": "darkblue", "family": "Arial"}
+            )
+            
+            return fig
+        except Exception as e:
+            st.error(f"Error creating gauge chart: {e}")
+            return None
+            
     def display_file_upload(self):
         """Display file upload interface and handle uploaded files"""
         with st.container():
@@ -301,12 +505,42 @@ class EmotionAnalyzer:
                     st.write("### Record Audio")
                     st.write("Record your voice directly in the browser:")
                     
-                    audio_recording = st.audio_recorder(
-                        text="Click to record",
-                        recording_color="#e65100",
-                        neutral_color="#5e35b1",
-                        sample_rate=16000,
-                    )
+                    # Add a toggle for real-time processing
+                    real_time_enabled = st.toggle("Enable real-time analysis", value=False, 
+                                           help="Process audio as you speak for immediate feedback")
+                    
+                    if real_time_enabled:
+                        st.markdown("<p class='real-time-indicator'>● Real-time analysis active</p>", unsafe_allow_html=True)
+                        if not self.loaded:
+                            self.load_model()
+                        self.real_time_processing = True
+                    else:
+                        self.real_time_processing = False
+                    
+                    # Check if audio recorder component is available
+                    if not audiorecorder_available:
+                        st.error("Audio recorder component is not available. Please run 'pip install streamlit-audiorecorder'")
+                    else:
+                        # Use the st_audiorecorder component instead of st.audio_recorder
+                        audio_recording = st_audiorecorder(
+                            text="Click to record",
+                            recording_color="#e65100",
+                            neutral_color="#5e35b1",
+                            sample_rate=16000,
+                        )
+                    
+                    # If real-time enabled, create a placeholder for live results
+                    if real_time_enabled:
+                        live_result_placeholder = st.empty()
+                        
+                        # Check if there are any results in the queue
+                        if not result_queue.empty():
+                            emotion, confidence_scores, audio_y, audio_sr = result_queue.get()
+                            with live_result_placeholder.container():
+                                st.markdown(f"### Live Emotion: **{emotion.upper()}**")
+                                max_confidence = confidence_scores.get(emotion, 0)
+                                gauge_fig = self.create_gauge_chart(max_confidence, emotion)
+                                st.plotly_chart(gauge_fig, use_container_width=True)
             
             # Process the uploaded file or recorded audio
             if uploaded_file is not None:
@@ -326,6 +560,15 @@ class EmotionAnalyzer:
                     f.write(audio_recording)
                 
                 st.success("Recording saved successfully!")
+                
+                # If real-time processing is enabled, add to the queue
+                if self.real_time_processing:
+                    try:
+                        y, sr = librosa.load(file_path, sr=None)
+                        audio_queue.put((y, sr))
+                    except Exception as e:
+                        st.error(f"Error processing audio for real-time analysis: {e}")
+                
                 self.process_audio(file_path)
     
     def display_demo_section(self):
@@ -446,10 +689,10 @@ class EmotionAnalyzer:
                 ):
                     st.markdown(f"### Detected Emotion: <span style='color:{EMOTION_COLORS.get(emotion, '#607D8B')}'>{emotion.upper()}</span>", unsafe_allow_html=True)
                     
-                    # Display most confident emotion with progress bar
+                    # Display most confident emotion with gauge chart
                     max_confidence = max(confidence_scores.values())
-                    st.markdown(f"Confidence: **{max_confidence:.1f}%**")
-                    st.progress(max_confidence/100)
+                    gauge_fig = self.create_gauge_chart(max_confidence, emotion)
+                    st.plotly_chart(gauge_fig, use_container_width=True)
                     
                     # Display emotion description
                     st.markdown(f"**Description**: {EMOTION_DESCRIPTIONS.get(emotion, '')}")
@@ -540,6 +783,83 @@ class EmotionAnalyzer:
             - **Acted vs. Natural**: The system was trained on acted emotions which may differ from natural expressions
             """)
     
+    def display_tensorboard_launcher(self):
+        """Display TensorBoard launcher interface"""
+        with st.container():
+            colored_header(
+                label="TensorBoard Visualization",
+                description="Launch TensorBoard to visualize model training metrics",
+                color_name="violet-70"
+            )
+            
+            with stylable_container(
+                key="tensorboard_container",
+                css_styles="""
+                    {
+                        background-color: #f0f2f6;
+                        border-radius: 10px;
+                        padding: 20px;
+                    }
+                """
+            ):
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    st.write("### TensorBoard Launcher")
+                    st.write("""
+                    TensorBoard provides interactive visualizations of model training metrics, 
+                    architecture, and performance. Launch it to explore detailed insights into 
+                    your emotion recognition model.
+                    """)
+                    
+                    # Get log directory
+                    logs_dir = st.text_input(
+                        "Log Directory", 
+                        value="logs",
+                        help="Directory containing TensorFlow training logs"
+                    )
+                
+                with col2:
+                    st.write("### Launch")
+                    tb_port = find_available_port()
+                    if st.button("Start TensorBoard", key="start_tb"):
+                        if os.path.exists(logs_dir):
+                            process, port = start_tensorboard(logs_dir, tb_port)
+                            if process:
+                                self.tensorboard_process = process
+                                self.tensorboard_port = port
+                                st.session_state['tensorboard_running'] = True
+                                st.success(f"TensorBoard started successfully on port {port}")
+                        else:
+                            st.error(f"Log directory {logs_dir} does not exist.")
+            
+            # Display TensorBoard iframe if running
+            if st.session_state.get('tensorboard_running', False):
+                with stylable_container(
+                    key="tb_launcher",
+                    css_styles="""
+                        {
+                            background-color: #f0e6ff;
+                            border-radius: 8px;
+                            padding: 15px;
+                            border: 1px solid #d0c0ff;
+                            margin-top: 10px;
+                        }
+                    """
+                ):
+                    st.markdown(f"""
+                    ### TensorBoard is Running 🚀
+                    
+                    Open TensorBoard in a new browser tab: [http://localhost:{self.tensorboard_port}](http://localhost:{self.tensorboard_port})
+                    """)
+                    
+                    if st.button("Stop TensorBoard", key="stop_tb"):
+                        if self.tensorboard_process:
+                            self.tensorboard_process.terminate()
+                            self.tensorboard_process = None
+                            st.session_state['tensorboard_running'] = False
+                            st.success("TensorBoard stopped successfully")
+    
     def run(self):
         """Main method to run the Streamlit application"""
         # Display app header
@@ -555,8 +875,8 @@ class EmotionAnalyzer:
             
             selected = option_menu(
                 menu_title="Navigation",
-                options=["Analyze Audio", "View Examples", "About", "Settings"],
-                icons=["soundwave", "play-circle", "info-circle", "gear"],
+                options=["Analyze Audio", "View Examples", "TensorBoard", "About", "Settings"],
+                icons=["soundwave", "play-circle", "graph-up", "info-circle", "gear"],
                 menu_icon="cast",
                 default_index=0,
                 styles={
@@ -574,6 +894,23 @@ class EmotionAnalyzer:
             - Dataset: RAVDESS
             - Accuracy: ~75-85% on test data
             """)
+            
+            # Add real-time toggle in sidebar
+            st.markdown("### Real-time Processing")
+            if 'real_time_enabled' not in st.session_state:
+                st.session_state.real_time_enabled = False
+                
+            real_time = st.checkbox(
+                "Enable real-time analysis", 
+                value=st.session_state.real_time_enabled,
+                help="Process audio continuously for immediate feedback"
+            )
+            
+            if real_time != st.session_state.real_time_enabled:
+                st.session_state.real_time_enabled = real_time
+                if real_time and not self.loaded:
+                    self.load_model()
+                self.real_time_processing = real_time
         
         # Display selected section
         if selected == "Analyze Audio":
@@ -581,6 +918,9 @@ class EmotionAnalyzer:
             
         elif selected == "View Examples":
             self.display_demo_section()
+            
+        elif selected == "TensorBoard":
+            self.display_tensorboard_launcher()
             
         elif selected == "About":
             self.display_about_section()
@@ -604,6 +944,10 @@ class EmotionAnalyzer:
             ):
                 st.write("### Model Settings")
                 model_path = st.text_input("Model Path", value=self.model_path)
+                
+                st.write("### Audio Processing Settings")
+                sample_length = st.slider("Sample Length (seconds)", 1, 10, 5)
+                
                 if st.button("Save Settings"):
                     self.model_path = model_path
                     st.success("Settings saved successfully!")
@@ -612,9 +956,16 @@ class EmotionAnalyzer:
         # Footer
         st.markdown("---")
         st.markdown(
-            "<p style='text-align: center; color: gray;'>Speech Emotion Analyzer v1.0 | Made with ❤️ using Streamlit</p>",
+            "<p style='text-align: center; color: gray;'>Speech Emotion Analyzer v1.1 | Made with ❤️ using Streamlit</p>",
             unsafe_allow_html=True
         )
+
+# Initialize session state
+if 'tensorboard_running' not in st.session_state:
+    st.session_state['tensorboard_running'] = False
+
+if 'real_time_enabled' not in st.session_state:
+    st.session_state['real_time_enabled'] = False
 
 if __name__ == "__main__":
     app = EmotionAnalyzer()

@@ -132,11 +132,17 @@ class DataLoader:
         
         try:
             # Convert dataset to pandas DataFrame for easier splitting
-            df = self.dataset['train'].to_pandas()
+            if hasattr(self.dataset['train'], 'to_pandas'):
+                # This is a Hugging Face dataset with to_pandas method
+                df = self.dataset['train'].to_pandas()
+            else:
+                # This is already a pandas DataFrame (from dummy dataset)
+                df = self.dataset['train']
             
             # Examine the dataset structure to identify the emotion label column
             logger.info(f"Dataset columns: {df.columns.tolist()}")
             
+            # Rest of the method remains the same
             # Identify which column contains the emotion labels
             # Different datasets might use different column names
             label_column = None
@@ -168,10 +174,10 @@ class DataLoader:
                 def extract_emotion_from_path(path):
                     try:
                         # Extract the emotion code from filename (format: emotion-spk_ID...)
-                        if 'path' in path:
+                        if isinstance(path, dict) and 'path' in path:
                             filename = os.path.basename(path['path'])
                         else:
-                            filename = os.path.basename(path)
+                            filename = os.path.basename(str(path))
                             
                         if 'happy' in filename.lower():
                             return 1  # happy
