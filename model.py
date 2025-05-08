@@ -103,6 +103,17 @@ class EmotionModel:
             }
         
         try:
+            # Ensure input shape is a tuple with 3 dimensions
+            if len(input_shape) != 3:
+                logger.warning(f"Expected 3D input shape (height, width, channels), got {input_shape}. Attempting to fix...")
+                if len(input_shape) == 2:
+                    # Assuming missing channel dimension
+                    input_shape = (*input_shape, 1)
+                    logger.info(f"Fixed input shape to {input_shape}")
+                else:
+                    logger.error(f"Cannot fix input shape {input_shape}. Expected 3D shape.")
+                    raise ValueError(f"Invalid input shape: {input_shape}. Expected 3D shape.")
+            
             # Use functional API instead of Sequential to handle variable input shapes
             inputs = Input(shape=input_shape)
             
@@ -146,14 +157,21 @@ class EmotionModel:
             # Create model
             model = Model(inputs=inputs, outputs=outputs)
             
-            # Compile model
+            # Compile model with error handling for optimizer
+            try:
+                optimizer = Adam(learning_rate=params['learning_rate'])
+            except:
+                # For older TensorFlow versions
+                optimizer = Adam(lr=params['learning_rate'])
+                
             model.compile(
-                optimizer=Adam(learning_rate=params['learning_rate']),
+                optimizer=optimizer,
                 loss='sparse_categorical_crossentropy',
                 metrics=['accuracy']
             )
             
             logger.info(f"CNN model built with {params['num_conv_layers']} convolutional layers and {params['num_dense_layers']} dense layers")
+            logger.info(f"Input shape: {input_shape}")
             model.summary(print_fn=logger.info)
             
             return model

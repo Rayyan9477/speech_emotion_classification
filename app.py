@@ -185,23 +185,58 @@ def start_tensorboard(logdir, port=6006):
     """Start TensorBoard server in a new process"""
     try:
         # Kill any existing TensorBoard processes
-        subprocess.run(["taskkill", "/f", "/im", "tensorboard.exe"], 
-                      stdout=subprocess.DEVNULL, 
-                      stderr=subprocess.DEVNULL)
-    except:
-        pass
-    
-    # Start new TensorBoard process
-    try:
-        process = subprocess.Popen(
-            ["tensorboard", "--logdir", logdir, "--port", str(port)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        return process, port
+        if os.name == 'nt':  # Windows
+            try:
+                subprocess.run(["taskkill", "/f", "/im", "tensorboard.exe"], 
+                            stdout=subprocess.DEVNULL, 
+                            stderr=subprocess.DEVNULL)
+            except:
+                pass
+        else:  # Linux/Mac
+            try:
+                subprocess.run(["pkill", "-f", "tensorboard"], 
+                            stdout=subprocess.DEVNULL, 
+                            stderr=subprocess.DEVNULL)
+            except:
+                pass
+        
+        # Start new TensorBoard process
+        try:
+            # Check if logdir exists and has content
+            if not os.path.exists(logdir):
+                raise FileNotFoundError(f"Log directory {logdir} does not exist")
+            
+            # Check if the directory has any content
+            if not any(os.scandir(logdir)):
+                raise ValueError(f"Log directory {logdir} is empty, no training logs found")
+                
+            # Launch TensorBoard process
+            process = subprocess.Popen(
+                ["tensorboard", "--logdir", logdir, "--port", str(port)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Check if process started successfully
+            if process.poll() is not None:
+                # Process terminated immediately
+                stdout, stderr = process.communicate()
+                if stderr:
+                    raise RuntimeError(f"TensorBoard failed to start: {stderr}")
+            
+            return process, port
+        except FileNotFoundError as e:
+            st.error(f"Error: {str(e)}")
+            return None, None
+        except ValueError as e:
+            st.error(f"Error: {str(e)}")
+            return None, None
+        except Exception as e:
+            st.error(f"Failed to start TensorBoard: {e}")
+            return None, None
     except Exception as e:
-        st.error(f"Failed to start TensorBoard: {e}")
+        st.error(f"Unexpected error starting TensorBoard: {e}")
         return None, None
 
 # Real-time audio processing thread
@@ -224,8 +259,47 @@ def process_audio_thread(model, feature_extractor, emotion_labels):
             # Convert to decibels
             mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
             
+            # Expected shape for the model input is (1, 128, 165, 1)
+            expected_shape = (1, 128, 165, 1)
+            
+            # Fix time dimension (axis 1 in mel_spec_db)
+            time_frames = mel_spec_db.shape[1]
+            expected_frames = expected_shape[2]  # 165 frames
+            
+            if time_frames < expected_frames:
+                # Pad if shorter
+                padding = ((0, 0), (0, expected_frames - time_frames))
+                mel_spec_db = np.pad(mel_spec_db, padding, mode='constant')
+            elif time_frames > expected_frames:
+                # Trim if longer
+                mel_spec_db = mel_spec_db[:, :expected_frames]
+            
             # Reshape for model input (adding batch and channel dimensions)
             mel_spec_db = mel_spec_db.reshape(1, mel_spec_db.shape[0], mel_spec_db.shape[1], 1)
+            
+            # Double-check the shape matches what the model expects
+            actual_shape = mel_spec_db.shape
+            if actual_shape != expected_shape:
+                print(f"Feature shape mismatch: Expected {expected_shape}, got {actual_shape}. Fixing...")
+                
+                # Create a new array with the correct shape
+                fixed_features = np.zeros(expected_shape)
+                
+                # Copy data, trimming or padding as needed for each dimension
+                # Handle batch dimension (usually 1)
+                min_batch = min(actual_shape[0], expected_shape[0])
+                # Handle frequency dimension (128 mel bands)
+                min_freq = min(actual_shape[1], expected_shape[1])
+                # Handle time dimension (165 frames)
+                min_time = min(actual_shape[2], expected_shape[2])
+                # Handle channel dimension (usually 1)
+                min_channel = min(actual_shape[3], expected_shape[3])
+                
+                # Copy only what fits
+                fixed_features[:min_batch, :min_freq, :min_time, :min_channel] = \
+                    mel_spec_db[:min_batch, :min_freq, :min_time, :min_channel]
+                
+                mel_spec_db = fixed_features
             
             # Make prediction
             prediction = model.predict(mel_spec_db, verbose=0)
@@ -242,6 +316,8 @@ def process_audio_thread(model, feature_extractor, emotion_labels):
             
         except Exception as e:
             print(f"Error in audio processing thread: {e}")
+            import traceback
+            print(traceback.format_exc())
         
         finally:
             audio_queue.task_done()
@@ -264,6 +340,12 @@ class EmotionAnalyzer:
         self.tensorflow_available = tensorflow_available
         self.ensure_upload_dir()
         
+        # Check if demo folder exists, create if not
+        os.makedirs("demo_files", exist_ok=True)
+        
+        # Check if model folder exists, create if not
+        os.makedirs("models", exist_ok=True)
+        
     def ensure_upload_dir(self):
         """Ensure the upload directory exists"""
         os.makedirs(self.upload_folder, exist_ok=True)
@@ -277,17 +359,31 @@ class EmotionAnalyzer:
             
         try:
             with st.spinner("Loading model... Please wait."):
+                # First try to load the primary model (Keras format)
                 try:
                     self.model = tf.keras.models.load_model(self.model_path)
                     st.success("Model loaded successfully!")
                 except Exception as e:
-                    st.warning(f"Failed to load model from {self.model_path}. Trying backup model...")
+                    st.warning(f"Failed to load model from {self.model_path}. Error: {str(e)}")
+                    st.warning("Trying backup model path...")
+                    
+                    # Try loading the backup model (H5 format)
                     try:
                         self.model = tf.keras.models.load_model(self.backup_model_path)
                         st.success("Backup model loaded successfully!")
                     except Exception as e2:
-                        st.error(f"Failed to load backup model: {e2}")
-                        st.stop()
+                        st.error(f"Failed to load backup model: {str(e2)}")
+                        
+                        # Try to create a fresh model with default architecture
+                        try:
+                            st.warning("Attempting to create a new model with default architecture...")
+                            emotion_model = EmotionModel(num_classes=len(self.emotion_labels))
+                            self.model = emotion_model.build_cnn(input_shape=(128, 165, 1))
+                            st.warning("Created new model with default architecture. Note: This model is untrained.")
+                        except Exception as e3:
+                            st.error(f"Could not create default model: {str(e3)}")
+                            st.error("Unable to load or create a model. Please check model files or reinstall TensorFlow.")
+                            st.stop()
             
             self.loaded = True
             
@@ -302,6 +398,8 @@ class EmotionAnalyzer:
                 
         except Exception as e:
             st.error(f"Error loading model: {e}")
+            import traceback
+            st.error(f"Detailed error: {traceback.format_exc()}")
             st.stop()
     
     def extract_features(self, audio_file_path):
@@ -320,7 +418,7 @@ class EmotionAnalyzer:
                     # If longer, trim to 5 seconds
                     y = y[:target_length]
                 
-                # Extract mel spectrogram
+                # Extract mel spectrogram with fixed parameters to match model input shape
                 mel_spec = librosa.feature.melspectrogram(
                     y=y, sr=sr, n_fft=2048, hop_length=512, n_mels=128, fmax=8000
                 )
@@ -328,12 +426,54 @@ class EmotionAnalyzer:
                 # Convert to decibels
                 mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
                 
+                # Expected shape for the model input is (1, 128, 165, 1)
+                expected_shape = (1, 128, 165, 1)
+                
+                # Fix time dimension (axis 1 in mel_spec_db)
+                time_frames = mel_spec_db.shape[1]
+                expected_frames = expected_shape[2]  # 165 frames
+                
+                if time_frames < expected_frames:
+                    # Pad if shorter
+                    padding = ((0, 0), (0, expected_frames - time_frames))
+                    mel_spec_db = np.pad(mel_spec_db, padding, mode='constant')
+                elif time_frames > expected_frames:
+                    # Trim if longer
+                    mel_spec_db = mel_spec_db[:, :expected_frames]
+                
                 # Reshape for model input (adding batch and channel dimensions)
                 mel_spec_db = mel_spec_db.reshape(1, mel_spec_db.shape[0], mel_spec_db.shape[1], 1)
+                
+                # Double-check the shape matches what the model expects
+                actual_shape = mel_spec_db.shape
+                if actual_shape != expected_shape:
+                    st.warning(f"Feature shape mismatch: Expected {expected_shape}, got {actual_shape}. Attempting to fix...")
+                    
+                    # Create a new array with the correct shape
+                    fixed_features = np.zeros(expected_shape)
+                    
+                    # Copy data, trimming or padding as needed for each dimension
+                    # Handle batch dimension (usually 1)
+                    min_batch = min(actual_shape[0], expected_shape[0])
+                    # Handle frequency dimension (128 mel bands)
+                    min_freq = min(actual_shape[1], expected_shape[1])
+                    # Handle time dimension (165 frames)
+                    min_time = min(actual_shape[2], expected_shape[2])
+                    # Handle channel dimension (usually 1)
+                    min_channel = min(actual_shape[3], expected_shape[3])
+                    
+                    # Copy only what fits
+                    fixed_features[:min_batch, :min_freq, :min_time, :min_channel] = \
+                        mel_spec_db[:min_batch, :min_freq, :min_time, :min_channel]
+                    
+                    mel_spec_db = fixed_features
+                    st.success(f"Fixed feature shape to {mel_spec_db.shape}")
                 
                 return y, sr, mel_spec_db
         except Exception as e:
             st.error(f"Error extracting features: {e}")
+            import traceback
+            st.error(f"Details: {traceback.format_exc()}")
             return None, None, None
     
     def predict_emotion(self, features):
@@ -418,6 +558,23 @@ class EmotionAnalyzer:
         try:
             color = EMOTION_COLORS.get(emotion, "#607D8B")
             
+            # Create color variants for steps without trying to parse hex colors
+            light_color = color  # Base color
+            medium_color = "#BDBDBD"  # Medium gray for middle range
+            light_gray = "#E0E0E0"  # Light gray for low range
+            light_variant = "rgba(200, 200, 200, 0.3)"  # Safe light variant
+            
+            # Try to create hex-based color variant, but use safe fallback if it fails
+            try:
+                # Parse hex color into RGB components
+                r = int(color[1:3], 16)
+                g = int(color[3:5], 16)
+                b = int(color[5:7], 16)
+                light_variant = f"rgba({r}, {g}, {b}, 0.3)"
+            except:
+                # If hex parsing fails, use the safe fallback
+                pass
+            
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=confidence,
@@ -430,9 +587,9 @@ class EmotionAnalyzer:
                     "borderwidth": 2,
                     "bordercolor": "gray",
                     "steps": [
-                        {"range": [0, 30], "color": "#E0E0E0"},
-                        {"range": [30, 70], "color": "#BDBDBD"},
-                        {"range": [70, 100], "color": color + "30"}
+                        {"range": [0, 30], "color": light_gray},
+                        {"range": [30, 70], "color": medium_color},
+                        {"range": [70, 100], "color": light_variant}
                     ],
                     "threshold": {
                         "line": {"color": "red", "width": 4},
@@ -451,21 +608,30 @@ class EmotionAnalyzer:
             
             return fig
         except Exception as e:
-            st.error(f"Error creating gauge chart: {e}")
-            return None
+            print(f"Error creating gauge chart: {e}")
+            import traceback
+            print(traceback.format_exc())
+            
+            # Return a simple fallback figure in case of error
+            fallback_fig = go.Figure()
+            fallback_fig.add_annotation(text="Chart creation failed", showarrow=False)
+            return fallback_fig
             
     def display_file_upload(self):
         """Display file upload interface and handle uploaded files"""
         with st.container():
             colored_header(
-                label="Upload Audio",
-                description="Upload an audio file to analyze the speaker's emotions",
+                label="Analyze Your Speech",
+                description="Upload or record audio to detect emotions",
                 color_name="violet-70"
             )
             
-            col1, col2 = st.columns([3, 2])
+            tab1, tab2 = st.tabs(["📁 Upload Audio File", "🎙️ Record Audio"])
             
-            with col1:
+            # Initialize audio_recording variable to None at the start
+            audio_recording = None
+            
+            with tab1:
                 with stylable_container(
                     key="upload_container",
                     css_styles="""
@@ -473,9 +639,13 @@ class EmotionAnalyzer:
                             background-color: #f0f2f6;
                             border-radius: 10px;
                             padding: 20px;
+                            margin-top: 10px;
                         }
                     """
                 ):
+                    st.markdown("### Upload Audio File")
+                    st.markdown("Upload a WAV or MP3 file of someone speaking to analyze their emotional state.")
+                    
                     uploaded_file = st.file_uploader(
                         "Choose an audio file (WAV or MP3)", 
                         type=["wav", "mp3"],
@@ -490,8 +660,16 @@ class EmotionAnalyzer:
                         - Make sure the speaker's voice is prominent
                         """
                     )
+                    
+                    # Display example upload button
+                    if st.button("Don't have a file? Try a sample", key="try_sample"):
+                        if os.path.exists("demo_files/happy_sample.wav"):
+                            self.process_audio("demo_files/happy_sample.wav")
+                            st.success("Loaded sample audio!")
+                        else:
+                            st.warning("Demo files not found. Please go to the 'View Examples' section.")
             
-            with col2:
+            with tab2:
                 with stylable_container(
                     key="record_container",
                     css_styles="""
@@ -499,11 +677,12 @@ class EmotionAnalyzer:
                             background-color: #ede7f6;
                             border-radius: 10px;
                             padding: 20px;
+                            margin-top: 10px;
                         }
                     """
                 ):
-                    st.write("### Record Audio")
-                    st.write("Record your voice directly in the browser:")
+                    st.markdown("### Record Audio")
+                    st.markdown("Record your voice directly in the browser to analyze emotions in real-time.")
                     
                     # Add a toggle for real-time processing
                     real_time_enabled = st.toggle("Enable real-time analysis", value=False, 
@@ -519,9 +698,11 @@ class EmotionAnalyzer:
                     
                     # Check if audio recorder component is available
                     if not audiorecorder_available:
-                        st.error("Audio recorder component is not available. Please run 'pip install streamlit-audiorecorder'")
+                        st.error("Audio recorder component is not available. Please use the Upload option instead.")
+                        st.info("If you want to use the recording feature, run: 'pip install streamlit-audiorecorder'")
                     else:
-                        # Use the st_audiorecorder component instead of st.audio_recorder
+                        st.markdown("Click below to start/stop recording:")
+                        # Use the st_audiorecorder component
                         audio_recording = st_audiorecorder(
                             text="Click to record",
                             recording_color="#e65100",
@@ -530,7 +711,7 @@ class EmotionAnalyzer:
                         )
                     
                     # If real-time enabled, create a placeholder for live results
-                    if real_time_enabled:
+                    if real_time_enabled and audiorecorder_available:
                         live_result_placeholder = st.empty()
                         
                         # Check if there are any results in the queue
@@ -542,6 +723,9 @@ class EmotionAnalyzer:
                                 gauge_fig = self.create_gauge_chart(max_confidence, emotion)
                                 st.plotly_chart(gauge_fig, use_container_width=True)
             
+            # Add a separator before results
+            st.markdown("---")
+            
             # Process the uploaded file or recorded audio
             if uploaded_file is not None:
                 # Save the uploaded file to disk
@@ -552,7 +736,8 @@ class EmotionAnalyzer:
                 st.success(f"File uploaded successfully: {uploaded_file.name}")
                 self.process_audio(file_path)
                 
-            elif audio_recording is not None:
+            # Check both audiorecorder_available and audio_recording to prevent errors
+            elif audiorecorder_available and audio_recording is not None and len(audio_recording) > 0:
                 # Save the recorded audio to disk
                 timestamp = int(time.time())
                 file_path = os.path.join(self.upload_folder, f"recording_{timestamp}.wav")
@@ -651,18 +836,28 @@ class EmotionAnalyzer:
         if not self.loaded:
             self.load_model()
         
-        # Extract features from audio
-        y, sr, features = self.extract_features(audio_file_path)
-        
-        if features is None:
-            st.error("Failed to extract features from the audio file.")
+        # Check if file exists
+        if not os.path.exists(audio_file_path):
+            st.error(f"Audio file not found: {audio_file_path}")
             return
-        
-        # Predict emotion
-        emotion, confidence_scores = self.predict_emotion(features)
-        
-        # Display results
-        self.display_results(audio_file_path, y, sr, emotion, confidence_scores)
+            
+        try:
+            # Extract features from audio
+            y, sr, features = self.extract_features(audio_file_path)
+            
+            if features is None:
+                st.error("Failed to extract features from the audio file.")
+                return
+            
+            # Predict emotion
+            emotion, confidence_scores = self.predict_emotion(features)
+            
+            # Display results
+            self.display_results(audio_file_path, y, sr, emotion, confidence_scores)
+        except Exception as e:
+            st.error(f"Error processing audio: {str(e)}")
+            import traceback
+            st.error(f"Details: {traceback.format_exc()}")
     
     def display_results(self, audio_file_path, y, sr, emotion, confidence_scores):
         """Display emotion analysis results"""
@@ -689,29 +884,63 @@ class EmotionAnalyzer:
                 ):
                     st.markdown(f"### Detected Emotion: <span style='color:{EMOTION_COLORS.get(emotion, '#607D8B')}'>{emotion.upper()}</span>", unsafe_allow_html=True)
                     
-                    # Display most confident emotion with gauge chart
-                    max_confidence = max(confidence_scores.values())
-                    gauge_fig = self.create_gauge_chart(max_confidence, emotion)
-                    st.plotly_chart(gauge_fig, use_container_width=True)
+                    # Check if confidence_scores is empty, and handle it gracefully
+                    if not confidence_scores:
+                        st.warning("No confidence scores available. The model may not have produced valid predictions.")
+                        max_confidence = 0
+                    else:
+                        # Display most confident emotion with gauge chart
+                        max_confidence = max(confidence_scores.values())
+                    
+                    try:
+                        gauge_fig = self.create_gauge_chart(max_confidence, emotion)
+                        if gauge_fig is not None:
+                            st.plotly_chart(gauge_fig, use_container_width=True)
+                        else:
+                            st.warning("Could not create confidence gauge chart.")
+                    except Exception as e:
+                        st.error(f"Error displaying gauge chart: {e}")
                     
                     # Display emotion description
                     st.markdown(f"**Description**: {EMOTION_DESCRIPTIONS.get(emotion, '')}")
                     
                     # Display original audio for playback
-                    st.audio(audio_file_path)
+                    try:
+                        st.audio(audio_file_path)
+                    except Exception as e:
+                        st.error(f"Error playing audio: {e}")
             
             with col2:
                 tabs = st.tabs(["Confidence Scores", "Audio Visualization"])
                 
                 with tabs[0]:
-                    # Display interactive bar chart of confidence scores
-                    fig = self.create_interactive_visualization(confidence_scores)
-                    st.plotly_chart(fig, use_container_width=True)
+                    # Check if confidence_scores is empty
+                    if not confidence_scores:
+                        st.warning("No confidence scores available to display.")
+                    else:
+                        try:
+                            # Display interactive bar chart of confidence scores
+                            fig = self.create_interactive_visualization(confidence_scores)
+                            if fig is not None:
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.warning("Could not create confidence visualization.")
+                        except Exception as e:
+                            st.error(f"Error displaying confidence scores visualization: {e}")
                 
                 with tabs[1]:
-                    # Display audio visualizations
-                    fig = self.visualize_audio(y, sr)
-                    st.pyplot(fig)
+                    try:
+                        # Display audio visualizations if y and sr are available
+                        if y is not None and sr is not None:
+                            fig = self.visualize_audio(y, sr)
+                            if fig is not None:
+                                st.pyplot(fig)
+                            else:
+                                st.warning("Could not visualize audio waveform.")
+                        else:
+                            st.warning("Audio data not available for visualization.")
+                    except Exception as e:
+                        st.error(f"Error displaying audio visualization: {e}")
     
     def display_about_section(self):
         """Display information about the application"""
@@ -871,7 +1100,14 @@ class EmotionAnalyzer:
         
         # Sidebar navigation
         with st.sidebar:
-            st.image("results/visualizations/enhanced_confusion_matrix.png", caption="Emotion Classification Matrix", use_column_width=True)
+            try:
+                # Check if visualization image exists before trying to display it
+                if os.path.exists("results/visualizations/enhanced_confusion_matrix.png"):
+                    st.image("results/visualizations/enhanced_confusion_matrix.png", caption="Emotion Classification Matrix", use_container_width=True)
+                else:
+                    st.info("Visualization image not found. This won't affect the app's functionality.")
+            except Exception as e:
+                st.info(f"Could not load visualization image. The app will still function normally.")
             
             selected = option_menu(
                 menu_title="Navigation",
