@@ -1,11 +1,6 @@
 Sample,True Emotion,Predicted Emotion,Confidence
-201,happy,angry,0.6129045
-99,happy,angry,0.5916295
-37,neutral,angry,0.58487666
-54,sad,angry,0.5325928
-175,neutral,angry,0.53072935
-80,disgust,angry,0.5282302
-81,disgust,angry,0.52347434
-40,disgust,angry,0.51567936
-65,fearful,angry,0.51548237
-63,neutral,angry,0.5111519
+82,calm,fearful,0.47339004
+16,sad,fearful,0.46478042
+153,sad,fearful,0.4445224
+149,calm,fearful,0.4431729
+103,happy,fearful,0.4347851

@@ -4,6 +4,10 @@ import argparse
 import logging
 import sys
 
+# Import our monkey patch first - this will fix the argmax function
+import monkey_patch
+monkey_patch.monkeypatch()
+
 # Try to import TensorFlow with error handling
 try:
     import tensorflow as tf
@@ -73,10 +77,11 @@ def main():
     set_seeds()
     
     # Create output directories
-    os.makedirs('results', exist_ok=True)
-    os.makedirs('results/reports', exist_ok=True)
-    os.makedirs('models', exist_ok=True)
-    os.makedirs('logs', exist_ok=True)
+    import os as operating_system  # Import with a different name to avoid conflict
+    operating_system.makedirs('results', exist_ok=True)
+    operating_system.makedirs('results/reports', exist_ok=True)
+    operating_system.makedirs('models', exist_ok=True)
+    operating_system.makedirs('logs', exist_ok=True)
     
     logger.info("Starting Speech Emotion Classification")
     logger.info(f"Model type: {args.model_type}")
@@ -214,14 +219,24 @@ def main():
     # Step 7: Save model
     logger.info("Step 7: Saving model")
     
-    # Save in .keras format (newer format)
+    # Check if model already exists and only save if it doesn't
+    import os
     model_path = f"models/{args.model_type}_emotion_model.keras"
-    trainer.save_model(model_path)
-    logger.info(f"Model saved to {model_path}")
+    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
+    
+    if not os.path.exists(model_path):
+        # Save in .keras format (newer format)
+        trainer.save_model(model_path)
+        logger.info(f"Model saved to {model_path}")
+    else:
+        logger.info(f"Model already exists at {model_path}, skipping save")
     
     # Legacy .h5 format for compatibility
-    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
-    trainer.save_model(h5_model_path)
+    if not os.path.exists(h5_model_path):
+        trainer.save_model(h5_model_path)
+        logger.info(f"Model saved to {h5_model_path}")
+    else:
+        logger.info(f"Model already exists at {h5_model_path}, skipping save")
     
     # Step 8: Run visualizations
     logger.info("Step 8: Generating advanced visualizations")

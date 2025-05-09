@@ -3,13 +3,19 @@
 
 import os
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
 import logging
 import pandas as pd
+import argparse
+import traceback
+
+# Import monkey patch first to fix OverflowError
+import monkey_patch
+monkey_patch.monkeypatch()
+
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 import seaborn as sns
-import argparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
