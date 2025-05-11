@@ -1,31 +1,40 @@
-import os
-import numpy as np
-import argparse
-import logging
-import sys
-from datetime import datetime
+#!/usr/bin/env python3
+# main.py - Main driver script for the Speech Emotion Classification system
 
-# Import our monkey patch first - this will fix the argmax function
+import os
+import sys
+import logging
+import argparse
+import subprocess
+from pathlib import Path
+import importlib.util
+import numpy as np
+
+# Import our monkey patch first - this will fix TensorFlow issues
 import monkey_patch
 monkey_patch.monkeypatch()
+logger = logging.getLogger(__name__) # Initialize logger after monkey_patch
+logger.info("Applied monkey patch for TensorFlow.")
 
 # Try to import TensorFlow with error handling
 try:
     import tensorflow as tf
     tensorflow_available = True
+    logger.info(f"TensorFlow version: {tf.__version__}")
 except ImportError as e:
     tensorflow_available = False
     tensorflow_error = str(e)
-    
-import matplotlib.pyplot as plt
+    logger.error(f"TensorFlow not available: {tensorflow_error}")
 
+# Import custom modules
 from data_loader import DataLoader
 from feature_extractor import FeatureExtractor
 from model import EmotionModel
 from trainer import ModelTrainer
 from optimizer import GeneticOptimizer
+# setup_demo, analyze_predictions, visualize_results are imported dynamically when needed
 
-# Set up logging
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -34,337 +43,307 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
 
-# Set random seeds for reproducibility
 def set_seeds(seed=42):
+    """Set random seeds for reproducibility."""
     np.random.seed(seed)
     if tensorflow_available:
         tf.random.set_seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
-    os.environ['TF_DETERMINISTIC_OPS'] = '1'
+    # TF_DETERMINISTIC_OPS can slow down training, enable if strict reproducibility is paramount
+    # os.environ['TF_DETERMINISTIC_OPS'] = '1' 
+    logger.info(f"Random seeds set with seed: {seed}")
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Speech Emotion Classification')
-    parser.add_argument('--model_type', type=str, default='cnn', choices=['mlp', 'cnn'],
-                        help='Type of model to train (mlp or cnn)')
-    parser.add_argument('--optimize', action='store_true',
-                        help='Whether to optimize hyperparameters using genetic algorithm')
-    parser.add_argument('--population_size', type=int, default=10,
-                        help='Population size for genetic algorithm')
-    parser.add_argument('--generations', type=int, default=10,
-                        help='Number of generations for genetic algorithm')
-    parser.add_argument('--batch_size', type=int, default=32,
-                        help='Batch size for training')
-    parser.add_argument('--epochs', type=int, default=50,
-                        help='Maximum number of epochs for training')
-    parser.add_argument('--subset_size', type=int, default=None,
-                        help='Size of subset to use for optimization')
-    parser.add_argument('--force_retrain', action='store_true',
-                        help='Force retraining even if a model already exists')
-    
-    return parser.parse_args()
-
-def main():
-    # Check if TensorFlow is available
+def check_tensorflow_availability():
+    """Checks and logs TensorFlow availability."""
     if not tensorflow_available:
-        logger.error(f"TensorFlow is not available. Error: {tensorflow_error}")
-        logger.error("Cannot proceed with speech emotion classification without TensorFlow.")
-        logger.error("Please reinstall TensorFlow with 'pip install tensorflow==2.16.1'")
-        sys.exit(1)
-        
-    # Parse command-line arguments
-    args = parse_arguments()
-    
-    # Set random seeds for reproducibility
+        logger.warning(f"TensorFlow is not available or failed to import: {tensorflow_error}")
+        print(f"Warning: TensorFlow is not available ({tensorflow_error}). Some functionalities might be limited.")
+    return tensorflow_available
+
+def perform_training(args):
+    """Handles the model training process."""
+    logger.info("Starting model training process...")
     set_seeds()
-    
-    # Create output directories
-    import os as operating_system  # Import with a different name to avoid conflict
-    operating_system.makedirs('results', exist_ok=True)
-    operating_system.makedirs('results/reports', exist_ok=True)
-    operating_system.makedirs('models', exist_ok=True)
-    operating_system.makedirs('logs', exist_ok=True)
-    
-    logger.info("Starting Speech Emotion Classification")
-    logger.info(f"Model type: {args.model_type}")
-    
-    # Define model paths based on model type
-    model_path = f"models/{args.model_type}_emotion_model.keras"
-    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
-    
-    # Check if model already exists and if we should skip training
-    try:
-        from model_manager import ModelManager
-        model_manager = ModelManager()
-        
-        # Check if model exists in the registry
-        existing_models = model_manager.get_models(model_type=args.model_type)
-        
-        if not args.force_retrain and (os.path.exists(model_path) or existing_models):
-            logger.info(f"Trained model already exists for type {args.model_type}")
-            logger.info("Skipping training. Use --force_retrain to train again.")
-            
-            # Get the latest model of this type
-            latest_model = model_manager.get_latest_model(model_type=args.model_type)
-            if latest_model:
-                logger.info(f"Using latest {args.model_type.upper()} model: {latest_model['id']}")
-                logger.info(f"Model metrics: {latest_model['metrics']}")
-            else:
-                logger.info(f"Using model at {model_path}")
-            
-            # Load the existing model to use later
-        else:
-            if args.force_retrain:
-                logger.info("Force retrain option enabled. Training new model...")
-            else:
-                logger.info("No existing model found. Training new model...")
-    except ImportError:
-        # Fall back to simple file check if ModelManager isn't available
-        if not args.force_retrain and os.path.exists(model_path):
-            logger.info(f"Trained model already exists at {model_path}")
-            logger.info("Skipping training. Use --force_retrain to train again.")
-            
-            # Load the existing model to use later
-        try:
-            if tensorflow_available:
-                model = tf.keras.models.load_model(model_path)
-                logger.info(f"Successfully loaded existing model from {model_path}")
-                
-                # Skip to visualization if needed, or exit
-                logger.info("Model is ready for use in the UI. Run the app.py to use the trained model.")
-                return
-            else:
-                logger.error("TensorFlow not available, cannot load model")
-                return
-        except Exception as e:
-            logger.error(f"Error loading existing model: {e}")
-            logger.info("Will proceed with training a new model")
-    
-    logger.info(f"Hyperparameter optimization: {args.optimize}")
-    
-    # Step 1: Load and split dataset
-    logger.info("Step 1: Loading and splitting dataset")
+    check_tensorflow_availability()
+
+    # Load data
     data_loader = DataLoader()
     dataset = data_loader.load_dataset()
-    train_data, val_data, test_data = data_loader.split_dataset()
-    
-    # Get the correct label column name
-    label_column = None
-    for col in train_data.columns:
-        if col in ['labels', 'label', 'emotion', 'emotion_id']:
-            label_column = col
-            break
-    
-    if label_column is None:
-        logger.warning("Label column not found in dataset. The feature extractor will attempt to detect it.")
-    else:
-        logger.info(f"Using '{label_column}' as the label column")
-    
-    # Step 2: Extract features
-    logger.info("Step 2: Extracting features")
+    if dataset is None:
+        logger.error("Dataset loading failed. Aborting training.")
+        return
+    train_data, val_data, test_data = data_loader.split_dataset(
+        train_size=args.train_split,
+        val_size=args.val_split,
+        test_size=args.test_split
+    )
+    logger.info(f"Dataset split: Train {len(train_data)}, Val {len(val_data)}, Test {len(test_data)}")
+
+    # Extract features
     feature_extractor = FeatureExtractor()
+    # Process a subset for faster hyperparameter optimization if specified
+    train_subset = train_data
+    if args.optimize and args.subset_size is not None and args.subset_size > 0 and args.subset_size < len(train_data):
+        train_subset = train_data.sample(n=args.subset_size)
+        logger.info(f"Using a subset of training data for optimization: {len(train_subset)} samples")
     
-    # Extract features based on model type
-    feature_type = 'mfcc' if args.model_type == 'mlp' else 'spectrogram'
-    logger.info(f"Extracting {feature_type} features for {args.model_type.upper()} model")
+    X_train_features = feature_extractor.process_dataset(train_subset, feature_type=args.model_type)
+    y_train = X_train_features.pop('labels')
     
-    # Process training data first and get the max spectrogram length
-    train_features = feature_extractor.process_dataset(train_data, feature_type=feature_type)
+    X_val_features = feature_extractor.process_dataset(val_data, feature_type=args.model_type)
+    y_val = X_val_features.pop('labels')
+
+    X_test_features = feature_extractor.process_dataset(test_data, feature_type=args.model_type)
+    y_test = X_test_features.pop('labels')
+
+    # Save test data (features and labels) for current split BEFORE model training decision
+    results_dir = Path("results")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    X_test_to_save = None
+    if args.model_type == 'cnn':
+        X_test_to_save = X_test_features['spectrogram'] 
+    elif args.model_type == 'mlp':
+        X_test_to_save = X_test_features['mfcc']
+    else:
+        logger.error(f"Unsupported model type for saving test data: {args.model_type}")
+        # Potentially return or raise an error if this state is critical
+
+    if X_test_to_save is not None:
+        np.save(results_dir / f"{args.model_type}_X_test.npy", X_test_to_save)
+        np.save(results_dir / f"{args.model_type}_y_test.npy", y_test)
+        logger.info(f"Test data (features and labels) saved in {results_dir}/ for model type {args.model_type}.")
     
-    # Use the same max spectrogram length for validation and test sets to ensure consistent shapes
-    max_length = train_features.get('max_length', None)
-    if max_length:
-        logger.info(f"Using consistent spectrogram length of {max_length} across all data splits")
+    # Model training decision
+    model_save_path = Path("models") / f"{args.model_type}_emotion_model_final.keras"
+    if model_save_path.exists() and not args.force_train:
+        logger.info(f"Model {model_save_path} already exists and --force-train not specified. Skipping model building and training.")
+        print(f"Found existing model: {model_save_path}. Use --force-train to retrain.")
+        return # Training part is done (skipped)
+
+    # Determine input shape and features based on model type
+    if args.model_type == 'cnn':
+        X_train = X_train_features['spectrogram']
+        X_val = X_val_features['spectrogram']
+        X_test = X_test_features['spectrogram']
+        input_shape = X_train.shape[1:]
+    elif args.model_type == 'mlp':
+        X_train = X_train_features['mfcc']
+        X_val = X_val_features['mfcc']
+        X_test = X_test_features['mfcc']
+        input_shape = (X_train.shape[1],)
+    else:
+        logger.error(f"Unsupported model type: {args.model_type}")
+        return
+
+    logger.info(f"Input shape for {args.model_type.upper()} model: {input_shape}")
+
+    num_classes = len(np.unique(y_train))
+    logger.info(f"Number of classes: {num_classes}")
+
+    emotion_model = EmotionModel(num_classes=num_classes)
     
-    # Normalize training features
-    train_features = feature_extractor.normalize_features(train_features, feature_type=feature_type, fit=True)
-    
-    # Process validation and test data with the same max_length
-    val_features = feature_extractor.process_dataset(val_data, feature_type=feature_type, max_length=max_length)
-    val_features = feature_extractor.normalize_features(val_features, feature_type=feature_type, fit=False)
-    
-    test_features = feature_extractor.process_dataset(test_data, feature_type=feature_type, max_length=max_length)
-    test_features = feature_extractor.normalize_features(test_features, feature_type=feature_type, fit=False)
-    
-    # Get features and labels
-    X_train = train_features[feature_type]
-    y_train = train_features['labels']
-    X_val = val_features[feature_type]
-    y_val = val_features['labels']
-    X_test = test_features[feature_type]
-    y_test = test_features['labels']
-    
-    logger.info(f"Training set: {X_train.shape}, Validation set: {X_val.shape}, Test set: {X_test.shape}")
-    
-    # Save the test features and labels for later analysis
-    np.save(f'results/{args.model_type}_X_test.npy', X_test)
-    np.save(f'results/{args.model_type}_y_test.npy', y_test)
-    logger.info(f"Test features and labels saved to results/{args.model_type}_X_test.npy and results/{args.model_type}_y_test.npy")
-    
-    # Step 3: Build model
-    logger.info("Step 3: Building model")
-    emotion_model = EmotionModel(num_classes=7)  # 7 emotion classes
-    
-    # Determine input shape based on model type
-    if args.model_type == 'mlp':
-        input_shape = (X_train.shape[1],)  # MFCC features
-    else:  # CNN
-        input_shape = X_train.shape[1:]  # Spectrogram features
-    
-    # Step 4: Optimize hyperparameters if requested
+    best_params = None
     if args.optimize:
-        logger.info("Step 4: Optimizing hyperparameters")
-        optimizer = GeneticOptimizer(model_type=args.model_type, num_classes=7)
-        
+        logger.info("Starting hyperparameter optimization...")
+        optimizer = GeneticOptimizer(model_type=args.model_type, num_classes=num_classes)
         _, best_params, _ = optimizer.optimize(
-            X_train, y_train, X_val, y_val,
-            input_shape=input_shape,
+            X_train, y_train, X_val, y_val, input_shape,
             population_size=args.population_size,
             generations=args.generations,
-            subset_size=args.subset_size
+            subset_size=args.subset_size # Pass subset_size to optimizer
         )
-        
-        logger.info(f"Best parameters: {best_params}")
-        
-        # Build model with optimized parameters
-        if args.model_type == 'mlp':
-            model = emotion_model.build_mlp(input_shape=input_shape, params=best_params)
-        else:  # CNN
-            model = emotion_model.build_cnn(input_shape=input_shape, params=best_params)
-    else:
-        logger.info("Step 4: Using default hyperparameters")
-        
-        # Build model with default parameters
-        if args.model_type == 'mlp':
-            model = emotion_model.build_mlp(input_shape=input_shape)
-        else:  # CNN
-            model = emotion_model.build_cnn(input_shape=input_shape)
+        logger.info(f"Optimization complete. Best parameters: {best_params}")
+
+    # Build and train model
+    if args.model_type == 'cnn':
+        model = emotion_model.build_cnn(input_shape, params=best_params)
+    else: # mlp
+        model = emotion_model.build_mlp(input_shape, params=best_params)
     
-    # Step 5: Train model
-    logger.info("Step 5: Training model")
+    model.summary(print_fn=logger.info)
+
     trainer = ModelTrainer(model, model_type=args.model_type)
-    callbacks = emotion_model.get_callbacks(patience=10)
+    callbacks = emotion_model.get_callbacks(patience=args.early_stopping_patience)
     
-    history = trainer.train(
-        X_train, y_train,
-        X_val, y_val,
-        batch_size=args.batch_size,
-        epochs=args.epochs,
-        callbacks=callbacks
-    )
+    trainer.train(X_train, y_train, X_val, y_val, 
+                  batch_size=args.batch_size, epochs=args.epochs, callbacks=callbacks)
     
-    # Save training history as JSON for visualization
-    import json
-    history_path = f'results/{args.model_type}_training_history.json'
-    with open(history_path, 'w') as f:
-        json.dump(history.history, f)
-    logger.info(f"Training history saved to {history_path}")
-    
-    # Step 6: Evaluate model
-    logger.info("Step 6: Evaluating model")
-    emotion_labels = ['calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised']
-    metrics = trainer.evaluate(X_test, y_test, emotion_labels=emotion_labels)
-    
-    # Print evaluation metrics
-    logger.info(f"Test accuracy: {metrics['accuracy']:.4f}")
-    logger.info(f"Average precision: {metrics['precision_avg']:.4f}")
-    logger.info(f"Average recall: {metrics['recall_avg']:.4f}")
-    logger.info(f"Average F1-score: {metrics['f1_avg']:.4f}")
-    
-    # Step 7: Save model
-    logger.info("Step 7: Saving model")
-    
-    # Check if model already exists and only save if it doesn't
-    import os
-    model_path = f"models/{args.model_type}_emotion_model.keras"
-    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
-    
-    if not os.path.exists(model_path):
-        # Save in .keras format (newer format)
-        trainer.save_model(model_path)
-        logger.info(f"Model saved to {model_path}")
-    else:
-        logger.info(f"Model already exists at {model_path}, skipping save")
-    
-    # Legacy .h5 format for compatibility
-    if not os.path.exists(h5_model_path):
-        trainer.save_model(h5_model_path)
-        logger.info(f"Model saved to {h5_model_path}")
-    else:
-        logger.info(f"Model already exists at {h5_model_path}, skipping save")
-    
-    # Register model with ModelManager
-    logger.info("Registering model with ModelManager")
+    logger.info("Model training complete. Evaluating on test set...")
+    metrics = trainer.evaluate(X_test, y_test, emotion_labels=data_loader.get_emotion_labels())
+    logger.info(f"Test set evaluation metrics: {metrics}")
+
+    # Save model (this line is reached only if training happened)
+    trainer.save_model(str(model_save_path))
+    logger.info(f"Trained model saved to {model_save_path}")
+
+    # Save test data for later use by analysis/visualization scripts
+    # This part is now redundant here as it's done before the training check
+    # results_dir = Path("results")
+    # results_dir.mkdir(parents=True, exist_ok=True)
+    # np.save(results_dir / f"{args.model_type}_X_test.npy", X_test)
+    # np.save(results_dir / f"{args.model_type}_y_test.npy", y_test)
+    # logger.info(f"Test data (X_test, y_test) saved in {results_dir}/ directory for model type {args.model_type}.")
+
+
+def setup_environment_main():
+    """Sets up the environment, e.g., by creating demo files."""
+    logger.info("Setting up environment (demo files)...")
     try:
-        from model_manager import ModelManager
-        model_manager = ModelManager()
-        
-        # Prepare metrics for model registration
-        model_metrics = {
-            "accuracy": float(metrics['accuracy']),
-            "precision": float(metrics['precision_avg']),
-            "recall": float(metrics['recall_avg']),
-            "f1": float(metrics['f1_avg']),
-            "trained_on": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "dataset": "RAVDESS",
-            "epochs": args.epochs,
-            "batch_size": args.batch_size
-        }
-        
-        # Register the model
-        model_id = model_manager.register_model(
-            model_path=model_path,
-            model_type=args.model_type,
-            metrics=model_metrics,
-            description=f"{args.model_type.upper()} model trained on RAVDESS dataset with accuracy {metrics['accuracy']:.4f}"
-        )
-        
-        logger.info(f"Model registered with ID: {model_id}")
-        
-        # Save metrics to model registry
-        model_manager.save_model_metrics(model_path, model_metrics)
-        logger.info("Model metrics saved to registry")
+        import setup_demo
+        setup_demo.main()
+        logger.info("Environment setup complete.")
+    except ImportError:
+        logger.error("Failed to import setup_demo.py. Skipping demo file setup.")
     except Exception as e:
-        logger.error(f"Error registering model with ModelManager: {e}")
-        logger.error("Continuing without model registration")
+        logger.error(f"Error during environment setup: {e}")
+
+def analyze_predictions_main(args):
+    """Runs the prediction analysis script."""
+    logger.info("Analyzing model predictions...")
+    try:
+        import analyze_predictions
+        # Simulate command-line arguments for analyze_predictions if needed
+        sys_argv_backup = sys.argv
+        sys.argv = ["analyze_predictions.py", "--model_type", args.model_type]
+        # Add other arguments for analyze_predictions as needed based on its parser
+        # For example, if analyze_predictions.py takes a model_path:
+        # model_path_arg = Path("models") / f"{args.model_type}_emotion_model_final.keras"
+        # if model_path_arg.exists():
+        #    sys.argv.extend(["--model_path", str(model_path_arg)])
+        analyze_predictions.main()
+        sys.argv = sys_argv_backup # Restore original sys.argv
+        logger.info("Prediction analysis complete.")
+    except ImportError:
+        logger.error("Failed to import analyze_predictions.py. Skipping analysis.")
+    except Exception as e:
+        logger.error(f"Error during prediction analysis: {e}")
+
+def visualize_results_main(args):
+    """Runs the results visualization script."""
+    logger.info("Generating result visualizations...")
+    try:
+        import visualize_results
+        # Simulate command-line arguments for visualize_results
+        sys_argv_backup = sys.argv
+        model_path = Path("models") / f"{args.model_type}_emotion_model_final.keras"
+        if not model_path.exists():
+            model_path = Path("models") / f"{args.model_type}_emotion_model.keras" # Fallback
+        if not model_path.exists():
+             model_path = Path("models") / f"{args.model_type}_emotion_model.h5" # Fallback
+
+        if model_path.exists():
+            sys.argv = ["visualize_results.py", "--model_path", str(model_path)]
+            # Add other arguments for visualize_results as needed
+            # e.g., sys.argv.extend(["--test_data", str(Path("results") / f"{args.model_type}_X_test.npy")])
+            # e.g., sys.argv.extend(["--test_labels", str(Path("results") / f"{args.model_type}_y_test.npy")])
+            visualize_results.main()
+        else:
+            logger.warning(f"Model file for {args.model_type} not found at {model_path} (or .keras/.h5). Skipping visualization.")
+        sys.argv = sys_argv_backup # Restore original sys.argv
+        logger.info("Result visualization complete.")
+    except ImportError:
+        logger.error("Failed to import visualize_results.py. Skipping visualization.")
+    except Exception as e:
+        logger.error(f"Error during result visualization: {e}")
+
+def run_streamlit_app_main():
+    """Launches the Streamlit application."""
+    logger.info("Launching Streamlit application...")
     
-    # Step 8: Run visualizations
-    logger.info("Step 8: Generating advanced visualizations")
+    # Prefer fixed_app.py, then app_fixed.py
+    app_file_to_run = "fixed_app.py" 
+    if not os.path.exists(app_file_to_run):
+        logger.warning(f"'{app_file_to_run}' not found. Trying 'app_fixed.py'.")
+        app_file_to_run = "app_fixed.py"
+        if not os.path.exists(app_file_to_run):
+            logger.error(f"Neither 'fixed_app.py' nor 'app_fixed.py' found. Cannot launch app.")
+            print(f"Error: Critical application files ('fixed_app.py' or 'app_fixed.py') were not found.")
+            return
+
+    cmd = ["streamlit", "run", app_file_to_run, "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
+    try:
+        process = subprocess.Popen(cmd)
+        logger.info(f"Streamlit app '{app_file_to_run}' started with PID {process.pid}. Access it at http://localhost:8501")
+        process.wait() # Wait for the app to close
+    except FileNotFoundError:
+        logger.error("Streamlit command not found. Make sure Streamlit is installed and in your PATH.")
+        print("Error: Streamlit command not found. Please ensure Streamlit is installed.")
+    except Exception as e:
+        logger.error(f"Error launching Streamlit app: {e}")
+        print(f"Error launching Streamlit app: {e}")
+
+
+def parse_arguments():
+    """Parses command-line arguments."""
+    parser = argparse.ArgumentParser(description="Speech Emotion Classification System - Main Driver")
     
-    # Import the visualizer
-    from visualize_results import ResultsVisualizer
-    
-    # Create visualizer
-    visualizer = ResultsVisualizer(
-        model_path=model_path,
-        results_dir='results',
-        interactive=True
-    )
-    
-    # Visualize model architecture
-    visualizer.visualize_model_architecture()
-    
-    # Visualize confusion matrix
-    y_pred = model.predict(X_test)
-    y_pred_classes = np.argmax(y_pred, axis=1)
-    visualizer.visualize_confusion_matrix(y_test, y_pred_classes)
-    
-    # Visualize t-SNE
-    visualizer.visualize_tsne(X_test, y_test)
-    
-    # Visualize training history
-    visualizer.visualize_history(history_path)
-    
-    # Analyze misclassifications
-    misclassified_df = visualizer.analyze_misclassifications(X_test, y_test)
-    
-    # Generate comprehensive HTML report
-    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-    
-    visualizer.generate_report(metrics, misclassified_df)
-    
-    logger.info("Speech Emotion Classification completed successfully")
+    # Actions
+    parser.add_argument("--setup", action="store_true", help="Run environment setup (e.g., create demo files).")
+    parser.add_argument("--train", action="store_true", help="Train a new model.")
+    parser.add_argument("--app", action="store_true", help="Run the Streamlit application.")
+    parser.add_argument("--analyze", action="store_true", help="Analyze model predictions.")
+    parser.add_argument("--visualize", action="store_true", help="Generate result visualizations.")
+    parser.add_argument("--all", action="store_true", help="Run setup, train, analyze, visualize, and then launch the app.")
+
+    # Model and Training Parameters (relevant if --train or --all is used)
+    parser.add_argument('--model_type', type=str, default='cnn', choices=['mlp', 'cnn'],
+                        help='Type of model to train (mlp or cnn). Also used by --analyze and --visualize.')
+    parser.add_argument('--epochs', type=int, default=50, help='Number of epochs for training.')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training.')
+    parser.add_argument('--early_stopping_patience', type=int, default=10, help='Patience for early stopping.')
+    parser.add_argument('--train_split', type=float, default=0.7, help='Proportion of dataset for training.')
+    parser.add_argument('--val_split', type=float, default=0.15, help='Proportion of dataset for validation.')
+    parser.add_argument('--test_split', type=float, default=0.15, help='Proportion of dataset for testing.')
+
+    parser.add_argument('--force_train', action='store_true', 
+                        help='Force retraining the model even if an existing one is found.')
+
+    # Hyperparameter Optimization Parameters (relevant if --train and --optimize is used)
+    parser.add_argument('--optimize', action='store_true',
+                        help='Whether to optimize hyperparameters using genetic algorithm during training.')
+    parser.add_argument('--population_size', type=int, default=10,
+                        help='Population size for genetic algorithm.')
+    parser.add_argument('--generations', type=int, default=5, # Reduced default for faster runs
+                        help='Number of generations for genetic algorithm.')
+    parser.add_argument('--subset_size', type=int, default=None,
+                        help='Size of subset of training data to use for faster hyperparameter optimization (e.g., 500). Default is to use all training data.')
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+
+    # Ensure necessary directories exist
+    Path("models").mkdir(parents=True, exist_ok=True)
+    Path("results").mkdir(parents=True, exist_ok=True)
+    Path("logs").mkdir(parents=True, exist_ok=True)
+    Path("uploads").mkdir(parents=True, exist_ok=True)
+    Path("demo_files").mkdir(parents=True, exist_ok=True)
+
+    actions_specified = args.setup or args.train or args.app or args.analyze or args.visualize or args.all
+
+    if args.all:
+        setup_environment_main()
+        perform_training(args)
+        analyze_predictions_main(args)
+        visualize_results_main(args)
+        run_streamlit_app_main()
+    else:
+        if args.setup:
+            setup_environment_main()
+        if args.train:
+            perform_training(args)
+        if args.analyze:
+            analyze_predictions_main(args)
+        if args.visualize:
+            visualize_results_main(args)
+        if args.app:
+            run_streamlit_app_main()
+
+    if not actions_specified: 
+        print("No action specified. Use --help to see available options.")
+        print("Defaulting to launching the Streamlit app...")
+        run_streamlit_app_main()
+    
+    logger.info("Main script execution finished.")

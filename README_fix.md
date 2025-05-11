@@ -61,7 +61,36 @@ Options:
 ### Running the web app
 
 ```
-streamlit run app.py
+streamlit run fixed_app.py
+```
+
+### Using the new Driver Script
+
+For a more convenient way to run all components of the system, you can use the new driver script:
+
+```
+python driver.py [options]
+```
+
+Available options:
+- `--train`: Train a new model
+- `--model-type {mlp,cnn}`: Type of model to train (default: cnn)
+- `--optimize`: Optimize hyperparameters during training
+- `--analyze`: Analyze model predictions
+- `--visualize`: Generate visualizations
+- `--app`: Run the Streamlit app
+- `--all`: Run all steps: train, analyze, visualize, and app
+
+Examples:
+```
+# Just run the app
+python driver.py --app
+
+# Train a model and then run the app
+python driver.py --train --app
+
+# Run everything
+python driver.py --all
 ```
 
 ## Technical Notes

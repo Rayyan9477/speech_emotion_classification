@@ -135,8 +135,14 @@ def run_streamlit_app():
     """Run the Streamlit application"""
     logger.info("Starting Streamlit application")
     
-    # Check if app_fixed.py exists and use it instead of app.py if available
-    app_file = "app_fixed.py" if os.path.exists("app_fixed.py") else "app.py"
+    # Check which fixed app file exists and use it
+    if os.path.exists("fixed_app.py"):
+        app_file = "fixed_app.py"
+    elif os.path.exists("app_fixed.py"):
+        app_file = "app_fixed.py"
+    else:
+        app_file = "app.py"
+        logger.warning(f"Using original app.py file which may contain errors")
     
     try:
         # Run Streamlit app

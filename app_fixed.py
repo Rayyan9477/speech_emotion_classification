@@ -646,7 +646,7 @@ class EmotionAnalyzer:
                     if st.button("View Visualization Dashboard", use_container_width=True):
                         # Use query parameters to navigate to dashboard
                         st.experimental_set_query_params(page="visualization_dashboard")
-                        st.experimental_rerun()
+                        st.rerun()
         
         except Exception as e:
             st.error(f"Error displaying results: {e}")
@@ -852,7 +852,7 @@ class EmotionAnalyzer:
                                         webbrowser.open(f"http://localhost:{port}")
                                         
                                         # Rerun to show the TensorBoard iframe
-                                        st.experimental_rerun()
+                                        st.rerun()
                                         
                                     except Exception as e:
                                         st.error(f"Error starting TensorBoard: {e}")
@@ -886,7 +886,7 @@ class EmotionAnalyzer:
                             self.tensorboard_process = None
                             st.session_state['tensorboard_running'] = False
                             st.success("TensorBoard server stopped successfully")
-                            st.experimental_rerun()
+                            st.rerun()
     
     def display_about_section(self):
         """Display about section with project information"""

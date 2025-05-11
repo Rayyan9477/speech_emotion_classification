@@ -17,6 +17,51 @@
             "size_mb": 123.4,
             "metrics": {},
             "description": "CNN model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20250511_180843",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 18:08:43",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model loaded directly"
+        },
+        {
+            "id": "cnn_20250511_181842",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 18:18:42",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model loaded directly"
+        },
+        {
+            "id": "cnn_20250511_181859",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 18:18:59",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model loaded directly"
+        },
+        {
+            "id": "cnn_20250511_181931",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 18:19:31",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model loaded directly"
+        },
+        {
+            "id": "cnn_20250511_181937",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 18:19:37",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model loaded directly"
         }
     ]
 }

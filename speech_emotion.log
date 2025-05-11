@@ -1,0 +1,20 @@
+2025-05-11 18:08:42,313 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-05-11 18:08:42,747 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
+2025-05-11 18:08:43,952 - model_manager - INFO - Model registry saved to models/model_registry.json
+2025-05-11 18:08:43,952 - model_manager - INFO - Registered model cnn_20250511_180843 in registry
+2025-05-11 18:18:41,787 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-05-11 18:18:42,230 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
+2025-05-11 18:18:42,963 - model_manager - INFO - Model registry saved to models/model_registry.json
+2025-05-11 18:18:42,963 - model_manager - INFO - Registered model cnn_20250511_181842 in registry
+2025-05-11 18:18:59,049 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-05-11 18:18:59,050 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
+2025-05-11 18:18:59,548 - model_manager - INFO - Model registry saved to models/model_registry.json
+2025-05-11 18:18:59,549 - model_manager - INFO - Registered model cnn_20250511_181859 in registry
+2025-05-11 18:19:31,341 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-05-11 18:19:31,342 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
+2025-05-11 18:19:31,828 - model_manager - INFO - Model registry saved to models/model_registry.json
+2025-05-11 18:19:31,829 - model_manager - INFO - Registered model cnn_20250511_181931 in registry
+2025-05-11 18:19:36,903 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-05-11 18:19:36,903 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
+2025-05-11 18:19:37,429 - model_manager - INFO - Model registry saved to models/model_registry.json
+2025-05-11 18:19:37,430 - model_manager - INFO - Registered model cnn_20250511_181937 in registry
