@@ -1,0 +1,22 @@
+{
+    "models": [
+        {
+            "id": "cnn_20250511_161533",
+            "path": "models/cnn_emotion_model.keras",
+            "type": "cnn",
+            "created": "2025-05-11 16:15:33",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20250511_161533",
+            "path": "models/cnn_emotion_model.h5",
+            "type": "cnn",
+            "created": "2025-05-11 16:15:33",
+            "size_mb": 123.4,
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
+        }
+    ]
+}

@@ -3,6 +3,21 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
+import subprocess
+import logging
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("speech_emotion.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Import monkey patch first to fix OverflowError
 import monkey_patch
@@ -12,6 +27,7 @@ monkey_patch.monkeypatch()
 try:
     import tensorflow as tf
     tensorflow_available = True
+    tensorflow_error = None
 except ImportError as e:
     tensorflow_available = False
     tensorflow_error = str(e)
@@ -40,12 +56,22 @@ try:
     from streamlit_audiorecorder import st_audiorecorder
     audiorecorder_available = True
 except ImportError:
+    # Make this a clear flag for when the component is not installed
+    st_audiorecorder = None
     audiorecorder_available = False
+    logger.warning("streamlit_audiorecorder not installed. Audio recording features will be disabled.")
+    logger.info("To enable audio recording, run: pip install streamlit-audiorecorder")
 
 # Import custom modules
 from model import EmotionModel
 from feature_extractor import FeatureExtractor
 from dashboard import EmotionDashboard
+
+try:
+    from model_manager import ModelManager
+    model_manager_available = True
+except ImportError:
+    model_manager_available = False
 
 # Set page configuration
 st.set_page_config(
@@ -465,12 +491,37 @@ class EmotionAnalyzer:
         """Initialize the Emotion Analyzer application"""
         # Setup paths
         self.upload_folder = "uploads"
-        self.model_path = "models/emotion_model"
-        self.backup_model_path = "models/emotion_model.h5"
+        os.makedirs(self.upload_folder, exist_ok=True)
+        
+        # Default to using CNN model
+        self.model_type = "cnn"
+        
+        # Set model paths with model type for better organization
+        self.model_path = f"models/{self.model_type}_emotion_model.keras"
+        self.backup_model_path = f"models/{self.model_type}_emotion_model.h5"
         
         # Initialize components
         self.feature_extractor = FeatureExtractor()
         self.dashboard = EmotionDashboard()
+        
+        # Check if TensorFlow is available
+        self.tensorflow_available = tensorflow_available
+        
+        # Initialize model manager
+        try:
+            from model_manager import ModelManager
+            self.model_manager = ModelManager()
+            logger.info("ModelManager initialized successfully")
+        except ImportError as e:
+            logger.error(f"Could not initialize ModelManager: {e}")
+            self.model_manager = None
+        
+        # Will be set when model is loaded
+        self.model = None
+        self.loaded = False
+        
+        # Track predictions for session
+        self.predictions = []
         
         # Set default emotion labels
         self.emotion_labels = [
@@ -490,6 +541,11 @@ class EmotionAnalyzer:
         # Check tensorflow availability
         self.tensorflow_available = tensorflow_available
         
+        # Create required directories
+        os.makedirs(self.upload_folder, exist_ok=True)
+        os.makedirs("models", exist_ok=True)
+        os.makedirs("results", exist_ok=True)
+        
         # Ensure upload directory exists
         self.ensure_upload_dir()
         
@@ -498,39 +554,145 @@ class EmotionAnalyzer:
         os.makedirs(self.upload_folder, exist_ok=True)
     
     def load_model(self):
-        """Load the pre-trained emotion model"""
+        """Load the pre-trained emotion model using ModelManager"""
         if not self.tensorflow_available:
             st.error(f"TensorFlow is not available. Error: {tensorflow_error}")
             st.info("Please reinstall TensorFlow or fix the DLL loading issue to use this application.")
             st.stop()
             
         try:
-            with st.spinner("Loading model... Please wait."):
-                # First try to load the primary model (Keras format)
-                try:
-                    self.model = tf.keras.models.load_model(self.model_path)
-                    st.success("Model loaded successfully!")
-                except Exception as e:
-                    st.warning(f"Failed to load model from {self.model_path}. Error: {str(e)}")
-                    st.warning("Trying backup model path...")
-                    
-                    # Try loading the backup model (H5 format)
+            with st.spinner("Loading pre-trained model... Please wait."):
+                # Check if we have a model manager
+                if not hasattr(self, 'model_manager'):
                     try:
-                        self.model = tf.keras.models.load_model(self.backup_model_path)
-                        st.success("Backup model loaded successfully!")
-                    except Exception as e2:
-                        st.error(f"Failed to load backup model: {str(e2)}")
+                        from model_manager import ModelManager
+                        self.model_manager = ModelManager()
+                    except ImportError:
+                        st.warning("ModelManager not available. Falling back to direct model loading.")
+                        # Fall back to direct loading without ModelManager
+                        self.model = tf.keras.models.load_model(self.model_path)
+                        st.success(f"Successfully loaded pre-trained {self.model_type.upper()} model!")
+                        self.loaded = True
+                        return
+                
+                # Use the model manager to find and load the model
+                model_entry = self.model_manager.get_model_by_path(self.model_path)
+                
+                if model_entry:
+                    # Model is in registry, use it
+                    self.model = self.model_manager.load_model(model_path=self.model_path)
+                    if self.model:
+                        st.success(f"Successfully loaded pre-trained {self.model_type.upper()} model!")
+                        st.info(f"Model loaded from: {self.model_path}")
                         
-                        # Try to create a fresh model with default architecture
-                        try:
-                            st.warning("Attempting to create a new model with default architecture...")
-                            emotion_model = EmotionModel(num_classes=len(self.emotion_labels))
-                            self.model = emotion_model.build_cnn(input_shape=(128, 165, 1))
-                            st.warning("Created new model with default architecture. Note: This model is untrained.")
-                        except Exception as e3:
-                            st.error(f"Could not create default model: {str(e3)}")
-                            st.error("Unable to load or create a model. Please check model files or reinstall TensorFlow.")
-                            st.stop()
+                        # Check if model has evaluation metrics
+                        metrics = self.model_manager.get_model_evaluation_report(model_path=self.model_path)
+                        if metrics:
+                            accuracy = metrics.get("accuracy", 0)
+                            st.info(f"Model accuracy: {accuracy:.2%}")
+                        
+                        self.loaded = True
+                        return
+                
+                # If we get here, try to load any available model
+                latest_model = self.model_manager.get_latest_model()
+                if latest_model:
+                    self.model = self.model_manager.load_model(model_id=latest_model["id"])
+                    if self.model:
+                        # Update model path to match the loaded model
+                        self.model_path = latest_model["path"]
+                        self.model_type = latest_model["type"]
+                        
+                        st.success(f"Loaded latest available {self.model_type.upper()} model!")
+                        st.info(f"Model loaded from: {self.model_path}")
+                        
+                        # Check if model has evaluation metrics
+                        metrics = self.model_manager.get_model_evaluation_report(model_id=latest_model["id"])
+                        if metrics:
+                            accuracy = metrics.get("accuracy", 0)
+                            st.info(f"Model accuracy: {accuracy:.2%}")
+                        
+                        self.loaded = True
+                        return
+                
+                # If no models found in registry, try direct loading
+                st.warning("No models found in registry. Attempting direct model loading.")
+                if os.path.exists(self.model_path):
+                    try:
+                        # Try using tf.keras (newer TensorFlow versions)
+                        if hasattr(tf, 'keras'):
+                            self.model = tf.keras.models.load_model(self.model_path)
+                        # Fallback to direct keras import if needed
+                        else:
+                            import keras
+                            self.model = keras.models.load_model(self.model_path)
+                        
+                        st.success(f"Successfully loaded pre-trained {self.model_type.upper()} model!")
+                        self.loaded = True
+                        
+                        # Register the model with ModelManager
+                        self.model_manager.register_model(
+                            model_path=self.model_path,
+                            model_type=self.model_type,
+                            description=f"{self.model_type.upper()} model loaded directly"
+                        )
+                        return
+                    except Exception as e:
+                        logger.error(f"Error loading model directly: {e}")
+                        st.error(f"Error loading model: {e}")
+                elif os.path.exists(self.backup_model_path):
+                    try:
+                        # Try using tf.keras (newer TensorFlow versions)
+                        if hasattr(tf, 'keras'):
+                            self.model = tf.keras.models.load_model(self.backup_model_path)
+                        # Fallback to direct keras import if needed
+                        else:
+                            import keras
+                            self.model = keras.models.load_model(self.backup_model_path)
+                            
+                        st.success(f"Successfully loaded backup {self.model_type.upper()} model!")
+                        self.model_path = self.backup_model_path
+                        self.loaded = True
+                    
+                    # Register the model with ModelManager
+                    self.model_manager.register_model(
+                        model_path=self.backup_model_path,
+                        model_type=self.model_type,
+                        description=f"{self.model_type.upper()} backup model loaded directly"
+                    )
+                    return
+                latest_model = self.model_manager.get_latest_model(self.model_type)
+                if latest_model:
+                    self.model_path = latest_model["path"]
+                    self.model = self.model_manager.load_model(model_path=self.model_path)
+                    if self.model:
+                        st.success(f"Successfully loaded latest {self.model_type.upper()} model!")
+                        st.info(f"Model loaded from: {self.model_path}")
+                        self.loaded = True
+                        return
+                
+                # If we still don't have a model, check if any model exists
+                any_model = self.model_manager.get_latest_model()
+                if any_model:
+                    self.model_path = any_model["path"]
+                    self.model_type = any_model["type"]
+                    self.model = self.model_manager.load_model(model_path=self.model_path)
+                    if self.model:
+                        st.success(f"Successfully loaded {self.model_type.upper()} model!")
+                        st.info(f"Model loaded from: {self.model_path}")
+                        self.loaded = True
+                        return
+                
+                # If we get here, no model could be loaded
+                st.warning("No pre-trained model found. Please run main.py first to train a model.")
+                st.info("Command to train model: python main.py --model_type cnn")
+                
+                # Create placeholder untrained model with warning
+                st.warning("Creating an untrained model for demonstration purposes only.")
+                st.warning("Predictions will not be accurate without training!")
+                emotion_model = EmotionModel(num_classes=len(self.emotion_labels))
+                self.model = emotion_model.build_cnn(input_shape=(128, 165, 1))
+                st.warning("Using untrained model. Predictions will not be accurate!")
             
             self.loaded = True
             
@@ -818,7 +980,9 @@ class EmotionAnalyzer:
                 color_name="violet-70"
             )
             
-            tab1, tab2 = st.tabs(["📁 Upload Audio File", "🎙️ Record Audio"])
+            st.markdown("<p class='instruction-text'>Upload or record audio to analyze the emotional tone.</p>", unsafe_allow_html=True)
+            
+            tab1, tab2 = st.tabs(["📁 Upload Audio", "🎙️ Record Audio"])
             
             # Initialize audio_recording variable to None at the start
             audio_recording = None
@@ -830,31 +994,39 @@ class EmotionAnalyzer:
                         {
                             background-color: #FFFFFF;
                             border-radius: 16px;
-                            padding: 28px;
+                            padding: 24px;
                             margin-top: 16px;
-                            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 10px 15px -5px rgba(0,0,0,0.05);
                             border: 1px solid rgba(226, 232, 240, 0.8);
                         }
                     """
                 ):
-                    st.markdown("<h3 style='font-weight: 600; color: #4F46E5;'>Upload Audio File</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 20px;'>Upload Audio File</h3>", unsafe_allow_html=True)
                     
-                    # Create a modern upload area
-                    st.markdown("<div class='uploadArea'>", unsafe_allow_html=True)
+                    # Create a simplified upload area
+                    st.markdown("""
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <p style="color: #4B5563; margin-bottom: 5px;">Drag and drop your audio file below</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                     uploaded_file = st.file_uploader(
-                        "Choose an audio file (WAV or MP3)", 
+                        "Upload Audio File",
                         type=["wav", "mp3"],
-                        help="Upload a short audio clip (ideally 5-10 seconds) of someone speaking"
+                        help="Upload a clear speech recording for emotion analysis",
+                        key="audio_uploader",
+                        label_visibility="collapsed"
                     )
-                    st.markdown("</div>", unsafe_allow_html=True)
                     
-                    # Tips section with modern styling
-                    tips_col1, tips_col2 = st.columns([1, 1])
+                    # Tips section with simplified styling
+                    st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='font-weight: 600; color: #374151; margin-bottom: 10px; font-size: 1rem;'>Tips for Best Results</h4>", unsafe_allow_html=True)
+                    
+                    tips_col1, tips_col2 = st.columns(2)
                     
                     with tips_col1:
                         st.markdown("""
-                        <div style="background-color: #F0F7FF; border-radius: 12px; padding: 16px; height: 100%;">
-                            <h4 style="color: #4F46E5; margin-bottom: 12px; font-weight: 600; font-size: 1rem;">Tips for Best Results</h4>
+                        <div style="background-color: #F0F7FF; border-radius: 12px; padding: 12px; height: 100%;">
                             <ul style="margin-left: 0; padding-left: 20px;">
                                 <li>Use clear audio with minimal background noise</li>
                                 <li>Short clips (5-10 seconds) work best</li>
@@ -865,10 +1037,9 @@ class EmotionAnalyzer:
                     
                     with tips_col2:
                         st.markdown("""
-                        <div style="background-color: #EBEEFE; border-radius: 12px; padding: 16px; height: 100%;">
-                            <h4 style="color: #4F46E5; margin-bottom: 12px; font-weight: 600; font-size: 1rem;">Supported Files</h4>
-                            <p>WAV or MP3 audio files containing clear speech</p>
-                            <p style="margin-top: 8px; font-size: 0.9rem;">Maximum recommended length: 10 seconds</p>
+                        <div style="background-color: #EBEEFE; border-radius: 12px; padding: 12px; height: 100%;">
+                            <p><strong>Supported Files:</strong> WAV or MP3</p>
+                            <p style="margin-top: 5px; font-size: 0.9rem;">Maximum recommended length: 10 seconds</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -896,28 +1067,27 @@ class EmotionAnalyzer:
                         }
                     """
                 ):
-                    st.markdown("<h3 style='font-weight: 600; color: #4F46E5;'>Record Your Voice</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 15px;'>Record Your Voice</h3>", unsafe_allow_html=True)
                     
-                    # Create 2 columns for recorder and settings
-                    recorder_col, settings_col = st.columns([3, 2])
+                    # Create 2 columns for recorder and settings - using a more balanced ratio
+                    recorder_col, settings_col = st.columns([1, 1])
                     
                     with recorder_col:
                         st.markdown("""
                         <div style="background: linear-gradient(135deg, #F5F7FF 0%, #EDF2FF 100%); 
-                                    border-radius: 16px; 
-                                    padding: 24px; 
+                                    border-radius: 12px; 
+                                    padding: 15px; 
                                     text-align: center;
                                     border: 1px solid #E5EDFF;">
-                            <h4 style="margin-bottom: 16px; color: #4338CA; font-weight: 600;">Voice Recorder</h4>
-                            <p style="margin-bottom: 20px; font-size: 0.95rem;">
-                                Speak clearly for 5-10 seconds to get the most accurate emotion analysis
+                            <h4 style="margin-bottom: 10px; color: #4338CA; font-weight: 600;">Voice Recorder</h4>
+                            <p style="margin-bottom: 10px; font-size: 0.9rem;">
+                                Speak clearly for 5-10 seconds
                             </p>
                         """, unsafe_allow_html=True)
                         
                         # Check if audio recorder component is available
                         if not audiorecorder_available:
-                            st.error("Audio recorder component is not available. Please use the Upload option instead.")
-                            st.info("If you want to use the recording feature, run: 'pip install streamlit-audiorecorder'")
+                            st.warning("Recorder unavailable. Use Upload tab instead.")
                         else:
                             # Use the st_audiorecorder component
                             audio_recording = st_audiorecorder(
@@ -930,11 +1100,11 @@ class EmotionAnalyzer:
                         st.markdown("</div>", unsafe_allow_html=True)
                     
                     with settings_col:
-                        st.markdown("<h4 style='color: #4338CA; font-weight: 600; font-size: 1.1rem; margin-bottom: 16px;'>Settings</h4>", unsafe_allow_html=True)
+                        st.markdown("<h4 style='color: #4338CA; font-weight: 600; font-size: 1rem; margin-bottom: 10px;'>Settings</h4>", unsafe_allow_html=True)
                         
                         # Add a toggle for real-time processing with improved styling
                         real_time_enabled = st.toggle("Real-time Analysis", value=False, 
-                                              help="Process audio as you speak for immediate feedback")
+                                              help="Process audio as you speak")
                         
                         if real_time_enabled:
                             st.markdown("<p class='real-time-indicator'>Real-time analysis active</p>", unsafe_allow_html=True)
@@ -944,15 +1114,15 @@ class EmotionAnalyzer:
                         else:
                             self.real_time_processing = False
                         
-                        # Add recording tips
+                        # Add recording tips with more concise styling
                         st.markdown("""
                         <div style="background-color: #F0FDF4; 
                                     border-radius: 12px; 
-                                    padding: 12px; 
-                                    margin-top: 16px;
+                                    padding: 10px; 
+                                    margin-top: 10px;
                                     border: 1px solid #DCFCE7;">
-                            <h5 style="color: #16A34A; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Recording Tips</h5>
-                            <ul style="margin-left: 0; padding-left: 16px; font-size: 0.85rem;">
+                            <p style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Recording Tips:</strong></p>
+                            <ul style="margin: 0; padding-left: 16px; font-size: 0.85rem;">
                                 <li>Use a good microphone</li>
                                 <li>Reduce background noise</li>
                                 <li>Speak naturally</li>
@@ -962,19 +1132,19 @@ class EmotionAnalyzer:
                     
                     # If real-time enabled, create a placeholder for live results
                     if real_time_enabled and audiorecorder_available:
-                        st.markdown("<div style='margin-top: 20px; background-color: #F5F7FF; border-radius: 16px; padding: 20px; border: 1px dashed #C7D2FE;'>", unsafe_allow_html=True)
+                        st.markdown("<div style='margin-top: 15px; background-color: #F5F7FF; border-radius: 12px; padding: 15px; border: 1px dashed #C7D2FE;'>", unsafe_allow_html=True)
                         live_result_placeholder = st.empty()
                         
                         # Check if there are any results in the queue
                         if not result_queue.empty():
                             emotion, confidence_scores, audio_y, audio_sr = result_queue.get()
                             with live_result_placeholder.container():
-                                st.markdown(f"<h3 style='text-align: center; font-weight: 600; color: {EMOTION_COLORS.get(emotion, '#607D8B')};'>Live Emotion: {emotion.upper()}</h3>", unsafe_allow_html=True)
+                                st.markdown(f"<h3 style='text-align: center; font-weight: 600; color: {EMOTION_COLORS.get(emotion, '#607D8B')};'>Live: {emotion.upper()}</h3>", unsafe_allow_html=True)
                                 max_confidence = confidence_scores.get(emotion, 0)
                                 gauge_fig = self.create_gauge_chart(max_confidence, emotion)
                                 st.plotly_chart(gauge_fig, use_container_width=True)
                         else:
-                            live_result_placeholder.markdown("<p style='text-align: center; color: #6B7280;'>Start speaking to see real-time emotion analysis</p>", unsafe_allow_html=True)
+                            live_result_placeholder.markdown("<p style='text-align: center; color: #6B7280;'>Start speaking to see results</p>", unsafe_allow_html=True)
                             
                         st.markdown("</div>", unsafe_allow_html=True)
             
@@ -1651,6 +1821,516 @@ class EmotionAnalyzer:
                             st.session_state['tensorboard_running'] = False
                             st.success("TensorBoard stopped successfully")
     
+    def display_model_management(self):
+        """Display the model management UI section"""
+        st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 16px;'>Model Management</h3>", unsafe_allow_html=True)
+        
+        # Get models from the ModelManager
+        models = self.model_manager.get_models()
+        
+        # No models found
+        if not models:
+            st.warning("No pre-trained models found. You need to train a model first.")
+            st.info("Run the following command to train a model:")
+            st.code("python main.py --model_type cnn", language="bash")
+            return
+        
+        # Create tabs for different model management sections
+        model_tabs = st.tabs(["Available Models", "Model Comparison", "Model Details", "Train New Model"])
+        
+        # Tab 1: Available Models
+        with model_tabs[0]:
+            # Format models for display
+            display_models = []
+            for model in models:
+                # Check if this is the currently loaded model
+                status = "⭐ Active" if model["path"] == self.model_path else "Available"
+                
+                # Get metrics if available
+                metrics = model.get("metrics", {})
+                accuracy = metrics.get("accuracy", 0)
+                accuracy_str = f"{accuracy:.2%}" if isinstance(accuracy, (float, int)) else "Unknown"
+                
+                display_models.append({
+                    "id": model["id"],
+                    "file": os.path.basename(model["path"]),
+                    "type": model["type"].upper(),
+                    "created": model["created"],
+                    "size": f"{model.get('size_mb', 0):.2f} MB",
+                    "accuracy": accuracy_str,
+                    "status": status
+                })
+            
+            # Display models in a table
+            df_models = pd.DataFrame(display_models)
+            st.dataframe(
+                df_models[["file", "type", "created", "size", "accuracy", "status"]],
+                use_container_width=True,
+                column_config={
+                    "file": "Filename",
+                    "type": "Model Type",
+                    "created": "Created On",
+                    "size": "Size",
+                    "accuracy": "Accuracy",
+                    "status": "Status"
+                }
+            )
+            
+            # Model selection section
+            st.subheader("Select Active Model")
+            
+            # Create a selectbox with model options
+            model_options = [f"{m['type'].upper()} - {m['id']} ({m.get('metrics', {}).get('accuracy', 0):.2%} acc)" 
+                            for m in models]
+            
+            # Find the index of the current model
+            current_model = next((m for m in models if m["path"] == self.model_path), None)
+            default_index = 0
+            if current_model:
+                current_option = f"{current_model['type'].upper()} - {current_model['id']} ({current_model.get('metrics', {}).get('accuracy', 0):.2%} acc)"
+                if current_option in model_options:
+                    default_index = model_options.index(current_option)
+            
+            selected_model_option = st.selectbox(
+                "Choose a model to use for predictions:", 
+                options=model_options,
+                index=default_index
+            )
+            
+            # Extract the model ID from the selected option
+            selected_model_id = selected_model_option.split(' - ')[1].split(' ')[0]
+            
+            # Button to activate the selected model
+            if st.button("Set as Active Model"):
+                # Find the selected model
+                selected_model = next((m for m in models if m["id"] == selected_model_id), None)
+                if selected_model:
+                    # Update model path
+                    self.model_path = selected_model["path"]
+                    self.model_type = selected_model["type"]
+                    # Load the selected model
+                    self.model = self.model_manager.load_model(model_id=selected_model_id)
+                    st.success(f"Model {selected_model_id} is now active!")
+                    # Force a page refresh to update the UI
+                    st.rerun()
+        
+        # Tab 2: Model Comparison
+        with model_tabs[1]:
+            st.subheader("Compare Model Performance")
+            
+            # Multi-select for models to compare
+            model_ids = [m["id"] for m in models]
+            model_names = [f"{m['type'].upper()} - {m['id']} ({m.get('metrics', {}).get('accuracy', 0):.2%} acc)" for m in models]
+            
+            # Default to selecting up to 3 models
+            default_selections = model_names[:min(3, len(model_names))]
+            
+            selected_models = st.multiselect(
+                "Select models to compare:",
+                options=model_names,
+                default=default_selections
+            )
+            
+            if selected_models:
+                # Extract ids from selections
+                selected_ids = [model_names.index(name) for name in selected_models]
+                selected_ids = [model_ids[idx] for idx in selected_ids]
+                
+                # Create metrics comparison
+                if st.button("Generate Comparison"):
+                    # Get comparison data
+                    compare_data = self.model_manager.compare_models(selected_ids)
+                    
+                    if compare_data and compare_data["models"]:
+                        # Display models side by side
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.subheader("Model Information")
+                            model_info = []
+                            for model in compare_data["models"]:
+                                model_info.append({
+                                    "ID": model["id"],
+                                    "Type": model["type"].upper(),
+                                    "Created": model["created"],
+                                    "Size": f"{model.get('size_mb', 0):.2f} MB"
+                                })
+                            
+                            st.dataframe(pd.DataFrame(model_info))
+                        
+                        with col2:
+                            st.subheader("Performance Comparison")
+                            
+                            # Check which metrics are available
+                            metrics_data = {}
+                            for metric_name, values in compare_data["metrics"].items():
+                                # Skip metrics that don't look like performance metrics
+                                if metric_name in ['accuracy', 'precision', 'recall', 'f1']:
+                                    metrics_data[metric_name.capitalize()] = values
+                            
+                            # Create metrics dataframe
+                            metrics_df = pd.DataFrame(metrics_data, index=[m["id"] for m in compare_data["models"]])
+                            st.dataframe(metrics_df.style.format("{:.2%}"))
+                        
+                        # Generate a bar chart comparison
+                        st.subheader("Accuracy Comparison")
+                        chart_data = self.model_manager.generate_model_comparison_chart(
+                            model_ids=selected_ids, 
+                            metric='accuracy'
+                        )
+                        
+                        if chart_data:
+                            fig = go.Figure()
+                            for i, model_id in enumerate(chart_data['labels']):
+                                fig.add_trace(go.Bar(
+                                    x=[model_id], 
+                                    y=[chart_data['datasets'][0]['data'][i]],
+                                    name=f"{chart_data['model_types'][i].upper()}",
+                                    text=[f"{chart_data['datasets'][0]['data'][i]:.2%}"],
+                                    textposition='auto'
+                                ))
+                            
+                            fig.update_layout(
+                                title_text='Model Accuracy Comparison',
+                                xaxis_title='Model ID',
+                                yaxis_title='Accuracy',
+                                yaxis=dict(tickformat='.0%')
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("Could not generate comparison. Some models may be missing metrics.")
+            else:
+                st.info("Please select at least one model to compare")
+        
+        # Tab 3: Model Details
+        with model_tabs[2]:
+            st.subheader("Model Performance Details")
+            
+            # Select a model to view details
+            selected_model_name = st.selectbox(
+                "Choose a model:",
+                options=model_names
+            )
+            
+            if selected_model_name:
+                # Get selected model ID
+                selected_idx = model_names.index(selected_model_name)
+                selected_id = model_ids[selected_idx]
+                
+                # Get model details
+                model_entry = self.model_manager.get_model_by_id(selected_id)
+                
+                if model_entry:
+                    # Show model info card
+                    with st.expander("Model Information", expanded=True):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown(f"**Model ID:** {model_entry['id']}")
+                            st.markdown(f"**Type:** {model_entry['type'].upper()}")
+                            st.markdown(f"**Created:** {model_entry['created']}")
+                            st.markdown(f"**Size:** {model_entry.get('size_mb', 0):.2f} MB")
+                        
+                        with col2:
+                            metrics = model_entry.get('metrics', {})
+                            if metrics:
+                                st.markdown(f"**Accuracy:** {metrics.get('accuracy', 0):.2%}")
+                                st.markdown(f"**Precision:** {metrics.get('precision', 0):.2%}")
+                                st.markdown(f"**Recall:** {metrics.get('recall', 0):.2%}")
+                                st.markdown(f"**F1 Score:** {metrics.get('f1', 0):.2%}")
+                    
+                    # Generate radar chart of metrics
+                    radar_data = self.model_manager.generate_model_metrics_radar_chart(selected_id)
+                    if radar_data:
+                        st.subheader("Performance Metrics")
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatterpolar(
+                            r=radar_data['datasets'][0]['data'],
+                            theta=radar_data['labels'],
+                            fill='toself',
+                            name=radar_data['datasets'][0]['label']
+                        ))
+                        
+                        fig.update_layout(
+                            polar=dict(
+                                radialaxis=dict(
+                                    visible=True,
+                                    range=[0, 1]
+                                )
+                            ),
+                            showlegend=True
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Get evaluation report if available
+                    report = self.model_manager.get_model_evaluation_report(model_id=selected_id)
+                    if report:
+                        st.subheader("Evaluation Report")
+                        
+                        # Display full report in an expander
+                        with st.expander("View Full Report"):
+                            st.json(report)
+                    else:
+                        st.info("No detailed evaluation report available for this model")
+                else:
+                    st.warning("Could not find details for the selected model")
+        
+        # Tab 4: Train New Model
+        with model_tabs[3]:
+            st.subheader("Train a New Model")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                model_type = st.selectbox("Model Type", ["CNN", "MLP"])
+                epochs = st.slider("Number of Epochs", min_value=10, max_value=100, value=50, step=5)
+                batch_size = st.slider("Batch Size", min_value=8, max_value=64, value=32, step=8)
+            
+            with col2:
+                optimize = st.checkbox("Optimize Hyperparameters")
+                if optimize:
+                    population = st.slider("Population Size", min_value=5, max_value=20, value=10)
+                    generations = st.slider("Generations", min_value=5, max_value=20, value=10)
+            
+            # Button to start training
+            if st.button("Train New Model"):
+                # Build command
+                cmd = [
+                    "python", "main.py",
+                    "--model_type", model_type.lower(),
+                    "--batch_size", str(batch_size),
+                    "--epochs", str(epochs)
+                ]
+                
+                if optimize:
+                    cmd.extend([
+                        "--optimize",
+                        "--population_size", str(population),
+                        "--generations", str(generations)
+                    ])
+                
+                # Show command
+                st.code(" ".join(cmd), language="bash")
+                
+                # Display a message
+                st.info("Training started in background. This may take some time. Check the terminal for progress.")
+                
+                # Launch the training process in a separate thread
+                def run_training():
+                    try:
+                        subprocess.run(cmd, check=True)
+                        return "Training completed successfully!"
+                    except subprocess.CalledProcessError as e:
+                        return f"Training failed with error: {e}"
+                
+                # Start the thread
+                import threading
+                thread = threading.Thread(target=run_training)
+                thread.daemon = True
+                thread.start()
+        
+        # Model actions section
+        st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Model Actions</h3>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("<p style='font-weight: 500; margin-bottom: 12px;'>Use Existing Model</p>", unsafe_allow_html=True)
+            
+            # Create dropdown for model selection
+            if models:
+                model_options = [f"{os.path.basename(m['path'])} ({m['type'].upper()})" for m in models]
+                selected_model_index = st.selectbox(
+                    "Select a model",
+                    options=range(len(models)),
+                    format_func=lambda i: model_options[i],
+                    index=0
+                )
+                
+                if st.button("Load Selected Model", use_container_width=True):
+                    selected_model = models[selected_model_index]
+                    selected_model_path = selected_model["path"]
+                    
+                    # Only reload if different model
+                    if selected_model_path != self.model_path:
+                        self.model_path = selected_model_path
+                        self.model_type = selected_model["type"]
+                        
+                        # Update backup path
+                        if selected_model_path.endswith(".keras"):
+                            self.backup_model_path = selected_model_path.replace(".keras", ".h5")
+                        else:
+                            self.backup_model_path = selected_model_path.replace(".h5", ".keras")
+                        
+                        # Force model reload
+                        self.loaded = False
+                        st.success(f"Model {selected_model['id']} selected.")
+                        st.info(f"Loading model from: {self.model_path}")
+                        
+                        # Load model using ModelManager
+                        self.model = self.model_manager.load_model(model_id=selected_model["id"])
+                        if self.model:
+                            self.loaded = True
+                            st.success("Model loaded successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to load model. Please try another model.")
+                    else:
+                        st.info("This model is already loaded.")
+            else:
+                st.info("No models available to load.")
+        
+        with col2:
+            st.markdown("<p style='font-weight: 500; margin-bottom: 12px;'>Train New Model</p>", unsafe_allow_html=True)
+            
+            model_type_for_training = st.selectbox(
+                "Model architecture",
+                options=["CNN", "MLP"],
+                index=0
+            )
+            
+            if st.button("Train New Model", use_container_width=True):
+                st.info(f"Starting training for new {model_type_for_training} model...")
+                
+                try:
+                    # Start training in a separate process
+                    process = subprocess.Popen(
+                        ["python", "main.py", "--model_type", model_type_for_training.lower()], 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    
+                    st.success("Training process started!")
+                    st.info("This may take 30-60 minutes depending on your hardware.")
+                    st.info("You can continue using the app with the current model while training runs in the background.")
+                    st.warning("After training completes, refresh this page to see the new model.")
+                    
+                except Exception as e:
+                    st.error(f"Error starting training process: {str(e)}")
+        
+        # Advanced model management section
+        if models:
+            st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Advanced Management</h3>", unsafe_allow_html=True)
+            
+            adv_col1, adv_col2 = st.columns(2)
+            
+            with adv_col1:
+                # Model description editing
+                if models:
+                    edit_model_index = st.selectbox(
+                        "Select model to edit",
+                        options=range(len(models)),
+                        format_func=lambda i: model_options[i],
+                        index=0,
+                        key="edit_model"
+                    )
+                    
+                    model_to_edit = models[edit_model_index]
+                    current_desc = model_to_edit.get("description", "No description")
+                    
+                    new_desc = st.text_area(
+                        "Edit description",
+                        value=current_desc,
+                        height=100
+                    )
+                    
+                    if st.button("Update Description", use_container_width=True):
+                        if new_desc != current_desc:
+                            success = self.model_manager.update_model_description(
+                                model_id=model_to_edit["id"],
+                                description=new_desc
+                            )
+                            if success:
+                                st.success("Description updated successfully!")
+                            else:
+                                st.error("Failed to update description.")
+                        else:
+                            st.info("No changes to description.")
+            
+            with adv_col2:
+                # Model deletion
+                if models:
+                    delete_model_index = st.selectbox(
+                        "Select model to delete",
+                        options=range(len(models)),
+                        format_func=lambda i: model_options[i],
+                        index=0,
+                        key="delete_model"
+                    )
+                    
+                    model_to_delete = models[delete_model_index]
+                    
+                    delete_file_too = st.checkbox(
+                        "Also delete model file from disk",
+                        value=False
+                    )
+                    
+                    if st.button("Delete Model", use_container_width=True, type="primary", help="This action cannot be undone"):
+                        # Check if trying to delete active model
+                        if model_to_delete["path"] == self.model_path:
+                            st.error("Cannot delete the currently active model. Please load a different model first.")
+                        else:
+                            # Confirm deletion
+                            st.warning(f"Are you sure you want to delete model {model_to_delete['id']}?")
+                            
+                            confirm_col1, confirm_col2 = st.columns(2)
+                            with confirm_col1:
+                                if st.button("Yes, Delete It", use_container_width=True, key="confirm_delete"):
+                                    success = self.model_manager.delete_model(
+                                        model_id=model_to_delete["id"],
+                                        delete_file=delete_file_too
+                                    )
+                                    if success:
+                                        st.success(f"Model {model_to_delete['id']} deleted successfully!")
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to delete model.")
+                            
+                            with confirm_col2:
+                                if st.button("Cancel", use_container_width=True, key="cancel_delete"):
+                                    st.info("Deletion canceled.")
+                                    st.rerun()
+        
+        # Technical model details section
+        if self.model and self.loaded:
+            st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Current Model Details</h3>", unsafe_allow_html=True)
+            
+            with st.expander("Show model summary"):
+                # Capture model summary
+                stringlist = []
+                self.model.summary(print_fn=lambda x: stringlist.append(x))
+                model_summary = "\n".join(stringlist)
+                st.code(model_summary, language="bash")
+        
+        # Model performance metrics if available
+        current_model = self.model_manager.get_model_by_path(self.model_path)
+        if current_model:
+            metrics = self.model_manager.get_model_evaluation_report(model_id=current_model.get("id"))
+            
+            if metrics:
+                st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Model Performance</h3>", unsafe_allow_html=True)
+                
+                metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+                
+                with metric_col1:
+                    st.metric("Accuracy", f"{metrics.get('accuracy', 0):.2%}")
+                
+                with metric_col2:
+                    st.metric("Precision", f"{metrics.get('precision', 0):.2%}")
+                
+                with metric_col3:
+                    st.metric("Recall", f"{metrics.get('recall', 0):.2%}")
+                
+                with metric_col4:
+                    st.metric("F1 Score", f"{metrics.get('f1', 0):.2%}")
+                    
+                # Show confusion matrix if available
+                if os.path.exists("results/model_evaluation_cm.png"):
+                    st.image("results/model_evaluation_cm.png", use_container_width=True)
+    
     def run(self):
         """Main method to run the Streamlit application"""
         # Display modern app header with gradient text and design
@@ -1748,8 +2428,8 @@ class EmotionAnalyzer:
             # Modern navigation menu
             selected = option_menu(
                 menu_title="Navigation",
-                options=["Analyze Audio", "Visualization Dashboard", "View Examples", "TensorBoard", "About", "Settings"],
-                icons=["mic-fill", "bar-chart-fill", "collection-play", "graph-up", "info-circle", "sliders"],
+                options=["Analyze Audio", "Visualization Dashboard", "Model Management", "About"],
+                icons=["mic-fill", "bar-chart-fill", "cpu", "info-circle"],
                 menu_icon="menu-app",
                 default_index=0,
                 styles={
@@ -1837,21 +2517,32 @@ class EmotionAnalyzer:
             )
             self.dashboard.display_dashboard()
             
-        elif selected == "View Examples":
-            self.display_demo_section()
+        elif selected == "Model Management":
+            colored_header(
+                label="Model Management",
+                description="Manage, train, and select pre-trained emotion recognition models",
+                color_name="blue-70"
+            )
             
-        elif selected == "TensorBoard":
-            self.display_tensorboard_launcher()
+            # Model management container
+            with stylable_container(
+                key="model_management_container",
+                css_styles="""
+                    {
+                        background-color: #FFFFFF;
+                        border-radius: 16px;
+                        padding: 24px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+                        margin-top: 16px;
+                        margin-bottom: 16px;
+                        border: 1px solid rgba(226, 232, 240, 0.8);
+                    }
+                """
+            ):
+                self.display_model_management()
             
         elif selected == "About":
             self.display_about_section()
-            
-        elif selected == "Settings":
-            colored_header(
-                label="Settings",
-                description="Configure application settings",
-                color_name="violet-70"
-            )
             
             # Create tabs for different settings categories
             settings_tabs = st.tabs(["🧠 Model", "🔊 Audio", "🖥️ Interface", "ℹ️ About"])
@@ -1877,22 +2568,61 @@ class EmotionAnalyzer:
                     model_col1, model_col2 = st.columns([3, 2])
                     
                     with model_col1:
-                        model_path = st.text_input("Model Path", 
-                                                value=self.model_path,
-                                                help="Path to the trained emotion classification model")
+                        # Scan for available models in the models directory
+                        available_models = []
+                        if os.path.exists("models"):
+                            for file in os.listdir("models"):
+                                if file.endswith(".keras") or file.endswith(".h5"):
+                                    if "_emotion_model" in file:
+                                        model_type = file.split("_")[0].upper()
+                                        available_models.append((f"models/{file}", f"{model_type} Model ({file})"))
                         
-                        model_type = st.selectbox(
-                            "Model Type", 
-                            options=["CNN", "MLP"],
-                            index=0,
-                            help="Select the type of neural network architecture"
+                        # If no models found, provide default options
+                        if not available_models:
+                            available_models = [
+                                (f"models/cnn_emotion_model.keras", "CNN Model (Default)"),
+                                (f"models/mlp_emotion_model.keras", "MLP Model (Optional)")
+                            ]
+                        
+                        # Create tuple of values and display names
+                        model_options = [(path, name) for path, name in available_models]
+                        model_path_options = [path for path, _ in model_options]
+                        model_display_names = [name for _, name in model_options]
+                        
+                        # Default to current model path if it exists in options
+                        default_index = 0
+                        if self.model_path in model_path_options:
+                            default_index = model_path_options.index(self.model_path)
+                        
+                        selected_model_index = st.selectbox(
+                            "Pre-trained Model", 
+                            options=range(len(model_display_names)),
+                            format_func=lambda i: model_display_names[i],
+                            index=default_index,
+                            help="Select a pre-trained model for emotion recognition"
                         )
+                        
+                        model_path = model_path_options[selected_model_index]
+                        
+                        # Option to train a new model if needed
+                        st.markdown("---")
+                        train_new_model = st.checkbox(
+                            "I need to train a new model",
+                            value=False,
+                            help="Check this if you want to train a new model instead of using a pre-trained one"
+                        )
+                        
+                        if train_new_model:
+                            st.info("To train a new model, run the following command in a terminal:")
+                            st.code("python main.py --model_type cnn", language="bash")
+                            st.info("After training, refresh this page to use the newly trained model.")
                     
                     with model_col2:
                         st.markdown("""
                         <div style="background-color: #F0F7FF; border-radius: 12px; padding: 16px; margin-top: 24px;">
                             <h4 style="font-weight: 600; color: #1E40AF; font-size: 0.9rem; margin-bottom: 12px;">Model Information</h4>
                             <ul style="margin-left: 0; padding-left: 20px; font-size: 0.9rem; color: #334155;">
+                                <li>Using pre-trained models for faster predictions</li>
                                 <li>CNN models work better with spectrograms</li>
                                 <li>Model files should be in .keras or .h5 format</li>
                                 <li>Default model is pre-trained on RAVDESS dataset</li>
@@ -2055,6 +2785,71 @@ class EmotionAnalyzer:
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Help tab for model training information
+                    st.markdown("### Model Training and Reuse")
+                    with stylable_container(
+                        key="model_training_container",
+                        css_styles="""
+                            {
+                                background-color: #FFFFFF;
+                                border-radius: 16px;
+                                padding: 24px;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+                                margin-top: 16px;
+                                margin-bottom: 16px;
+                                border: 1px solid rgba(226, 232, 240, 0.8);
+                            }
+                        """
+                    ):
+                        st.markdown("""
+                        #### How Model Training Works
+                        
+                        This application uses a pre-trained model to recognize emotions in speech. The model is trained once 
+                        and then reused for all predictions, making the app faster and more efficient.
+                        
+                        **Key points about model training:**
+                        
+                        1. **Pre-trained Models**: The app comes with pre-trained models that are ready to use.
+                        
+                        2. **Training Process**: Models are trained using the `main.py` script, which:
+                           - Loads and processes the RAVDESS dataset
+                           - Extracts audio features (mel spectrograms)
+                           - Trains a neural network (CNN or MLP)
+                           - Saves the trained model
+                        
+                        3. **Training Command**: If you need to train a new model, run:
+                           ```
+                           python main.py --model_type cnn
+                           ```
+                        
+                        4. **Model Location**: Trained models are saved in the `models/` folder as:
+                           - `cnn_emotion_model.keras` (primary)
+                           - `cnn_emotion_model.h5` (backup format)
+                        
+                        5. **Model Reuse**: Once trained, the model is loaded automatically by the app.
+                        
+                        > **Note**: Training typically takes 30-60 minutes depending on your hardware.
+                        """)
+                        
+                        # Add a button to run training if needed
+                        if st.button("Train New Model", use_container_width=False):
+                            st.info("Starting model training process...")
+                            try:
+                                # Start training in a separate process
+                                process = subprocess.Popen(
+                                    ["python", "main.py", "--model_type", "cnn"], 
+                                    stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE,
+                                    text=True
+                                )
+                                st.info("Training process started! This may take 30-60 minutes.")
+                                st.info("You can continue using the app with the current model while training runs in the background.")
+                                st.warning("After training completes, go to Settings to select the new model.")
+                            except Exception as e:
+                                st.error(f"Error starting training process: {str(e)}")
+                    
+                    st.markdown("---")
             
             # Save button below tabs
             with stylable_container(
@@ -2073,34 +2868,247 @@ class EmotionAnalyzer:
                 save_col1, save_col2, save_col3 = st.columns([1, 2, 1])
                 with save_col2:
                     if st.button("Save Settings", use_container_width=True):
+                        # Check if model path changed
+                        model_changed = self.model_path != model_path
+                        
+                        # Update model path
                         self.model_path = model_path
+                        
+                        # Update model type based on selected model
+                        if "cnn_" in model_path.lower():
+                            self.model_type = "cnn"
+                        elif "mlp_" in model_path.lower():
+                            self.model_type = "mlp"
+                        
+                        # Update backup model path based on model type
+                        if model_path.endswith(".keras"):
+                            self.backup_model_path = model_path.replace(".keras", ".h5")
+                        else:
+                            self.backup_model_path = model_path.replace(".h5", ".keras")
+                        
                         # Add other settings here as needed
                         st.success("✅ Settings saved successfully!")
-                        st.info("Some changes may require restarting the application to take effect.")
-                        self.loaded = False  # Force model reload with new settings
+                        
+                        # Reload model if path changed
+                        if model_changed:
+                            st.info("Model path changed, reloading model...")
+                            self.loaded = False  # Force model reload with new settings
+                            self.load_model()
+                            st.success("Model reloaded with new settings!")
+                        else:
+                            st.info("No changes to model path. Using current model.")
         
-        # Modern footer with better styling and information
+        elif selected == "Model Management":
+            colored_header(
+                label="Model Management",
+                description="Manage, train, and select pre-trained emotion recognition models",
+                color_name="blue-70"
+            )
+            
+            # Model management container
+            with stylable_container(
+                key="model_management_container",
+                css_styles="""
+                    {
+                        background-color: #FFFFFF;
+                        border-radius: 16px;
+                        padding: 24px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+                        margin-top: 16px;
+                        margin-bottom: 16px;
+                        border: 1px solid rgba(226, 232, 240, 0.8);
+                    }
+                """
+            ):
+                st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 16px;'>Available Models</h3>", unsafe_allow_html=True)
+                
+                # Scan for available models
+                models_info = []
+                model_files = []
+                
+                # Check models directory
+                if os.path.exists("models"):
+                    for file in os.listdir("models"):
+                        if file.endswith((".keras", ".h5")) and "_emotion_model" in file:
+                            model_type = file.split("_")[0].upper()
+                            model_path = os.path.join("models", file)
+                            model_files.append(model_path)
+                            
+                            # Get file creation/modification time
+                            creation_time = datetime.fromtimestamp(os.path.getctime(model_path))
+                            size_mb = os.path.getsize(model_path) / (1024 * 1024)
+                            
+                            # Get model metadata if possible
+                            model_metadata = "Unknown"
+                            if self.model and self.model_path == model_path:
+                                try:
+                                    model_metadata = "Layers: " + str(len(self.model.layers))
+                                except:
+                                    pass
+                            
+                            # Determine if this is the currently loaded model
+                            status = "⭐ Active" if model_path == self.model_path else "Available"
+                            
+                            models_info.append({
+                                "file": file,
+                                "path": model_path,
+                                "type": model_type,
+                                "created": creation_time.strftime("%Y-%m-%d %H:%M"),
+                                "size": f"{size_mb:.2f} MB",
+                                "metadata": model_metadata,
+                                "status": status
+                            })
+                
+                # No models found
+                if not models_info:
+                    st.warning("No pre-trained models found. You need to train a model first.")
+                    st.info("Run the following command to train a model:")
+                    st.code("python main.py --model_type cnn", language="bash")
+                else:
+                    # Display models in a table
+                    df_models = pd.DataFrame(models_info)
+                    st.dataframe(
+                        df_models[["file", "type", "created", "size", "status"]],
+                        use_container_width=True,
+                        column_config={
+                            "file": "Filename",
+                            "type": "Model Type",
+                            "created": "Created On",
+                            "size": "Size",
+                            "status": "Status"
+                        }
+                    )
+                
+                # Model actions section
+                st.markdown("<h3 style='font-weight: 500; margin-bottom: 12px;'>Use Existing Model</p>", unsafe_allow_html=True)
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Create dropdown for model selection
+                    if models_info:
+                        selected_model_index = st.selectbox(
+                            "Select a model", 
+                            options=range(len(models_info)),
+                            format_func=lambda i: f"{models_info[i]['file']} ({models_info[i]['status']})",
+                            index=0
+                        )
+                        
+                        if st.button("Load Selected Model", use_container_width=True):
+                            selected_model_path = models_info[selected_model_index]['path']
+                            
+                            # Only reload if different model
+                            if selected_model_path != self.model_path:
+                                self.model_path = selected_model_path
+                                
+                                # Update model type
+                                if "cnn_" in selected_model_path.lower():
+                                    self.model_type = "cnn"
+                                elif "mlp_" in selected_model_path.lower():
+                                    self.model_type = "mlp"
+                                
+                                # Update backup path
+                                if selected_model_path.endswith(".keras"):
+                                    self.backup_model_path = selected_model_path.replace(".keras", ".h5")
+                                else:
+                                    self.backup_model_path = selected_model_path.replace(".h5", ".keras")
+                                
+                                # Force model reload
+                                self.loaded = False
+                                st.success(f"Model path updated to: {self.model_path}")
+                                st.success("Reloading model...")
+                                self.load_model()
+                                st.rerun()
+                            else:
+                                st.info("This model is already loaded.")
+                    else:
+                        st.info("No models available to load.")
+                
+                with col2:
+                    st.markdown("<p style='font-weight: 500; margin-bottom: 12px;'>Train New Model</p>", unsafe_allow_html=True)
+                    
+                    model_type_for_training = st.selectbox(
+                        "Model architecture",
+                        options=["CNN", "MLP"],
+                        index=0
+                    )
+                    
+                    if st.button("Train New Model", use_container_width=True):
+                        st.info(f"Starting training for new {model_type_for_training} model...")
+                        
+                        try:
+                            # Start training in a separate process
+                            process = subprocess.Popen(
+                                ["python", "main.py", "--model_type", model_type_for_training.lower()], 
+                                stdout=subprocess.PIPE, 
+                                stderr=subprocess.PIPE,
+                                text=True
+                            )
+                            
+                            st.success("Training process started!")
+                            st.info("This may take 30-60 minutes depending on your hardware.")
+                            st.info("You can continue using the app with the current model while training runs in the background.")
+                            st.warning("After training completes, refresh this page to see the new model.")
+                            
+                        except Exception as e:
+                            st.error(f"Error starting training process: {str(e)}")
+                
+                # Technical model details section
+                if self.model and self.loaded:
+                    st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Current Model Details</h3>", unsafe_allow_html=True)
+                    
+                    with st.expander("Show model summary"):
+                        # Capture model summary
+                        stringlist = []
+                        self.model.summary(print_fn=lambda x: stringlist.append(x))
+                        model_summary = "\n".join(stringlist)
+                        st.code(model_summary, language="bash")
+                
+                # Model performance metrics if available
+                if os.path.exists("results/model_evaluation_report.json"):
+                    try:
+                        with open("results/model_evaluation_report.json", "r") as f:
+                            metrics = json.load(f)
+                            
+                        st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-top: 24px; margin-bottom: 16px;'>Model Performance</h3>", unsafe_allow_html=True)
+                        
+                        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+                        
+                        with metric_col1:
+                            st.metric("Accuracy", f"{metrics.get('accuracy', 0):.2%}")
+                        
+                        with metric_col2:
+                            st.metric("Precision", f"{metrics.get('precision', 0):.2%}")
+                        
+                        with metric_col3:
+                            st.metric("Recall", f"{metrics.get('recall', 0):.2%}")
+                        
+                        with metric_col4:
+                            st.metric("F1 Score", f"{metrics.get('f1', 0):.2%}")
+                            
+                        # Show confusion matrix if available
+                        if os.path.exists("results/model_evaluation_cm.png"):
+                            st.image("results/model_evaluation_cm.png", use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error loading model performance metrics: {str(e)}")
+        
+        # Streamlined footer
         st.markdown("""
-        <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5E7EB;">
+        <footer style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #E5E7EB;">
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
-                <div style="margin-bottom: 16px;">
-                    <p style="color: #6B7280; font-size: 0.9rem; font-weight: 500; margin-bottom: 4px;">
+                <div>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 0;">
                         Speech Emotion Analyzer v1.1
                     </p>
-                    <p style="color: #9CA3AF; font-size: 0.8rem; margin: 0;">
-                        © 2025 AI Research Team
-                    </p>
                 </div>
-                <div style="display: flex; gap: 24px; margin-bottom: 16px;">
-                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Help</a>
-                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Privacy</a>
-                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Terms</a>
-                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Contact</a>
+                <div style="display: flex; gap: 20px;">
+                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem;">Help</a>
+                    <a href="#" style="color: #6B7280; text-decoration: none; font-size: 0.9rem;">About</a>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 16px;">
+            <div style="text-align: center; margin-top: 10px;">
                 <p style="color: #9CA3AF; font-size: 0.8rem;">
-                    Made with <span style="color: #EF4444;">❤️</span> using Streamlit and TensorFlow
+                    Built with Streamlit and TensorFlow
                 </p>
             </div>
         </footer>

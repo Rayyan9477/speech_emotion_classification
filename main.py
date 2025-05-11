@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 import logging
 import sys
+from datetime import datetime
 
 # Import our monkey patch first - this will fix the argmax function
 import monkey_patch
@@ -59,6 +60,8 @@ def parse_arguments():
                         help='Maximum number of epochs for training')
     parser.add_argument('--subset_size', type=int, default=None,
                         help='Size of subset to use for optimization')
+    parser.add_argument('--force_retrain', action='store_true',
+                        help='Force retraining even if a model already exists')
     
     return parser.parse_args()
 
@@ -85,6 +88,59 @@ def main():
     
     logger.info("Starting Speech Emotion Classification")
     logger.info(f"Model type: {args.model_type}")
+    
+    # Define model paths based on model type
+    model_path = f"models/{args.model_type}_emotion_model.keras"
+    h5_model_path = f"models/{args.model_type}_emotion_model.h5"
+    
+    # Check if model already exists and if we should skip training
+    try:
+        from model_manager import ModelManager
+        model_manager = ModelManager()
+        
+        # Check if model exists in the registry
+        existing_models = model_manager.get_models(model_type=args.model_type)
+        
+        if not args.force_retrain and (os.path.exists(model_path) or existing_models):
+            logger.info(f"Trained model already exists for type {args.model_type}")
+            logger.info("Skipping training. Use --force_retrain to train again.")
+            
+            # Get the latest model of this type
+            latest_model = model_manager.get_latest_model(model_type=args.model_type)
+            if latest_model:
+                logger.info(f"Using latest {args.model_type.upper()} model: {latest_model['id']}")
+                logger.info(f"Model metrics: {latest_model['metrics']}")
+            else:
+                logger.info(f"Using model at {model_path}")
+            
+            # Load the existing model to use later
+        else:
+            if args.force_retrain:
+                logger.info("Force retrain option enabled. Training new model...")
+            else:
+                logger.info("No existing model found. Training new model...")
+    except ImportError:
+        # Fall back to simple file check if ModelManager isn't available
+        if not args.force_retrain and os.path.exists(model_path):
+            logger.info(f"Trained model already exists at {model_path}")
+            logger.info("Skipping training. Use --force_retrain to train again.")
+            
+            # Load the existing model to use later
+        try:
+            if tensorflow_available:
+                model = tf.keras.models.load_model(model_path)
+                logger.info(f"Successfully loaded existing model from {model_path}")
+                
+                # Skip to visualization if needed, or exit
+                logger.info("Model is ready for use in the UI. Run the app.py to use the trained model.")
+                return
+            else:
+                logger.error("TensorFlow not available, cannot load model")
+                return
+        except Exception as e:
+            logger.error(f"Error loading existing model: {e}")
+            logger.info("Will proceed with training a new model")
+    
     logger.info(f"Hyperparameter optimization: {args.optimize}")
     
     # Step 1: Load and split dataset
@@ -237,6 +293,41 @@ def main():
         logger.info(f"Model saved to {h5_model_path}")
     else:
         logger.info(f"Model already exists at {h5_model_path}, skipping save")
+    
+    # Register model with ModelManager
+    logger.info("Registering model with ModelManager")
+    try:
+        from model_manager import ModelManager
+        model_manager = ModelManager()
+        
+        # Prepare metrics for model registration
+        model_metrics = {
+            "accuracy": float(metrics['accuracy']),
+            "precision": float(metrics['precision_avg']),
+            "recall": float(metrics['recall_avg']),
+            "f1": float(metrics['f1_avg']),
+            "trained_on": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "dataset": "RAVDESS",
+            "epochs": args.epochs,
+            "batch_size": args.batch_size
+        }
+        
+        # Register the model
+        model_id = model_manager.register_model(
+            model_path=model_path,
+            model_type=args.model_type,
+            metrics=model_metrics,
+            description=f"{args.model_type.upper()} model trained on RAVDESS dataset with accuracy {metrics['accuracy']:.4f}"
+        )
+        
+        logger.info(f"Model registered with ID: {model_id}")
+        
+        # Save metrics to model registry
+        model_manager.save_model_metrics(model_path, model_metrics)
+        logger.info("Model metrics saved to registry")
+    except Exception as e:
+        logger.error(f"Error registering model with ModelManager: {e}")
+        logger.error("Continuing without model registration")
     
     # Step 8: Run visualizations
     logger.info("Step 8: Generating advanced visualizations")
