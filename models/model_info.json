@@ -1,0 +1,16 @@
+{
+    "name": "DefaultCNN",
+    "version": "0.1.0",
+    "accuracy": 0.0,
+    "last_trained": "N/A",
+    "features": "MFCC",
+    "classes": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "neutral",
+        "sad",
+        "surprise"
+    ]
+}

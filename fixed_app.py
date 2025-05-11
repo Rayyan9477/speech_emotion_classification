@@ -47,19 +47,65 @@ class EmotionAnalyzer:
         self.emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'] # Example
 
     def _load_model(self):
-        if os.path.exists(self.model_path):
+        model_dir = os.path.dirname(self.model_path)
+        preferred_model_path = self.model_path
+        loaded_model = None
+        model_loaded_successfully = False
+
+        if os.path.exists(preferred_model_path):
+            logger.info(f"Attempting to load preferred model: {preferred_model_path}")
             try:
-                model = tf.keras.models.load_model(self.model_path)
-                logger.info(f"Model loaded successfully from {self.model_path}")
-                return model
+                loaded_model = tf.keras.models.load_model(preferred_model_path)
+                logger.info(f"Preferred model loaded successfully from {preferred_model_path}")
+                if 'st' in sys.modules: # Check if streamlit is imported before using st functions
+                    st.info(f"Using preferred model: {os.path.basename(preferred_model_path)}")
+                model_loaded_successfully = True
             except Exception as e:
-                logger.error(f"Error loading model: {e}")
-                st.error(f"Error loading model: {e}")
-                return None
+                logger.error(f"Error loading preferred model {preferred_model_path}: {e}. Will try to find other models.")
+                if 'st' in sys.modules:
+                    st.warning(f"Could not load preferred model {os.path.basename(preferred_model_path)}. Trying other available models.")
         else:
-            logger.error(f"Model file not found at {self.model_path}")
-            st.error(f"Model file not found at {self.model_path}. Please ensure it's trained and available.")
-            return None
+            logger.warning(f"Preferred model file not found at {preferred_model_path}. Attempting to find other models.")
+
+        if not model_loaded_successfully:
+            potential_models = []
+            if os.path.exists(model_dir):
+                for fname in os.listdir(model_dir):
+                    if fname.endswith(".keras") or fname.endswith(".h5"):
+                        current_file_path = os.path.join(model_dir, fname)
+                        # Avoid re-trying the preferred path if it was already attempted
+                        if current_file_path == preferred_model_path and os.path.exists(preferred_model_path):
+                            continue
+                        potential_models.append(current_file_path)
+            
+            if not potential_models:
+                logger.error(f"No other model files (.h5 or .keras) found in {model_dir} to try.")
+                if not os.path.exists(preferred_model_path) and 'st' in sys.modules:
+                     st.error(f"No model files found in the '{os.path.basename(model_dir)}' directory.")
+                # If preferred existed but failed, the st.warning about it is already shown.
+                # A final error will be shown if all attempts fail.
+            else:
+                # Sort: .keras first, then by name
+                sorted_models = sorted(potential_models, key=lambda x: (not x.endswith(".keras"), x))
+                
+                for model_file_to_try in sorted_models:
+                    logger.info(f"Attempting to load alternative model: {model_file_to_try}")
+                    try:
+                        loaded_model = tf.keras.models.load_model(model_file_to_try)
+                        logger.info(f"Alternative model loaded successfully from {model_file_to_try}")
+                        if 'st' in sys.modules:
+                            st.success(f"Successfully loaded alternative model: {os.path.basename(model_file_to_try)}")
+                        model_loaded_successfully = True
+                        break # Stop after loading one successfully
+                    except Exception as e:
+                        logger.error(f"Error loading alternative model {model_file_to_try}: {e}")
+                        # Continue to try the next model
+            
+            if not model_loaded_successfully and 'st' in sys.modules:
+                st.error(f"Failed to load any model from the '{os.path.basename(model_dir)}' directory.")
+                return None # Return None if no model could be loaded
+        
+        return loaded_model
 
     def _load_model_info(self):
         if os.path.exists(self.model_info_path):
@@ -85,17 +131,36 @@ class EmotionAnalyzer:
             
             # Pad or truncate to a fixed length if your model expects it
             # Example: fixed length of 3 seconds at 44100 Hz = 132300 samples
-            expected_length = 132300 
-            if len(data) < expected_length:
-                data = np.pad(data, (0, expected_length - len(data)), 'constant')
-            elif len(data) > expected_length:
-                data = data[:expected_length]
+            expected_audio_length = 132300 
+            if len(data) < expected_audio_length:
+                data = np.pad(data, (0, expected_audio_length - len(data)), 'constant')
+            elif len(data) > expected_audio_length:
+                data = data[:expected_audio_length]
 
-            mfccs = np.mean(librosa.feature.mfcc(y=data, sr=sample_rate, n_mfcc=40).T, axis=0)
-            mfccs = np.expand_dims(mfccs, axis=0)
-            mfccs = np.expand_dims(mfccs, axis=-1)
+            # Revised MFCC processing to match model's expected input shape (None, 128, 165, 1)
+            n_mfcc_expected = 128
+            n_frames_expected = 165
 
-            prediction = self.model.predict(mfccs)
+            # Extract MFCCs. Default hop_length=512. For 3s audio at 44.1kHz (132300 samples),
+            # this yields approx. 132300/512 = 258 frames.
+            raw_mfccs = librosa.feature.mfcc(y=data, sr=sample_rate, n_mfcc=n_mfcc_expected) # Shape: (n_mfcc_expected, actual_frames)
+
+            # Pad or truncate the time frames dimension (axis 1) to n_frames_expected
+            current_frames = raw_mfccs.shape[1]
+            if current_frames > n_frames_expected:
+                mfccs_processed = raw_mfccs[:, :n_frames_expected]
+            elif current_frames < n_frames_expected:
+                padding_width = n_frames_expected - current_frames
+                mfccs_processed = np.pad(raw_mfccs, ((0, 0), (0, padding_width)), mode='constant')
+            else:
+                mfccs_processed = raw_mfccs
+            # mfccs_processed shape is now (n_mfcc_expected, n_frames_expected) -> (128, 165)
+
+            # Expand dimensions for the model: (batch_size, height, width, channels)
+            mfccs_final = np.expand_dims(mfccs_processed, axis=0) # Shape: (1, 128, 165)
+            mfccs_final = np.expand_dims(mfccs_final, axis=-1)    # Shape: (1, 128, 165, 1)
+
+            prediction = self.model.predict(mfccs_final)
             predicted_emotion_index = np.argmax(prediction)
             
             if predicted_emotion_index < len(self.emotion_labels):
@@ -208,20 +273,26 @@ class EmotionAnalyzer:
 
 
 class StreamlitApp:
-    def __init__(self, model_path=MODEL_PATH, model_info_path=MODEL_INFO_PATH):
-        self.analyzer = EmotionAnalyzer(model_path, model_info_path)
-        if "nav_selection" not in st.session_state:
-            st.session_state.nav_selection = "Home"
+    def __init__(self, model_path_arg=MODEL_PATH, model_info_path_arg=MODEL_INFO_PATH):
+        self.model_path_arg = model_path_arg
+        self.model_info_path_arg = model_info_path_arg
+        self.analyzer = None # Will be initialized in run()
 
     def run(self):
         st.set_page_config(layout="wide", page_title="Speech Emotion Analyzer", page_icon="🗣️")
+
+        if "nav_selection" not in st.session_state:
+            st.session_state.nav_selection = "Home"
+        
+        # Initialize the analyzer here, after set_page_config
+        if self.analyzer is None:
+            self.analyzer = EmotionAnalyzer(self.model_path_arg, self.model_info_path_arg)
 
         # Apply custom CSS
         st.markdown(
             """
             <style>
                 /* General body style */
-                body {
                 body {
                     color: #E0E0E0; 
                     background-color: #0E1117; 
@@ -351,9 +422,9 @@ class StreamlitApp:
             # Navigation
             selected = option_menu(
                 menu_title=None,  # Required
-                options=["Home", "Analyze Audio", "Live Recording", "Dashboard", "About"],
-                icons=["house-fill", "soundwave", "mic-fill", "bar-chart-line-fill", "info-circle-fill"],
-                menu_icon="cast", default_index=["Home", "Analyze Audio", "Live Recording", "Dashboard", "About"].index(st.session_state.nav_selection),
+                options=["Home", "Analyze Audio", "Dashboard", "About"],
+                icons=["house-fill", "soundwave", "bar-chart-line-fill", "info-circle-fill"],
+                menu_icon="cast", default_index=["Home", "Analyze Audio", "Dashboard", "About"].index(st.session_state.nav_selection),
                 styles={
                     "container": {"padding": "5px !important", "background-color": "#1A1D21"},
                     "icon": {"color": "#E0E0E0", "font-size": "20px"},
@@ -381,8 +452,6 @@ class StreamlitApp:
             self.display_home_page()
         elif st.session_state.nav_selection == "Analyze Audio":
             self.display_file_upload()
-        elif st.session_state.nav_selection == "Live Recording":
-            self.display_live_recording_page()
         elif st.session_state.nav_selection == "Dashboard":
             self.display_dashboard_page()
         elif st.session_state.nav_selection == "About":
@@ -405,18 +474,6 @@ class StreamlitApp:
         """, unsafe_allow_html=True)
         if st.button("Go to Analyze Audio", key="home_analyze", help="Upload and analyze an audio file"):
             st.session_state.nav_selection = "Analyze Audio"
-            st.rerun() # Corrected
-
-        # Card 2: Live Recording
-        st.markdown("""
-            <div class="action-card">
-                <div class="card-icon">🎙️</div>
-                <h3>Live Recording</h3>
-                <p>Record audio directly in your browser using your microphone and get instant emotion analysis.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button("Go to Live Recording", key="home_record", help="Record audio live for analysis"):
-            st.session_state.nav_selection = "Live Recording"
             st.rerun() # Corrected
 
         # Card 3: View Dashboard
@@ -463,34 +520,6 @@ class StreamlitApp:
             with st.spinner("Processing sample audio..."):
                 self.analyzer.process_audio(sample_audio_path)
 
-    def display_live_recording_page(self):
-        st.header("Live Emotion Analysis")
-        st.markdown("Record your voice using the microphone below. Speak clearly and click the microphone icon again to stop recording and analyze.")
-
-        audio_bytes = st_audiorecorder(
-            energy_threshold=(-1.0, 1.0), 
-            pause_threshold=3.0, 
-            sample_rate=44100,
-            key="live_audio_recorder"
-        )
-
-        if audio_bytes:
-            st.audio(audio_bytes, format="audio/wav")
-            temp_audio_path = "/tmp/live_recording.wav"
-            with open(temp_audio_path, "wb") as f:
-                f.write(audio_bytes)
-            
-            with st.spinner("Analyzing live recording..."):
-                self.analyzer.process_audio(temp_audio_path)
-            
-            if os.path.exists(temp_audio_path):
-                try:
-                    os.remove(temp_audio_path)
-                except Exception as e:
-                    logger.warning(f"Could not remove temp file {temp_audio_path}: {e}")
-        else:
-            st.info("Click the microphone icon to start recording. Click again to stop.")
-
     def display_dashboard_page(self):
         st.header("Application Dashboard")
         st.markdown("This section provides an overview of model performance and data insights.")
@@ -534,7 +563,6 @@ class StreamlitApp:
 
             **Features:**
             - **Audio File Analysis:** Upload WAV or MP3 files for emotion prediction.
-            - **Live Recording:** Record audio directly in the browser for real-time analysis.
             - **Visualizations:** View waveforms, spectrograms, and emotion probability distributions.
             - **Dashboard:** (Under development) Intended to show model performance metrics.
 
@@ -548,7 +576,6 @@ class StreamlitApp:
             - **Librosa:** For audio processing and feature extraction.
             - **TensorFlow/Keras:** For the deep learning model.
             - **Matplotlib & Plotly:** For generating visualizations.
-            - **streamlit-audiorecorder:** For live audio input.
 
             **Developed by:** GitHub Copilot & You!
             

@@ -1,0 +1,58 @@
+2025-05-11 18:41:49,091 - __main__ - INFO - Created directory: samples
+2025-05-11 18:41:49,092 - __main__ - WARNING - models/model_info.json not found. Creating a dummy file.
+2025-05-11 18:41:49,093 - __main__ - WARNING - samples/sample1.wav not found. Creating a dummy silent WAV file.
+2025-05-11 18:41:49,100 - __main__ - INFO - Created dummy sample audio: samples/sample1.wav
+2025-05-11 18:41:49,100 - __main__ - ERROR - Model file not found at models/emotion_model.h5
+2025-05-11 18:41:49,111 - __main__ - INFO - Model info loaded successfully from models/model_info.json
+2025-05-11 18:42:40,309 - __main__ - ERROR - Model file not found at models/emotion_model.h5
+2025-05-11 18:42:40,317 - __main__ - INFO - Model info loaded successfully from models/model_info.json
+2025-05-11 18:46:56,077 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:46:56,078 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:46:56,668 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:46:56,673 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:47:34,823 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:47:34,823 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:35,274 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:35,276 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:47:35,557 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:47:35,557 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:36,010 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:36,012 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:47:38,801 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:47:38,802 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:39,260 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:47:39,263 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:47:41,163 - __main__ - ERROR - Error during emotion prediction: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(1, 40)
+2025-05-11 18:48:16,540 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:48:16,541 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:17,045 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:17,048 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:48:17,131 - __main__ - ERROR - Error during emotion prediction: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(1, 40)
+2025-05-11 18:48:30,033 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:48:30,033 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:30,488 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:30,490 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:48:30,864 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:48:30,865 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:31,331 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:31,333 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:48:35,030 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:48:35,031 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:35,458 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:35,461 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:48:35,821 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:48:35,822 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:36,252 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:48:36,254 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:49:01,979 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:49:01,980 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:49:02,417 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:49:02,420 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:49:02,785 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:49:02,786 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:49:03,230 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:49:03,232 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
+2025-05-11 18:51:40,019 - __main__ - WARNING - Preferred model file not found at /workspaces/speech_emotion_classification/models/emotion_model.h5. Attempting to find other models.
+2025-05-11 18:51:40,019 - __main__ - INFO - Attempting to load alternative model: /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:51:40,422 - __main__ - INFO - Alternative model loaded successfully from /workspaces/speech_emotion_classification/models/cnn_emotion_model.keras
+2025-05-11 18:51:40,426 - __main__ - INFO - Model info loaded successfully from /workspaces/speech_emotion_classification/models/model_info.json
