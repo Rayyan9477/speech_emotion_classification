@@ -26,6 +26,10 @@ class FeatureExtractor:
         self.n_mels = n_mels
         self.hop_length = hop_length
         self.n_fft = n_fft
+        
+        # Initialize scalers for feature normalization
+        self.scaler_mfcc = StandardScaler()
+        self.scaler_spec = StandardScaler()
     
     def extract_features(self, audio_data, sr=22050):
         """
@@ -178,8 +182,8 @@ class FeatureExtractor:
             if feature_type in ['mfcc', 'both']:
                 features['mfcc'] = self.extract_mfcc(audio_data, sr)
                 
-            if feature_type in ['spectrogram', 'both']:
-                features['spectrogram'] = self.extract_spectrogram(audio_data, sr)
+            if feature_type in ['mel_spectrogram', 'both']:
+                features['mel_spectrogram'] = self.extract_spectrogram(audio_data, sr)
             
             return features
         
@@ -240,8 +244,8 @@ class FeatureExtractor:
                 if 'mfcc' in features:
                     mfcc_features.append(features['mfcc'])
                 
-                if 'spectrogram' in features:
-                    spec = features['spectrogram']
+                if 'mel_spectrogram' in features:
+                    spec = features['mel_spectrogram']
                     spec_features.append(spec)
                     spec_lengths.append(spec.shape[1])  # Store the length for padding later
                 
@@ -282,7 +286,7 @@ class FeatureExtractor:
                     padded_specs.append(padded_spec)
                 
                 spec_features = np.array(padded_specs)
-                result['spectrogram'] = spec_features
+                result['mel_spectrogram'] = spec_features
                 result['max_length'] = max_length  # Store the max_length for future use
             
             result['labels'] = labels
@@ -328,8 +332,8 @@ class FeatureExtractor:
                 
                 normalized_features['mfcc'] = normalized_mfcc
             
-            if 'spectrogram' in features and feature_type in ['spectrogram', 'both']:
-                spec_data = features['spectrogram']
+            if 'mel_spectrogram' in features and feature_type in ['mel_spectrogram', 'both']:
+                spec_data = features['mel_spectrogram']
                 
                 # Reshape for normalization
                 original_shape = spec_data.shape
@@ -344,7 +348,7 @@ class FeatureExtractor:
                 # Reshape back
                 normalized_spec = normalized_spec.reshape(original_shape)
                 
-                normalized_features['spectrogram'] = normalized_spec
+                normalized_features['mel_spectrogram'] = normalized_spec
             
             normalized_features['labels'] = features['labels']
             

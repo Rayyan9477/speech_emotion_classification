@@ -1,0 +1,20 @@
+2025-05-14 04:02:02,352 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-14 04:02:02,352 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-14 04:02:10,952 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-14 05:47:23,861 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-14 05:48:49,655 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 05:48:56,234 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:04:48,365 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-14 07:04:57,415 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:05:03,107 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:18:33,009 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-14 07:18:41,294 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:18:47,092 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:53:27,906 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-14 07:54:44,232 - __main__ - ERROR - Error monitoring training process: 
+2025-05-14 07:54:48,515 - __main__ - ERROR - Error monitoring training process: 

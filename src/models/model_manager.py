@@ -304,27 +304,6 @@ class ModelManager:
 
     def get_latest_model(self, model_type=None):
         """
-        Get the most recently created model
-        
-        Args:
-            model_type (str, optional): Filter by model type
-            
-        Returns:
-            dict: Latest model entry or None if no models found
-        """
-        models = self.get_models(model_type)
-        if not models:
-            logger.warning(f"No models found" + (f" for type {model_type}" if model_type else ""))
-            return None
-            
-        # Sort by creation date (newest first)
-        sorted_models = sorted(models, key=lambda m: m["created"], reverse=True)
-        latest = sorted_models[0]
-        logger.info(f"Latest model: {latest['id']} created on {latest['created']}")
-        return latest
-
-    def get_latest_model(self, model_type=None):
-        """
         Get the most recently created model from the registry
 
         Args:

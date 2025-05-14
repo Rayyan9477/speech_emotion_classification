@@ -20,8 +20,9 @@ try:
     # Prefer absolute import that matches the new package structure
     from src.models.model_manager import ModelManager
 except ImportError:
-    logger.error("Could not import ModelManager. Make sure model_manager.py is in the current directory.")
-    sys.exit(1)
+    import sys, os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+    from models.model_manager import ModelManager
 
 def create_dummy_model(model_type="cnn"):
     """Create a simple dummy model for testing"""

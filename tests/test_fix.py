@@ -5,7 +5,12 @@ import os
 import numpy as np
 import tensorflow as tf
 import logging
-from tf_utils import custom_signbit
+try:
+    from src.utils.tf_utils import custom_signbit
+except ImportError:
+    import sys, os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'utils')))
+    from tf_utils import custom_signbit
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

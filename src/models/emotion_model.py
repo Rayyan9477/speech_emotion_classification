@@ -205,12 +205,6 @@ class EmotionModel:
                 restore_best_weights=True,
                 verbose=1
             ),
-            tf.keras.callbacks.TensorBoard(
-                log_dir=log_dir,
-                histogram_freq=1,
-                update_freq='epoch',
-                profile_batch=0  # No profiling for faster training
-            ),
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=os.path.join(log_dir, 'best_model.keras'),
                 save_best_only=True,
@@ -220,9 +214,15 @@ class EmotionModel:
             tf.keras.callbacks.ReduceLROnPlateau(
                 monitor='val_loss',
                 factor=0.5,
-                patience=patience // 2,
+                patience=patience // 2,  # Reduce LR patience is half of early stopping patience
                 min_lr=1e-6,
                 verbose=1
+            ),
+            tf.keras.callbacks.TensorBoard(
+                log_dir=log_dir,
+                histogram_freq=1,
+                update_freq='epoch',
+                profile_batch=0  # No profiling for faster training
             )
         ]
 

@@ -1,12 +1,23 @@
+import os
+import sys
+import logging
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix, classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import (accuracy_score, precision_recall_fscore_support,
+                           confusion_matrix, classification_report, ConfusionMatrixDisplay)
 import matplotlib.pyplot as plt
 import seaborn as sns
-import logging
-import os
 
+# Add the project root to the Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+
+# Import TensorFlow patch to fix integer overflow
+import backup.tf_patch
+
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -44,6 +55,12 @@ class ModelTrainer:
         """
         try:
             logger.info(f"Starting {self.model_type.upper()} model training for {epochs} epochs with batch size {batch_size}")
+            
+            # Convert data to float32 and int32
+            X_train = tf.cast(X_train, tf.float32)
+            y_train = tf.cast(y_train, tf.int32)
+            X_val = tf.cast(X_val, tf.float32)
+            y_val = tf.cast(y_val, tf.int32)
             
             # Train the model
             self.history = self.model.fit(
@@ -275,8 +292,7 @@ class ModelTrainer:
 
 
 if __name__ == "__main__":
-    # Example usage
-    from model import EmotionModel
+    from emotion_model import EmotionModel
     
     # Create a simple model for testing
     emotion_model = EmotionModel(num_classes=7)
@@ -285,13 +301,13 @@ if __name__ == "__main__":
     # Create trainer
     trainer = ModelTrainer(mlp_model, model_type='mlp')
     
-    # Generate dummy data for testing
-    X_train = np.random.random((100, 13))
-    y_train = np.random.randint(0, 7, size=(100,))
-    X_val = np.random.random((20, 13))
-    y_val = np.random.randint(0, 7, size=(20,))
-    X_test = np.random.random((30, 13))
-    y_test = np.random.randint(0, 7, size=(30,))
+    # Generate dummy data for testing with explicit dtypes
+    X_train = np.random.random((100, 13)).astype(np.float32)
+    y_train = np.random.randint(0, 7, size=(100,), dtype=np.int32)
+    X_val = np.random.random((20, 13)).astype(np.float32)
+    y_val = np.random.randint(0, 7, size=(20,), dtype=np.int32)
+    X_test = np.random.random((30, 13)).astype(np.float32)
+    y_test = np.random.randint(0, 7, size=(30,), dtype=np.int32)
     
     # Train model
     trainer.train(X_train, y_train, X_val, y_val, epochs=5)

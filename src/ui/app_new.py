@@ -1,11 +1,12 @@
-# filepath: c:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\src\ui\app.py
-
 import streamlit as st
 import os
 import sys
 import numpy as np
 import logging
 from pathlib import Path
+import subprocess
+import time
+import threading
 
 # Add the project root to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -51,7 +52,11 @@ class EmotionAnalyzer:
             'sad': '😢',
             'surprise': '😲'
         }
-        self.training_in_progress = Falsedef load_model(self):
+        self.training_in_progress = False
+        self.training_process = None
+        self.training_thread = None
+
+    def load_model(self):
         """Load the model from available sources or automatically train a new one if none found"""
         try:
             # First try to load from direct file
@@ -94,6 +99,144 @@ class EmotionAnalyzer:
             logger.error(f"Error loading model: {e}")
             st.error(f"❌ Error loading model: {str(e)}")
             return False
+
+    def train_model_automatically(self):
+        """Start the model training process automatically"""
+        try:
+            self.training_in_progress = True
+            st.info("🚀 Starting automatic model training. This may take a few minutes...")
+            
+            # Display a progress message
+            progress_placeholder = st.empty()
+            progress_placeholder.markdown("""
+            <div style='padding: 10px; border-radius: 5px; background-color: #e6f7ff; border: 1px solid #1890ff; margin: 10px 0;'>
+                <h4 style='margin: 0; color: #096dd9;'>⏳ Training in progress...</h4>
+                <p style='margin: 5px 0 0 0;'>Training a new emotion recognition model. This process may take 5-10 minutes depending on your system.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Create and start the training process
+            self.training_process = subprocess.Popen(
+                [sys.executable, "-m", "src.main", "--train", "--model-type", "cnn"], 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Create a thread to monitor the training process
+            self.training_thread = threading.Thread(
+                target=self._monitor_training_process,
+                args=(progress_placeholder,),
+                daemon=True
+            )
+            self.training_thread.start()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error starting training process: {e}")
+            self.training_in_progress = False
+            return False
+
+    def _monitor_training_process(self, progress_placeholder):
+        """Monitor the training process and update the UI with progress"""
+        try:
+            start_time = time.time()
+            
+            while self.training_process.poll() is None:
+                elapsed = time.time() - start_time
+                mins, secs = divmod(int(elapsed), 60)
+                
+                # Update progress message every few seconds
+                progress_placeholder.markdown(f"""
+                <div style='padding: 10px; border-radius: 5px; background-color: #e6f7ff; border: 1px solid #1890ff; margin: 10px 0;'>
+                    <h4 style='margin: 0; color: #096dd9;'>⏳ Training in progress...</h4>
+                    <p style='margin: 5px 0 0 0;'>Training a new emotion recognition model. Time elapsed: {mins:02d}:{secs:02d}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                time.sleep(2)
+            
+            # Process completed
+            return_code = self.training_process.returncode
+            stdout, stderr = self.training_process.communicate()
+            
+            if return_code == 0:
+                # Training successful
+                elapsed = time.time() - start_time
+                mins, secs = divmod(int(elapsed), 60)
+                progress_placeholder.markdown(f"""
+                <div style='padding: 10px; border-radius: 5px; background-color: #d4edda; border: 1px solid #28a745; margin: 10px 0;'>
+                    <h4 style='margin: 0; color: #155724;'>✅ Training completed!</h4>
+                    <p style='margin: 5px 0 0 0;'>Training completed successfully in {mins:02d}:{secs:02d}. Attempting to load the new model...</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Try to load the newly trained model
+                self.load_trained_model()
+            else:
+                # Training failed
+                progress_placeholder.markdown(f"""
+                <div style='padding: 10px; border-radius: 5px; background-color: #f8d7da; border: 1px solid #dc3545; margin: 10px 0;'>
+                    <h4 style='margin: 0; color: #721c24;'>❌ Training failed!</h4>
+                    <p style='margin: 5px 0 0 0;'>There was an error during model training. Please check the logs for details.</p>
+                </div>
+                """, unsafe_allow_html=True)
+                logger.error(f"Training process failed with return code {return_code}")
+                logger.error(f"Error output: {stderr}")
+            
+            # Reset training status
+            self.training_in_progress = False
+            
+        except Exception as e:
+            logger.error(f"Error in monitoring training process: {e}")
+            self.training_in_progress = False
+
+    def load_trained_model(self):
+        """Try to load the newly trained model after training completes"""
+        try:
+            # Short delay to ensure file system has updated
+            time.sleep(1)
+            
+            # Check if the model file exists now
+            if os.path.exists(self.model_path):
+                self.model = tf.keras.models.load_model(self.model_path)
+                self.loaded = True
+                st.success("✅ Newly trained model loaded successfully!")
+                st.experimental_rerun()
+                return True
+            
+            # If main model not found, check in logs directory for the most recent model
+            log_dir = Path('logs')
+            if log_dir.exists():
+                run_dirs = sorted(log_dir.glob('run_*'), reverse=True)
+                if run_dirs:
+                    latest_run = run_dirs[0]
+                    model_path = latest_run / 'best_model.keras'
+                    if model_path.exists():
+                        self.model = tf.keras.models.load_model(str(model_path))
+                        self.model_path = str(model_path)
+                        self.loaded = True
+                        st.success(f"✅ Newly trained model loaded from {latest_run.name}!")
+                        st.experimental_rerun()
+                        return True
+            
+            st.warning("⚠️ Training completed but couldn't find the new model. Please refresh the page.")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error loading trained model: {e}")
+            st.error(f"❌ Error loading model after training: {str(e)}")
+            return False
+
+    def check_and_load_new_model(self):
+        """Poll periodically for the new model to become available"""
+        if not self.training_in_progress:
+            return False
+            
+        # Display waiting message
+        st.info("⏳ Model training in progress. You can continue using other features, and the page will automatically reload when training completes.")
+        return False
 
     def process_audio(self, audio_file):
         """Process audio file and predict emotion"""
