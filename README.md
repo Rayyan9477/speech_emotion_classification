@@ -7,14 +7,48 @@ This project implements a speech emotion classification system using neural netw
 ```
 speech_emotion_classification/
 │
-├── data_loader.py       # Loads and splits the RAVDESS dataset
-├── feature_extractor.py # Extracts MFCCs and spectrograms from audio
-├── model.py             # Defines MLP and CNN architectures
-├── trainer.py           # Manages model training and evaluation
-├── optimizer.py         # Implements genetic algorithms for hyperparameter tuning
-├── main.py              # Integrates all components
-├── requirements.txt     # Project dependencies
-└── README.md            # Project documentation
+├── src/                       # Source code package
+│   ├── data/                 # Data loading and processing
+│   │   ├── __init__.py
+│   │   └── data_loader.py    # Dataset loading and splitting
+│   │
+│   ├── features/             # Feature extraction
+│   │   ├── __init__.py
+│   │   └── feature_extractor.py # Audio feature extraction
+│   │
+│   ├── models/               # Model definitions
+│   │   ├── __init__.py
+│   │   ├── emotion_model.py  # Model architectures
+│   │   ├── trainer.py        # Model training and evaluation
+│   │   └── model_manager.py  # Model management and tracking
+│   │
+│   ├── utils/                # Utility functions
+│   │   ├── __init__.py
+│   │   └── monkey_patch.py   # TensorFlow fixes
+│   │
+│   ├── visualization/        # Visualization tools
+│   │   ├── __init__.py
+│   │   └── visualizer.py     # Visualization utilities
+│   │
+│   └── ui/                   # User interface components
+│       ├── __init__.py
+│       ├── app.py            # Streamlit application
+│       └── dashboard.py      # Analysis dashboard
+│
+├── tests/                    # Test suite
+│   ├── conftest.py          # Test fixtures
+│   └── test_*.py            # Test modules
+│
+├── models/                   # Saved models
+├── results/                  # Analysis results
+├── logs/                     # Training logs
+├── demo_files/              # Demo audio files
+├── samples/                 # Sample audio files
+├── uploads/                 # User uploads
+│
+├── setup_package.py         # Package installation setup
+├── requirements.txt         # Project dependencies
+└── README.md               # Project documentation
 ```
 
 ## Features

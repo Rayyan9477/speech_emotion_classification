@@ -1,20 +1,37 @@
-2025-05-11 18:08:42,313 - __main__ - INFO - TensorFlow version: 2.19.0
-2025-05-11 18:08:42,747 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
-2025-05-11 18:08:43,952 - model_manager - INFO - Model registry saved to models/model_registry.json
-2025-05-11 18:08:43,952 - model_manager - INFO - Registered model cnn_20250511_180843 in registry
-2025-05-11 18:18:41,787 - __main__ - INFO - TensorFlow version: 2.19.0
-2025-05-11 18:18:42,230 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
-2025-05-11 18:18:42,963 - model_manager - INFO - Model registry saved to models/model_registry.json
-2025-05-11 18:18:42,963 - model_manager - INFO - Registered model cnn_20250511_181842 in registry
-2025-05-11 18:18:59,049 - __main__ - INFO - TensorFlow version: 2.19.0
-2025-05-11 18:18:59,050 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
-2025-05-11 18:18:59,548 - model_manager - INFO - Model registry saved to models/model_registry.json
-2025-05-11 18:18:59,549 - model_manager - INFO - Registered model cnn_20250511_181859 in registry
-2025-05-11 18:19:31,341 - __main__ - INFO - TensorFlow version: 2.19.0
-2025-05-11 18:19:31,342 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
-2025-05-11 18:19:31,828 - model_manager - INFO - Model registry saved to models/model_registry.json
-2025-05-11 18:19:31,829 - model_manager - INFO - Registered model cnn_20250511_181931 in registry
-2025-05-11 18:19:36,903 - __main__ - INFO - TensorFlow version: 2.19.0
-2025-05-11 18:19:36,903 - __main__ - WARNING - Audio recorder component not available, recording functionality will be disabled
-2025-05-11 18:19:37,429 - model_manager - INFO - Model registry saved to models/model_registry.json
-2025-05-11 18:19:37,430 - model_manager - INFO - Registered model cnn_20250511_181937 in registry
+2025-05-12 08:36:10,031 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 08:37:16,192 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 08:41:41,075 - src.models.emotion_model - INFO - CNN model built with 2 convolutional layers and 2 dense layers
+2025-05-12 08:41:41,075 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-12 08:49:57,498 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 08:56:44,693 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 08:56:55,945 - __main__ - ERROR - Error loading model: 'ModelManager' object has no attribute 'get_latest_model'
+2025-05-12 09:44:11,211 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-12 09:44:11,213 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-12 09:44:18,600 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 09:44:33,103 - __main__ - ERROR - Error processing audio: 'FeatureExtractor' object has no attribute 'extract_features'
+2025-05-12 10:55:42,360 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-12 10:55:42,360 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-12 10:55:49,685 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 10:57:21,741 - __main__ - ERROR - Error processing audio: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(1, 1, 128, 165)
+2025-05-12 11:01:19,835 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-12 11:01:19,835 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-12 11:01:22,905 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-12 11:02:54,792 - __main__ - ERROR - Error processing audio: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(1, 1, 128, 165)
+2025-05-13 06:05:52,232 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-13 06:05:52,232 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-13 06:05:59,597 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-13 06:12:46,531 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-05-13 06:12:46,749 - __main__ - ERROR - Error processing audio: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(1, 1, 128, 165)
+2025-05-13 06:20:33,083 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-13 06:20:33,083 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-13 06:20:39,696 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-13 06:23:53,111 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)

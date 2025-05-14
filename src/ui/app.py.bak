@@ -1,0 +1,259 @@
+import streamlit as st
+import os
+import sys
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import logging
+import json
+from pathlib import Path
+
+# Add the project root to Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+# Import monkey patch first to fix OverflowError
+from src.utils.monkey_patch import monkeypatch
+monkeypatch()
+
+# Try to import TensorFlow with error handling
+try:
+    import tensorflow as tf
+    tensorflow_available = True
+except ImportError as e:
+    tensorflow_available = False
+    tensorflow_error = str(e)
+
+import librosa
+import librosa.display
+import soundfile as sf
+import plotly.graph_objects as go
+
+# Import custom modules
+from src.models.emotion_model import EmotionModel
+from src.features.feature_extractor import FeatureExtractor
+from src.models.model_manager import ModelManager
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+class EmotionAnalyzer:
+    def __init__(self):
+        self.model = None
+        self.model_manager = ModelManager()
+        self.feature_extractor = FeatureExtractor()
+        self.model_path = os.path.join('models', 'cnn_emotion_model.keras')
+        self.emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+        self.loaded = False
+        self.emoji_map = {
+            'angry': '😠',
+            'disgust': '🤢',
+            'fear': '😨',
+            'happy': '😊',
+            'neutral': '😐',
+            'sad': '😢',
+            'surprise': '😲'
+        }
+
+    def load_model(self):
+        """Load the model from available sources"""
+        try:
+            # First try to load from model manager
+            latest_model = self.model_manager.get_latest_model()
+            if (latest_model):
+                self.model = self.model_manager.load_model(model_id=latest_model["id"])
+                if self.model:
+                    self.model_path = latest_model["path"]
+                    st.success(f"Successfully loaded model from registry: {os.path.basename(self.model_path)}")
+                    self.loaded = True
+                    return True
+
+            # Try direct file loading if model manager fails
+            if os.path.exists(self.model_path):
+                self.model = tf.keras.models.load_model(self.model_path)
+                st.success(f"Successfully loaded model from file: {os.path.basename(self.model_path)}")
+                self.loaded = True
+                return True
+
+            # Check logs directory for backup models
+            log_dir = Path('logs')
+            if log_dir.exists():
+                run_dirs = sorted(log_dir.glob('run_*'), reverse=True)
+                for run_dir in run_dirs:
+                    model_path = run_dir / 'best_model.keras'
+                    if model_path.exists():
+                        self.model = tf.keras.models.load_model(str(model_path))
+                        st.success(f"Loaded backup model from: {model_path.parent.name}")
+                        self.model_path = str(model_path)
+                        self.loaded = True
+                        return True
+
+            st.warning("No trained model found. Please train a model first.")
+            return False
+
+        except Exception as e:
+            logger.error(f"Error loading model: {e}")
+            st.error(f"Error loading model: {str(e)}")
+            return False    def analyze_audio(self, audio_file):
+        """Analyze emotion in audio file"""
+        try:
+            if not self.loaded and not self.load_model():
+                return
+
+            # Load and preprocess audio
+            y, sr = librosa.load(audio_file)
+            
+            # Display waveform
+            st.subheader("🌊 Audio Waveform")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(y=y, mode='lines', name='Waveform'))
+            fig.update_layout(
+                title="Audio Signal",
+                xaxis_title="Sample",
+                yaxis_title="Amplitude",
+                showlegend=False
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Extract features
+            features = self.feature_extractor.extract_features(y, sr)
+            if features is None:
+                st.error("❌ Failed to extract features from audio!")
+                return
+
+            # Make prediction
+            features = np.expand_dims(features, axis=0)
+            predictions = self.model.predict(features)
+            emotion_probs = dict(zip(self.emotion_labels, predictions[0]))
+
+            # Display results
+            self.display_results(emotion_probs)
+
+        except Exception as e:
+            logger.error(f"Error processing audio: {e}")
+            st.error(f"❌ Error processing audio: {str(e)}")    def display_results(self, emotion_probs):
+        """Display emotion analysis results"""
+        st.subheader("🎭 Emotion Analysis Results")
+
+        # Create bar chart with custom colors
+        colors = ['#FF9999', '#66B2FF', '#99FF99', '#FFCC99', '#FF99CC', '#99CCFF', '#FFB366']
+        fig = go.Figure(data=[
+            go.Bar(
+                x=list(emotion_probs.keys()),
+                y=list(emotion_probs.values()),
+                marker_color=colors
+            )
+        ])
+
+        fig.update_layout(
+            title={
+                'text': "Emotion Probabilities",
+                'y':0.95,
+                'x':0.5,
+                'xanchor': 'center',
+                'yanchor': 'top'
+            },
+            xaxis_title="Emotion",
+            yaxis_title="Probability",
+            yaxis_range=[0, 1],
+            plot_bgcolor='white'
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Show top 3 emotions with emojis
+        top_emotions = sorted(emotion_probs.items(), key=lambda x: x[1], reverse=True)[:3]
+        st.subheader("🏆 Top 3 Detected Emotions:")
+        
+        for emotion, prob in top_emotions:
+            emoji = self.emoji_map.get(emotion, '')
+            st.markdown(f"### {emoji} {emotion.capitalize()}: {prob:.1%}")
+
+def main():
+    # Page config
+    st.set_page_config(
+        page_title="Speech Emotion Analyzer",
+        page_icon="🎭",
+        layout="wide"
+    )
+
+    # Custom CSS
+    st.markdown("""
+        <style>
+        .stApp {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .stAlert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Header
+    st.title("🎙️ Speech Emotion Analyzer")
+    st.markdown("""
+        This application analyzes the emotional content of speech in audio files.
+        Upload a WAV file to get started!
+    """)
+
+    # Initialize analyzer
+    analyzer = EmotionAnalyzer()
+
+    # Sidebar
+    st.sidebar.header("📚 Demo Files")
+    demo_files = {
+        "Happy Sample": "demo_files/happy_sample.wav",
+        "Sad Sample": "demo_files/sad_sample.wav",
+        "Angry Sample": "demo_files/angry_sample.wav"
+    }
+    
+    selected_demo = st.sidebar.selectbox(
+        "Try a demo file:",
+        ["Select a demo..."] + list(demo_files.keys())
+    )
+
+    # Main interface
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("📤 Upload Your Audio")
+        uploaded_file = st.file_uploader(
+            "Choose a WAV file",
+            type=['wav'],
+            help="Upload a WAV file containing speech"
+        )
+
+    # Process audio
+    if uploaded_file is not None:
+        st.audio(uploaded_file)
+        analyzer.analyze_audio(uploaded_file)
+    elif selected_demo != "Select a demo...":
+        demo_path = demo_files[selected_demo]
+        if os.path.exists(demo_path):
+            st.audio(demo_path)
+            analyzer.analyze_audio(demo_path)
+        else:
+            st.error(f"❌ Demo file not found: {demo_path}")
+
+    # Sidebar information
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### ℹ️ About")
+    st.sidebar.markdown("""
+        This app uses deep learning to recognize emotions in speech.
+        Currently supported emotions:
+        - 😠 Angry
+        - 🤢 Disgust
+        - 😨 Fear
+        - 😊 Happy
+        - 😐 Neutral
+        - 😢 Sad
+        - 😲 Surprise
+    """)
+
+if __name__ == "__main__":
+    main()
