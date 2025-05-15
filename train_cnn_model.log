@@ -1,0 +1,44 @@
+2025-05-15 07:24:35,400 - __main__ - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:24:35,763 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:24:35,763 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 07:24:35,763 - __main__ - WARNING - Feature files not found. Generating random data for demonstration.
+2025-05-15 07:24:36,425 - __main__ - INFO - X_train shape: (500, 128, 128, 1), y_train shape: (500,)
+2025-05-15 07:24:36,425 - __main__ - INFO - X_val shape: (100, 128, 128, 1), y_val shape: (100,)
+2025-05-15 07:24:36,425 - __main__ - INFO - X_test shape: (100, 128, 128, 1), y_test shape: (100,)
+2025-05-15 07:24:36,425 - __main__ - INFO - Creating CNN model with 7 classes
+2025-05-15 07:24:36,425 - src.models.emotion_model - INFO - Original input shape: (128, 128, 1)
+2025-05-15 07:24:36,571 - src.models.emotion_model - INFO - Enhanced CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 07:24:36,571 - src.models.emotion_model - INFO - Input shape: (128, 128, 1)
+2025-05-15 07:24:36,615 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 07:24:36,615 - src.models.trainer - INFO - Starting CNN model training for 50 epochs with batch size 32
+2025-05-15 07:24:36,615 - src.models.trainer - INFO - X_train shape: (500, 128, 128, 1), y_train shape: (500,)
+2025-05-15 07:24:36,615 - src.models.trainer - INFO - X_val shape: (100, 128, 128, 1), y_val shape: (100,)
+2025-05-15 07:26:09,895 - src.models.trainer - INFO - Training completed in 93.28 seconds (1.55 minutes)
+2025-05-15 07:26:12,268 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 07:26:12,268 - __main__ - INFO - Training completed in 95.65 seconds (1.59 minutes)
+2025-05-15 07:26:12,268 - __main__ - INFO - Evaluating model on test data
+2025-05-15 07:26:12,545 - src.models.trainer - INFO - Test loss: 1.9763
+2025-05-15 07:26:12,545 - src.models.trainer - INFO - Test accuracy: 0.1500
+2025-05-15 07:26:13,226 - src.models.trainer - WARNING - Could not calculate ROC AUC: OneHotEncoder.__init__() got an unexpected keyword argument 'sparse'
+2025-05-15 07:26:13,668 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 07:26:14,060 - src.models.trainer - INFO - Prediction distribution plot saved to results/cnn_prediction_distribution.png
+2025-05-15 07:26:14,060 - src.models.trainer - INFO - Class metrics saved to results/reports/cnn_class_metrics.csv
+2025-05-15 07:26:14,460 - src.models.trainer - INFO - Per-class metrics plot saved to results/cnn_per_class_metrics.png
+2025-05-15 07:26:14,460 - absl - WARNING - The `save_format` argument is deprecated in Keras 3. We recommend removing this argument as it can be inferred from the file path. Received: save_format=keras
+2025-05-15 07:26:14,549 - src.models.trainer - INFO - Model saved to models\cnn_emotion_model_20250515_072614.keras
+2025-05-15 07:26:14,549 - absl - WARNING - The `save_format` argument is deprecated in Keras 3. We recommend removing this argument as it can be inferred from the file path. Received: save_format=h5
+2025-05-15 07:26:14,549 - absl - WARNING - You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2025-05-15 07:26:14,587 - src.models.trainer - INFO - Model also saved in h5 format at models\cnn_emotion_model_20250515_072614.h5 for backward compatibility
+2025-05-15 07:26:14,603 - src.models.trainer - INFO - Model architecture saved to models\cnn_emotion_model_20250515_072614_architecture.json
+2025-05-15 07:26:14,609 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 07:26:14,609 - src.models.model_manager - INFO - Registered model cnn_20250515_072614 in registry
+2025-05-15 07:26:14,609 - src.models.model_manager - INFO - Training history saved to results\cnn_training_history.json
+2025-05-15 07:26:14,609 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 07:26:14,623 - src.models.model_manager - INFO - Test data saved to results\cnn_X_test.npy and results\cnn_y_test.npy
+2025-05-15 07:26:14,623 - __main__ - INFO - Model saved to models\cnn_emotion_model_20250515_072614.keras and registered with ID: cnn_20250515_072614
+2025-05-15 07:26:14,623 - __main__ - INFO - Test accuracy: 0.1500
+2025-05-15 07:26:14,627 - __main__ - INFO - ===== Training Summary =====
+2025-05-15 07:26:14,627 - __main__ - INFO - Model ID: cnn_20250515_072614
+2025-05-15 07:26:14,629 - __main__ - INFO - Accuracy: 0.1500
+2025-05-15 07:26:14,629 - __main__ - INFO - F1 Score: 0.0391
+2025-05-15 07:26:14,629 - __main__ - INFO - ============================

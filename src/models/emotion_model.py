@@ -1,12 +1,20 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, Dropout, Activation, BatchNormalization
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Input
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 import logging
 import os
 import time
+
+# Import monkey patch to fix TensorFlow overflow issues
+try:
+    from src.utils.monkey_patch import monkeypatch
+    monkeypatch()
+except ImportError:
+    pass
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -93,26 +101,46 @@ class EmotionModel:
         if params is None:
             params = {
                 'learning_rate': 0.001,
-                'num_conv_layers': 2,
-                'filters': [32, 64],
+                'num_conv_layers': 3,  # Increased from 2 to 3
+                'filters': [32, 64, 128],  # Added third layer with more filters
                 'kernel_size': (3, 3),
                 'pool_size': (2, 2),
                 'num_dense_layers': 2,
                 'dense_units': [128, 64],
-                'dropout_rate': 0.3
+                'dropout_rate': 0.3,
+                'use_residual': True,  # New parameter for residual connections
+                'l2_regularization': 0.0001  # L2 regularization for weights
             }
         
         try:
             # Ensure input shape is a tuple with 3 dimensions
+            if not isinstance(input_shape, tuple):
+                input_shape = tuple(input_shape)
+                
+            logger.info(f"Original input shape: {input_shape}")
+            
             if len(input_shape) != 3:
                 logger.warning(f"Expected 3D input shape (height, width, channels), got {input_shape}. Attempting to fix...")
                 if len(input_shape) == 2:
                     # Assuming missing channel dimension
                     input_shape = (*input_shape, 1)
                     logger.info(f"Fixed input shape to {input_shape}")
+                elif len(input_shape) == 1:
+                    # Try to reshape a 1D input to a reasonable 2D + channel format
+                    # Calculate dimensions for a roughly square image
+                    dim = int(np.sqrt(input_shape[0]))
+                    if dim * dim == input_shape[0]:
+                        input_shape = (dim, dim, 1)
+                    else:
+                        # If perfect square isn't possible, use a rectangular shape
+                        input_shape = (input_shape[0], 1, 1)
+                    logger.info(f"Converted 1D input shape to {input_shape}")
                 else:
                     logger.error(f"Cannot fix input shape {input_shape}. Expected 3D shape.")
                     raise ValueError(f"Invalid input shape: {input_shape}. Expected 3D shape.")
+            
+            # Import regularizer
+            from tensorflow.keras.regularizers import l2
             
             # Use functional API instead of Sequential to handle variable input shapes
             inputs = Input(shape=input_shape)
@@ -122,32 +150,50 @@ class EmotionModel:
                 filters=params['filters'][0],
                 kernel_size=params['kernel_size'],
                 padding='same',
-                activation='relu'
+                activation='relu',
+                kernel_regularizer=l2(params.get('l2_regularization', 0.0001))
             )(inputs)
             x = BatchNormalization()(x)
             x = MaxPooling2D(pool_size=params['pool_size'])(x)
             x = Dropout(params['dropout_rate'])(x)
             
-            # Additional convolutional layers
+            # Additional convolutional layers with residual connections
             for i in range(1, params['num_conv_layers']):
                 filters = params['filters'][i] if i < len(params['filters']) else 64
+                
+                # Store input for residual connection
+                if params.get('use_residual', False) and i > 1:
+                    res_connection = x
+                
+                # Convolutional block
                 x = Conv2D(
                     filters=filters,
                     kernel_size=params['kernel_size'],
                     padding='same',
-                    activation='relu'
+                    activation='relu',
+                    kernel_regularizer=l2(params.get('l2_regularization', 0.0001))
                 )(x)
                 x = BatchNormalization()(x)
+                
+                # Add residual connection if enabled and dimensions match
+                if params.get('use_residual', False) and i > 1 and x.shape[-1] == res_connection.shape[-1]:
+                    x = tf.keras.layers.add([x, res_connection])
+                    logger.info(f"Added residual connection at layer {i}")
+                
                 x = MaxPooling2D(pool_size=params['pool_size'])(x)
                 x = Dropout(params['dropout_rate'])(x)
             
-            # Flatten layer - this handles the variable input shape
-            x = Flatten()(x)
+            # Global average pooling to reduce parameters
+            x = tf.keras.layers.GlobalAveragePooling2D()(x)
             
             # Dense layers
             for i in range(params['num_dense_layers']):
                 units = params['dense_units'][i] if i < len(params['dense_units']) else 64
-                x = Dense(units, activation='relu')(x)
+                x = Dense(
+                    units, 
+                    activation='relu',
+                    kernel_regularizer=l2(params.get('l2_regularization', 0.0001))
+                )(x)
                 x = BatchNormalization()(x)
                 x = Dropout(params['dropout_rate'])(x)
             
@@ -170,7 +216,7 @@ class EmotionModel:
                 metrics=['accuracy']
             )
             
-            logger.info(f"CNN model built with {params['num_conv_layers']} convolutional layers and {params['num_dense_layers']} dense layers")
+            logger.info(f"Enhanced CNN model built with {params['num_conv_layers']} convolutional layers and {params['num_dense_layers']} dense layers")
             logger.info(f"Input shape: {input_shape}")
             model.summary(print_fn=logger.info)
             
@@ -187,28 +233,22 @@ class EmotionModel:
         Args:
             patience (int): Number of epochs with no improvement after which training will be stopped.
             log_dir (str): Directory to save TensorBoard logs.
-            
+        
         Returns:
             list: List of callbacks.
         """
         # Create logs directory if it doesn't exist
         os.makedirs(log_dir, exist_ok=True)
-        
         # Create a unique log directory for each run
         run_id = time.strftime('run_%Y%m%d_%H%M%S')
         log_dir = os.path.join(log_dir, run_id)
-        
-        return [
-            EarlyStopping(
-                monitor='val_loss',
-                patience=patience,
-                restore_best_weights=True,
-                verbose=1
-            ),
+        os.makedirs(log_dir, exist_ok=True)
+        callbacks = [
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=os.path.join(log_dir, 'best_model.keras'),
                 save_best_only=True,
                 monitor='val_loss',
+                mode='min',
                 verbose=1
             ),
             tf.keras.callbacks.ReduceLROnPlateau(
@@ -216,7 +256,8 @@ class EmotionModel:
                 factor=0.5,
                 patience=patience // 2,  # Reduce LR patience is half of early stopping patience
                 min_lr=1e-6,
-                verbose=1
+                verbose=1,
+                mode='min'
             ),
             tf.keras.callbacks.TensorBoard(
                 log_dir=log_dir,
@@ -225,6 +266,15 @@ class EmotionModel:
                 profile_batch=0  # No profiling for faster training
             )
         ]
+        # Add a simple CSV logger for robust history tracking
+        csv_logger = tf.keras.callbacks.CSVLogger(
+            os.path.join(log_dir, 'training_log.csv'),
+            append=True,
+            separator=','
+        )
+        callbacks.append(csv_logger)
+        logger.info(f"Callbacks prepared. Log directory: {log_dir}")
+        return callbacks
 
 
 if __name__ == "__main__":

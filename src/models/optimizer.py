@@ -1,10 +1,20 @@
 import numpy as np
 import random
+import os
+import sys
+import time
 from deap import base, creator, tools, algorithms
-from model import EmotionModel
-from trainer import ModelTrainer
+from .emotion_model import EmotionModel
+from .trainer import ModelTrainer
 import tensorflow as tf
 import logging
+
+# Import monkey patch to fix TensorFlow overflow issues
+try:
+    from src.utils.monkey_patch import monkeypatch
+    monkeypatch()
+except ImportError:
+    pass
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -162,6 +172,8 @@ class GeneticOptimizer:
             
             # Train model with early stopping
             callbacks = self.emotion_model.get_callbacks(patience=3)
+            # Remove EarlyStopping from callbacks
+            callbacks = [cb for cb in callbacks if not isinstance(cb, tf.keras.callbacks.EarlyStopping)]
             history = trainer.train(
                 X_train, y_train,
                 X_val, y_val,
@@ -245,6 +257,8 @@ class GeneticOptimizer:
             
             # Train model with early stopping
             callbacks = self.emotion_model.get_callbacks(patience=3)
+            # Remove EarlyStopping from callbacks
+            callbacks = [cb for cb in callbacks if not isinstance(cb, tf.keras.callbacks.EarlyStopping)]
             history = trainer.train(
                 X_train, y_train,
                 X_val, y_val,

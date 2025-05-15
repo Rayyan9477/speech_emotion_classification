@@ -59,45 +59,49 @@ class FeatureConfig:
 
 @dataclass
 class ModelArchConfig:
-    """Model architecture configuration"""
-    input_shape: List[Optional[int]]
-    model_path: str
-    backup_path: str
-    batch_size: int = 32
-    epochs: int = 50
-    learning_rate: float = 0.001
-    validation_split: float = 0.2
-    early_stopping_patience: int = 5
+    """Base model architecture configuration"""
+    learning_rate: float = 0.00003  # Much lower learning rate
+    early_stopping_patience: int = 10
     reduce_lr_patience: int = 3
-    dropout_rate: float = 0.5
+    reduce_lr_factor: float = 0.5  # Less aggressive LR reduction
+    validation_split: float = 0.15
+    dropout_rate: float = 0.4  # Increased dropout
+    batch_size: int = 32
+    epochs: int = 100
     optimizer: str = "adam"
-    loss: str = "sparse_categorical_crossentropy"
+    loss: str = "sparse_categorical_crossentropy" 
     metrics: List[str] = field(default_factory=lambda: ["accuracy"])
+    use_weight_decay: bool = True
+    weight_decay: float = 0.0001  # L2 regularization
+    gradient_clip: float = 1.0  # Gradient clipping
 
 @dataclass
 class CNNConfig(ModelArchConfig):
-    """CNN-specific configuration"""
-    conv_layers: List[int] = field(default_factory=lambda: [32, 64, 128])
-    dense_layers: List[int] = field(default_factory=lambda: [256, 128])
+    """CNN model configuration with simpler architecture"""
+    conv_layers: List[int] = field(default_factory=lambda: [16, 32, 32])  # Fewer filters
+    conv_kernel_size: int = 3
+    pool_size: int = 2
+    pool_stride: int = 2
+    dense_layers: List[int] = field(default_factory=lambda: [128, 64])  # Smaller dense layers
+    use_batch_norm: bool = True
+    kernel_initializer: str = "he_normal"  # Better initialization for ReLU
+    bias_initializer: str = "zeros"
+    activation: str = "relu"
+    model_path: str = "models/cnn_emotion_model.keras"
+    backup_path: str = "models/cnn_emotion_model.h5"
 
 @dataclass
 class MLPConfig(ModelArchConfig):
     """MLP-specific configuration"""
     hidden_layers: List[int] = field(default_factory=lambda: [512, 256, 128])
+    model_path: str = "models/mlp_emotion_model.keras"
+    backup_path: str = "models/mlp_emotion_model.h5"
 
 @dataclass
 class ModelsConfig:
     """Combined models configuration"""
-    cnn: CNNConfig = field(default_factory=lambda: CNNConfig(
-        input_shape=[128, None, 1],
-        model_path="models/cnn_emotion_model.keras",
-        backup_path="models/cnn_emotion_model.h5"
-    ))
-    mlp: MLPConfig = field(default_factory=lambda: MLPConfig(
-        input_shape=[13],
-        model_path="models/mlp_emotion_model.keras",
-        backup_path="models/mlp_emotion_model.h5"
-    ))
+    cnn: CNNConfig = field(default_factory=lambda: CNNConfig())
+    mlp: MLPConfig = field(default_factory=lambda: MLPConfig())
 
 @dataclass
 class TrainingConfig:

@@ -1,0 +1,80 @@
+2025-05-15 06:12:15,865 - __main__ - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Created directory: models
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Created directory: logs
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Created directory: results
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Created directory: results/reports
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - Generating dummy data with shape (20, 20, 1)
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - X_train shape: (100, 20, 20, 1), y_train shape: (100,)
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - X_val shape: (30, 20, 20, 1), y_val shape: (30,)
+2025-05-15 06:12:15,868 - src.utils.training_utils - INFO - X_test shape: (30, 20, 20, 1), y_test shape: (30,)
+2025-05-15 06:12:17,422 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 06:12:17,422 - __main__ - INFO - Using custom model classes from src.models
+2025-05-15 06:12:17,422 - __main__ - INFO - Creating model...
+2025-05-15 06:12:17,422 - src.models.emotion_model - INFO - Original input shape: (20, 20, 1)
+2025-05-15 06:12:17,557 - src.models.emotion_model - INFO - CNN model built with 2 convolutional layers and 2 dense layers
+2025-05-15 06:12:17,557 - src.models.emotion_model - INFO - Input shape: (20, 20, 1)
+2025-05-15 07:23:08,766 - __main__ - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:08,771 - src.utils.training_utils - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:08,772 - src.utils.training_utils - INFO - Created directory: models
+2025-05-15 07:23:08,772 - src.utils.training_utils - INFO - Created directory: logs
+2025-05-15 07:23:08,773 - src.utils.training_utils - INFO - Created directory: results
+2025-05-15 07:23:08,773 - src.utils.training_utils - INFO - Created directory: results/reports
+2025-05-15 07:23:08,774 - src.utils.training_utils - INFO - Generating dummy data with shape (20, 20, 1)
+2025-05-15 07:23:08,775 - src.utils.training_utils - INFO - X_train shape: (100, 20, 20, 1), y_train shape: (100,)
+2025-05-15 07:23:08,775 - src.utils.training_utils - INFO - X_val shape: (30, 20, 20, 1), y_val shape: (30,)
+2025-05-15 07:23:08,776 - src.utils.training_utils - INFO - X_test shape: (30, 20, 20, 1), y_test shape: (30,)
+2025-05-15 07:23:10,228 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:10,229 - __main__ - INFO - Using custom model classes from src.models
+2025-05-15 07:23:10,229 - __main__ - INFO - Creating model...
+2025-05-15 07:23:10,229 - src.models.emotion_model - INFO - Original input shape: (20, 20, 1)
+2025-05-15 07:23:10,404 - src.models.emotion_model - INFO - Enhanced CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 07:23:10,404 - src.models.emotion_model - INFO - Input shape: (20, 20, 1)
+2025-05-15 07:23:44,628 - __main__ - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:44,631 - src.utils.training_utils - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:44,632 - src.utils.training_utils - INFO - Created directory: models
+2025-05-15 07:23:44,632 - src.utils.training_utils - INFO - Created directory: logs
+2025-05-15 07:23:44,633 - src.utils.training_utils - INFO - Created directory: results
+2025-05-15 07:23:44,634 - src.utils.training_utils - INFO - Created directory: results/reports
+2025-05-15 07:23:44,634 - src.utils.training_utils - INFO - Generating dummy data with shape (20, 20, 1)
+2025-05-15 07:23:44,636 - src.utils.training_utils - INFO - X_train shape: (100, 20, 20, 1), y_train shape: (100,)
+2025-05-15 07:23:44,636 - src.utils.training_utils - INFO - X_val shape: (30, 20, 20, 1), y_val shape: (30,)
+2025-05-15 07:23:44,636 - src.utils.training_utils - INFO - X_test shape: (30, 20, 20, 1), y_test shape: (30,)
+2025-05-15 07:23:45,017 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-05-15 07:23:45,018 - __main__ - INFO - Using custom model classes from src.models
+2025-05-15 07:23:45,018 - __main__ - INFO - Creating model...
+2025-05-15 07:23:45,018 - src.models.emotion_model - INFO - Original input shape: (20, 20, 1)
+2025-05-15 07:23:45,177 - src.models.emotion_model - INFO - Enhanced CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 07:23:45,177 - src.models.emotion_model - INFO - Input shape: (20, 20, 1)
+2025-05-15 07:23:45,211 - src.models.emotion_model - INFO - Callbacks prepared. Log directory: logs\run_20250515_072345
+2025-05-15 07:23:45,212 - __main__ - INFO - Using custom EmotionModel and ModelTrainer classes
+2025-05-15 07:23:45,236 - __main__ - INFO - Training model for 30 epochs...
+2025-05-15 07:23:45,236 - src.models.trainer - INFO - Starting CNN model training for 30 epochs with batch size 16
+2025-05-15 07:23:45,236 - src.models.trainer - INFO - X_train shape: (100, 20, 20, 1), y_train shape: (100,)
+2025-05-15 07:23:45,237 - src.models.trainer - INFO - X_val shape: (30, 20, 20, 1), y_val shape: (30,)
+2025-05-15 07:24:07,132 - src.models.trainer - INFO - Training completed in 21.90 seconds (0.36 minutes)
+2025-05-15 07:24:09,727 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 07:24:09,727 - __main__ - INFO - Training completed in 24.49 seconds
+2025-05-15 07:24:10,009 - src.utils.training_utils - INFO - Training history plot saved to results\basic_model_training_history.png
+2025-05-15 07:24:10,009 - __main__ - INFO - Training history plot saved to results\basic_model_training_history.png
+2025-05-15 07:24:10,009 - __main__ - INFO - Evaluating model...
+2025-05-15 07:24:10,096 - src.models.trainer - INFO - Test loss: 5.4285
+2025-05-15 07:24:10,096 - src.models.trainer - INFO - Test accuracy: 0.1333
+2025-05-15 07:24:10,344 - src.models.trainer - WARNING - Could not calculate ROC AUC: OneHotEncoder.__init__() got an unexpected keyword argument 'sparse'
+2025-05-15 07:24:10,802 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 07:24:11,230 - src.models.trainer - INFO - Prediction distribution plot saved to results/cnn_prediction_distribution.png
+2025-05-15 07:24:11,230 - src.models.trainer - INFO - Class metrics saved to results/reports/cnn_class_metrics.csv
+2025-05-15 07:24:11,681 - src.models.trainer - INFO - Per-class metrics plot saved to results/cnn_per_class_metrics.png
+2025-05-15 07:24:11,681 - __main__ - INFO - Test loss: 5.4285
+2025-05-15 07:24:11,681 - __main__ - INFO - Test accuracy: 0.1333
+2025-05-15 07:24:11,681 - absl - WARNING - The `save_format` argument is deprecated in Keras 3. We recommend removing this argument as it can be inferred from the file path. Received: save_format=keras
+2025-05-15 07:24:11,753 - src.models.trainer - INFO - Model saved to models\basic_emotion_model_20250515_072411.keras
+2025-05-15 07:24:11,753 - absl - WARNING - The `save_format` argument is deprecated in Keras 3. We recommend removing this argument as it can be inferred from the file path. Received: save_format=h5
+2025-05-15 07:24:11,753 - absl - WARNING - You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2025-05-15 07:24:11,814 - src.models.trainer - INFO - Model also saved in h5 format at models\basic_emotion_model_20250515_072411.h5 for backward compatibility
+2025-05-15 07:24:11,814 - src.models.trainer - INFO - Model architecture saved to models\basic_emotion_model_20250515_072411_architecture.json
+2025-05-15 07:24:11,814 - __main__ - INFO - Model saved to models\basic_emotion_model_20250515_072411.keras
+2025-05-15 07:24:11,828 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 07:24:11,829 - src.models.model_manager - INFO - Registered model cnn_20250515_072411 in registry
+2025-05-15 07:24:11,829 - __main__ - INFO - Model registered with ModelManager
+2025-05-15 07:24:11,829 - __main__ - INFO - Model training completed successfully!

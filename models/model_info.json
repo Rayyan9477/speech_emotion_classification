@@ -1,16 +1,13 @@
 {
-    "name": "DefaultCNN",
-    "version": "0.1.0",
-    "accuracy": 0.0,
-    "last_trained": "N/A",
-    "features": "MFCC",
-    "classes": [
-        "angry",
-        "disgust",
-        "fear",
-        "happy",
-        "neutral",
-        "sad",
-        "surprise"
-    ]
+    "model_path": "models\\cnn_emotion_model.keras",
+    "model_type": "cnn",
+    "created": "2025-05-15 07:27:11",
+    "metrics": {
+        "accuracy": 0.20000000298023224,
+        "loss": 4.061727523803711,
+        "precision_avg": 0.04081632653061225,
+        "recall_avg": 0.2,
+        "f1_avg": 0.06779661016949153
+    },
+    "description": "CNN model for speech emotion classification"
 }

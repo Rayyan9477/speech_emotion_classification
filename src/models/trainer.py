@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import logging
 import numpy as np
 import pandas as pd
@@ -9,88 +10,393 @@ from sklearn.metrics import (accuracy_score, precision_recall_fscore_support,
                            confusion_matrix, classification_report, ConfusionMatrixDisplay)
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Add the project root to the Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, project_root)
-
-# Import TensorFlow patch to fix integer overflow
-import backup.tf_patch
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Import monkey patch to fix TensorFlow overflow issues
+try:
+    from src.utils.monkey_patch import monkeypatch
+    # Apply the patch
+    if monkeypatch():
+        logger.info("Successfully applied TensorFlow monkey patch")
+    else:
+        logger.warning("Failed to apply TensorFlow monkey patch")
+except ImportError:
+    logger.warning("Could not import monkey_patch, some TensorFlow operations may fail")
 
 class ModelTrainer:
     """
     Class for training and evaluating speech emotion classification models.
     """
     def __init__(self, model, model_type='cnn'):
-        """
-        Initialize the ModelTrainer with a model.
-        
-        Args:
-            model (tensorflow.keras.models.Model): The model to train and evaluate.
-            model_type (str): Type of the model ('mlp' or 'cnn').
-        """
+        """Initialize ModelTrainer."""
         self.model = model
         self.model_type = model_type
         self.history = None
+        self.training_time = None
         
-    def train(self, X_train, y_train, X_val, y_val, batch_size=32, epochs=50, callbacks=None):
-        """
-        Train the model.
-        
-        Args:
-            X_train (numpy.ndarray): Training features.
-            y_train (numpy.ndarray): Training labels.
-            X_val (numpy.ndarray): Validation features.
-            y_val (numpy.ndarray): Validation labels.
-            batch_size (int): Batch size for training.
-            epochs (int): Maximum number of epochs.
-            callbacks (list): List of callbacks for training.
+        # Create required directories
+        for dir_path in ['results', 'results/reports']:
+            os.makedirs(dir_path, exist_ok=True)
             
-        Returns:
-            dict: Training history.
-        """
+    def train(self, X_train, y_train, X_val, y_val, batch_size=32, epochs=50, callbacks=None):
+        """Train the model with proper error handling and advanced training features."""
         try:
+            start_time = time.time()
             logger.info(f"Starting {self.model_type.upper()} model training for {epochs} epochs with batch size {batch_size}")
             
-            # Convert data to float32 and int32
-            X_train = tf.cast(X_train, tf.float32)
-            y_train = tf.cast(y_train, tf.int32)
-            X_val = tf.cast(X_val, tf.float32)
-            y_val = tf.cast(y_val, tf.int32)
+            # Setup default callbacks if none provided
+            if callbacks is None:
+                # Create results directory if it doesn't exist
+                os.makedirs('models', exist_ok=True)
+                
+                # Setup model checkpoint to save best model
+                checkpoint_path = os.path.join('models', f'{self.model_type}_best_model.keras')
+                checkpoint = tf.keras.callbacks.ModelCheckpoint(
+                    checkpoint_path,
+                    monitor='val_loss',
+                    save_best_only=True,
+                    mode='min',
+                    verbose=1
+                )
+                
+                # Setup early stopping with reasonable patience
+                early_stopping = tf.keras.callbacks.EarlyStopping(
+                    monitor='val_loss',
+                    patience=15,  # Increased patience for better convergence
+                    restore_best_weights=True,
+                    verbose=1
+                )
+                
+                # Add ReduceLROnPlateau for adaptive learning rate
+                reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+                    monitor='val_loss',
+                    factor=0.5,  # Reduce learning rate by half
+                    patience=5,  # Wait 5 epochs before reducing
+                    min_lr=1e-6,
+                    verbose=1
+                )
+                
+                # Add TensorBoard logging
+                log_dir = os.path.join('logs', datetime.now().strftime("%Y%m%d-%H%M%S"))
+                tensorboard = tf.keras.callbacks.TensorBoard(
+                    log_dir=log_dir,
+                    histogram_freq=1,
+                    update_freq='epoch',
+                    profile_batch=0  # Disable profiling for better performance
+                )
+                
+                # Setup callbacks list
+                callbacks = [checkpoint, early_stopping, reduce_lr, tensorboard]
+                logger.info("Using enhanced callbacks: ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, and TensorBoard")
             
-            # Train the model
+            # Data preprocessing and validation
+            # Convert input data to proper dtype if needed
+            X_train = np.asarray(X_train, dtype=np.float32)
+            y_train = np.asarray(y_train, dtype=np.int32)
+            X_val = np.asarray(X_val, dtype=np.float32)
+            y_val = np.asarray(y_val, dtype=np.int32)
+            
+            # Log data shapes
+            logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+            logger.info(f"X_val shape: {X_val.shape}, y_val shape: {y_val.shape}")
+            
+            # Check for NaN values
+            if np.isnan(X_train).any() or np.isnan(X_val).any():
+                logger.warning("NaN values detected in training data. Replacing with zeros.")
+                X_train = np.nan_to_num(X_train)
+                X_val = np.nan_to_num(X_val)
+            
+            # Check for class imbalance
+            class_counts = np.bincount(y_train)
+            if len(class_counts) > 0 and (max(class_counts) / min(class_counts) > 2):
+                logger.warning(f"Class imbalance detected. Class distribution: {class_counts}")
+                logger.info("Consider using class weights or data augmentation for better performance")
+                
+                # Calculate class weights
+                total_samples = len(y_train)
+                n_classes = len(class_counts)
+                class_weights = {i: total_samples / (n_classes * count) for i, count in enumerate(class_counts)}
+                logger.info(f"Calculated class weights: {class_weights}")
+            else:
+                class_weights = None
+            
+            # Configure mixed precision if available (for faster training on compatible GPUs)
+            try:
+                mixed_precision = False
+                if tf.config.list_physical_devices('GPU'):
+                    policy = tf.keras.mixed_precision.Policy('mixed_float16')
+                    tf.keras.mixed_precision.set_global_policy(policy)
+                    mixed_precision = True
+                    logger.info("Using mixed precision training for performance improvement")
+            except Exception as mp_error:
+                logger.info(f"Mixed precision not available or not supported: {mp_error}")
+            
+            # Train the model with class weights if available
             self.history = self.model.fit(
                 X_train, y_train,
                 validation_data=(X_val, y_val),
                 batch_size=batch_size,
                 epochs=epochs,
                 callbacks=callbacks,
+                class_weight=class_weights,  # Apply class weights if available
                 verbose=1
             )
             
+            self.training_time = time.time() - start_time
+            logger.info(f"Training completed in {self.training_time:.2f} seconds ({self.training_time/60:.2f} minutes)")
+            
             # Plot training history
             self._plot_training_history()
-            
             return self.history
-        
         except Exception as e:
-            logger.error(f"Error training model: {e}")
+            logger.error(f"Error during training: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             raise
 
+    def evaluate(self, X_test, y_test, emotion_labels=None):
+        """Evaluate model with comprehensive metrics and visualizations."""
+        try:
+            # Basic evaluation
+            metrics = {}
+            loss, accuracy = self.model.evaluate(X_test, y_test, verbose=0)
+            logger.info(f"Test loss: {loss:.4f}")
+            logger.info(f"Test accuracy: {accuracy:.4f}")
+            
+            # Get predictions
+            y_pred = self.model.predict(X_test)
+            y_pred_classes = np.argmax(y_pred, axis=1)
+            
+            # Generate classification report
+            report = classification_report(y_test, y_pred_classes, output_dict=True)
+            cm = confusion_matrix(y_test, y_pred_classes)
+            
+            # Calculate additional metrics
+            from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
+            
+            # Convert to one-hot encoding for ROC AUC calculation
+            try:
+                from sklearn.preprocessing import OneHotEncoder
+                encoder = OneHotEncoder(sparse=False)
+                y_test_onehot = encoder.fit_transform(y_test.reshape(-1, 1))
+                
+                # Calculate ROC AUC for multi-class (one-vs-rest)
+                roc_auc = roc_auc_score(y_test_onehot, y_pred, multi_class='ovr', average='weighted')
+                logger.info(f"ROC AUC Score (weighted): {roc_auc:.4f}")
+            except Exception as e:
+                logger.warning(f"Could not calculate ROC AUC: {e}")
+                roc_auc = None
+            
+            # Store all metrics
+            metrics = {
+                'accuracy': float(accuracy),
+                'loss': float(loss),
+                'precision_avg': float(report['weighted avg']['precision']),
+                'recall_avg': float(report['weighted avg']['recall']),
+                'f1_avg': float(report['weighted avg']['f1-score']),
+                'roc_auc': float(roc_auc) if roc_auc is not None else None,
+                'per_class_metrics': report,
+                'confusion_matrix': cm.tolist()
+            }
+            
+            # Generate visualizations
+            self._plot_confusion_matrix(y_test, y_pred_classes, emotion_labels)
+            self._plot_prediction_distribution(y_test, y_pred_classes, emotion_labels)
+            
+            # Save metrics to CSV if emotion labels are provided
+            if emotion_labels:
+                self._save_metrics_to_csv(metrics, emotion_labels)
+                
+                # Generate per-class metrics visualization
+                self._plot_per_class_metrics(report, emotion_labels)
+            
+            return metrics
+        except Exception as e:
+            logger.error(f"Error during evaluation: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {'accuracy': 0.0, 'loss': float('inf'), 'error': str(e)}
+
+    def save_model(self, filepath):
+        """Save model with proper error handling."""
+        try:
+            # Convert to string if Path object
+            filepath = str(filepath)
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            
+            # Standardize on .keras format (preferred for TF 2.x)
+            base_path = filepath.rsplit('.', 1)[0] if '.' in filepath else filepath
+            keras_path = f"{base_path}.keras"
+            
+            # Save the model in the .keras format (primary)
+            self.model.save(keras_path, save_format='keras')
+            logger.info(f"Model saved to {keras_path}")
+            
+            # Also save as h5 for backward compatibility
+            h5_path = f"{base_path}.h5"
+            try:
+                self.model.save(h5_path, save_format='h5')
+                logger.info(f"Model also saved in h5 format at {h5_path} for backward compatibility")
+            except Exception as h5_err:
+                logger.warning(f"Could not save in h5 format: {h5_err}")
+
+            # Save architecture JSON
+            arch_path = f"{base_path}_architecture.json"
+            with open(arch_path, 'w') as f:
+                f.write(self.model.to_json())
+            logger.info(f"Model architecture saved to {arch_path}")
+            
+            # Return the primary save path
+            return keras_path
+            
+        except Exception as e:
+            logger.error(f"Error saving model: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
+
+    def _save_metrics_to_csv(self, metrics, emotion_labels):
+        """Save metrics with proper error handling."""
+        try:
+            if 'per_class_metrics' not in metrics:
+                return
+                
+            os.makedirs('results/reports', exist_ok=True)
+            
+            class_metrics = []
+            for i, label in enumerate(emotion_labels):
+                if str(i) in metrics['per_class_metrics']:
+                    class_metrics.append({
+                        'emotion': label,
+                        'precision': metrics['per_class_metrics'][str(i)]['precision'],
+                        'recall': metrics['per_class_metrics'][str(i)]['recall'],
+                        'f1_score': metrics['per_class_metrics'][str(i)]['f1-score'],
+                        'support': metrics['per_class_metrics'][str(i)]['support']
+                    })
+            
+            df = pd.DataFrame(class_metrics)
+            csv_path = f'results/reports/{self.model_type}_class_metrics.csv'
+            df.to_csv(csv_path, index=False)
+            logger.info(f"Class metrics saved to {csv_path}")
+            
+        except Exception as e:
+            logger.error(f"Error saving metrics to CSV: {e}")
+            
+    def _plot_confusion_matrix(self, y_true, y_pred, emotion_labels=None):
+        """Plot confusion matrix with proper error handling."""
+        try:
+            cm = confusion_matrix(y_true, y_pred)
+            plt.figure(figsize=(10, 8))
+            
+            if emotion_labels:
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=emotion_labels)
+            else:
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                
+            disp.plot(cmap='Blues', values_format='d')
+            plt.title(f'{self.model_type.upper()} Model Confusion Matrix')
+            plt.tight_layout()
+            
+            plt_path = f'results/{self.model_type}_confusion_matrix.png'
+            plt.savefig(plt_path, dpi=300, bbox_inches='tight')
+            logger.info(f"Confusion matrix plot saved to {plt_path}")
+            plt.close()
+            
+        except Exception as e:
+            logger.error(f"Error plotting confusion matrix: {e}")
+            
+    def _plot_per_class_metrics(self, report, emotion_labels=None):
+        """Plot per-class metrics with proper error handling."""
+        try:
+            # Extract per-class metrics
+            classes = []
+            precision = []
+            recall = []
+            f1_score = []
+            
+            for i, label in enumerate(emotion_labels):
+                if str(i) in report:
+                    classes.append(label)
+                    precision.append(report[str(i)]['precision'])
+                    recall.append(report[str(i)]['recall'])
+                    f1_score.append(report[str(i)]['f1-score'])
+            
+            # Create a DataFrame for easier plotting
+            df = pd.DataFrame({
+                'Class': classes,
+                'Precision': precision,
+                'Recall': recall,
+                'F1-Score': f1_score
+            })
+            
+            # Melt the DataFrame for easier plotting
+            df_melted = pd.melt(df, id_vars=['Class'], value_vars=['Precision', 'Recall', 'F1-Score'],
+                               var_name='Metric', value_name='Value')
+            
+            # Plot
+            plt.figure(figsize=(12, 8))
+            sns.barplot(x='Class', y='Value', hue='Metric', data=df_melted)
+            plt.title(f'{self.model_type.upper()} Model - Per-Class Metrics')
+            plt.xticks(rotation=45)
+            plt.ylim(0, 1.0)
+            plt.tight_layout()
+            
+            # Save plot
+            plt_path = f'results/{self.model_type}_per_class_metrics.png'
+            plt.savefig(plt_path, dpi=300, bbox_inches='tight')
+            logger.info(f"Per-class metrics plot saved to {plt_path}")
+            plt.close()
+            
+        except Exception as e:
+            logger.error(f"Error plotting per-class metrics: {e}")
+            
+    def _plot_prediction_distribution(self, y_true, y_pred, emotion_labels=None):
+        """Plot prediction distribution with proper error handling."""
+        try:
+            # Count occurrences of each class in true and predicted labels
+            true_counts = np.bincount(y_true, minlength=len(emotion_labels) if emotion_labels else None)
+            pred_counts = np.bincount(y_pred, minlength=len(emotion_labels) if emotion_labels else None)
+            
+            # Create a DataFrame for plotting
+            df = pd.DataFrame({
+                'Emotion': emotion_labels if emotion_labels else [f'Class {i}' for i in range(len(true_counts))],
+                'True Count': true_counts,
+                'Predicted Count': pred_counts
+            })
+            
+            # Melt the DataFrame for easier plotting
+            df_melted = pd.melt(df, id_vars=['Emotion'], value_vars=['True Count', 'Predicted Count'],
+                               var_name='Type', value_name='Count')
+            
+            # Plot
+            plt.figure(figsize=(12, 8))
+            sns.barplot(x='Emotion', y='Count', hue='Type', data=df_melted)
+            plt.title(f'{self.model_type.upper()} Model - Prediction Distribution')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            
+            # Save plot
+            plt_path = f'results/{self.model_type}_prediction_distribution.png'
+            plt.savefig(plt_path, dpi=300, bbox_inches='tight')
+            logger.info(f"Prediction distribution plot saved to {plt_path}")
+            plt.close()
+            
+        except Exception as e:
+            logger.error(f"Error plotting prediction distribution: {e}")
+            
     def _plot_training_history(self):
-        """
-        Plot the training history (accuracy and loss).
-        """
+        """Plot training history with proper error handling."""
         try:
             if self.history is None:
-                logger.warning("No training history available")
+                logger.warning("No training history available to plot")
                 return
-            
-            # Create figure with 2 subplots
+                
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
             
             # Plot accuracy
@@ -112,184 +418,13 @@ class ModelTrainer:
             ax2.grid(True)
             
             plt.tight_layout()
-            plt.savefig(f'results/{self.model_type}_training_history.png', dpi=300)
-            logger.info(f"Training history plot saved to results/{self.model_type}_training_history.png")
+            plt_path = f'results/{self.model_type}_training_history.png'
+            plt.savefig(plt_path, dpi=300, bbox_inches='tight')
+            logger.info(f"Training history plot saved to {plt_path}")
+            plt.close()
             
         except Exception as e:
             logger.error(f"Error plotting training history: {e}")
-            
-    def evaluate(self, X_test, y_test, emotion_labels=None):
-        """
-        Evaluate the model on test data.
-        
-        Args:
-            X_test (numpy.ndarray): Test features.
-            y_test (numpy.ndarray): Test labels.
-            emotion_labels (list): List of emotion labels.
-            
-        Returns:
-            dict: Evaluation metrics.
-        """
-        try:
-            # Evaluate model
-            loss, accuracy = self.model.evaluate(X_test, y_test, verbose=0)
-            logger.info(f"Test loss: {loss:.4f}")
-            logger.info(f"Test accuracy: {accuracy:.4f}")
-            
-            # Get predictions
-            y_pred = self.model.predict(X_test)
-            y_pred_classes = np.argmax(y_pred, axis=1)
-            
-            # Calculate metrics
-            report = classification_report(y_test, y_pred_classes, output_dict=True)
-            
-            # Plot confusion matrix
-            self._plot_confusion_matrix(y_test, y_pred_classes, emotion_labels)
-            
-            # Create a detailed results dictionary
-            metrics = {
-                'accuracy': accuracy,
-                'loss': loss,
-                'precision_avg': report['weighted avg']['precision'],
-                'recall_avg': report['weighted avg']['recall'],
-                'f1_avg': report['weighted avg']['f1-score'],
-                'report': report,
-                'confusion_matrix': confusion_matrix(y_test, y_pred_classes)
-            }
-            
-            # Save detailed metrics to a CSV file
-            self._save_metrics_to_csv(metrics, emotion_labels)
-            
-            return metrics
-        
-        except Exception as e:
-            logger.error(f"Error evaluating model: {e}")
-            raise
-            
-    def _save_metrics_to_csv(self, metrics, emotion_labels):
-        """
-        Save detailed metrics to a CSV file.
-        
-        Args:
-            metrics (dict): Evaluation metrics.
-            emotion_labels (list): List of emotion labels.
-        """
-        try:
-            if 'report' not in metrics:
-                return
-                
-            # Create reports directory if it doesn't exist
-            os.makedirs('results/reports', exist_ok=True)
-            
-            # Save per-class metrics
-            class_metrics = []
-            for i, label in enumerate(emotion_labels):
-                if str(i) in metrics['report']:
-                    class_metrics.append({
-                        'emotion': label,
-                        'precision': metrics['report'][str(i)]['precision'],
-                        'recall': metrics['report'][str(i)]['recall'],
-                        'f1_score': metrics['report'][str(i)]['f1-score'],
-                        'support': metrics['report'][str(i)]['support']
-                    })
-            
-            # Create DataFrame and save to CSV
-            import pandas as pd
-            metrics_df = pd.DataFrame(class_metrics)
-            metrics_df.to_csv(f'results/reports/{self.model_type}_class_metrics.csv', index=False)
-            logger.info(f"Class metrics saved to results/reports/{self.model_type}_class_metrics.csv")
-            
-        except Exception as e:
-            logger.error(f"Error saving metrics to CSV: {e}")
-    
-    def _plot_confusion_matrix(self, y_true, y_pred, emotion_labels=None):
-        """
-        Plot confusion matrix.
-        
-        Args:
-            y_true (numpy.ndarray): True labels.
-            y_pred (numpy.ndarray): Predicted labels.
-            emotion_labels (list): List of emotion labels.
-        """
-        try:
-            # Create confusion matrix
-            cm = confusion_matrix(y_true, y_pred)
-            
-            # Plot confusion matrix
-            plt.figure(figsize=(10, 8))
-            
-            # Use emotion labels if provided, otherwise use numeric labels
-            if emotion_labels is not None:
-                display_labels = emotion_labels
-            else:
-                display_labels = [str(i) for i in range(cm.shape[0])]
-            
-            disp = ConfusionMatrixDisplay(
-                confusion_matrix=cm,
-                display_labels=display_labels
-            )
-            
-            disp.plot(cmap=plt.cm.Blues, values_format='.2f')
-            plt.title(f'{self.model_type.upper()} Model Confusion Matrix')
-            plt.tight_layout()
-            plt.savefig(f'results/{self.model_type}_confusion_matrix.png', dpi=300)
-            logger.info(f"Confusion matrix plot saved to results/{self.model_type}_confusion_matrix.png")
-            
-        except Exception as e:
-            logger.error(f"Error plotting confusion matrix: {e}")
-    
-    def save_model(self, filepath):
-        """
-        Save the model to a file.
-        
-        Args:
-            filepath (str): Path to save the model.
-        """
-        try:
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            
-            # If .h5 file is requested, provide a warning but save in that format
-            if filepath.endswith('.h5'):
-                logger.warning("Saving model in HDF5 format, which is considered legacy. Consider using .keras format instead.")
-                self.model.save(filepath)
-            else:
-                # Use .keras extension for native Keras format
-                if not filepath.endswith('.keras'):
-                    filepath = f"{filepath}.keras"
-                self.model.save(filepath)
-            
-            logger.info(f"Model saved to {filepath}")
-            
-            # Save model architecture as JSON for reference
-            json_filepath = filepath.rsplit('.', 1)[0] + "_architecture.json"
-            with open(json_filepath, 'w') as f:
-                f.write(self.model.to_json())
-            logger.info(f"Model architecture saved to {json_filepath}")
-        
-        except Exception as e:
-            logger.error(f"Error saving model: {e}")
-            raise
-    
-    def load_model(self, filepath):
-        """
-        Load a trained model from a file.
-        
-        Args:
-            filepath (str): Path to the saved model.
-            
-        Returns:
-            tensorflow.keras.models.Model: The loaded model.
-        """
-        try:
-            self.model = tf.keras.models.load_model(filepath)
-            logger.info(f"Model loaded from {filepath}")
-            return self.model
-        
-        except Exception as e:
-            logger.error(f"Error loading model: {e}")
-            raise
-
 
 if __name__ == "__main__":
     from emotion_model import EmotionModel

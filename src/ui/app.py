@@ -115,6 +115,7 @@ if 'training_status' in st.session_state:
             <p>{status['message']}</p>
         </div>
         """, unsafe_allow_html=True)
+        del st.session_state.training_status
     elif status['type'] == 'error':
         status_container.markdown(f"""
         <div class='status-container status-error'>
@@ -122,11 +123,13 @@ if 'training_status' in st.session_state:
             <p>{status['message']}</p>
         </div>
         """, unsafe_allow_html=True)
-
+        del st.session_state.training_status
+    
+st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
-    
+
     /* Main header styles */
     .main-header {
         font-size: 2.75rem;
@@ -139,7 +142,7 @@ if 'training_status' in st.session_state:
         padding-top: 1rem;
         letter-spacing: -0.5px;
     }
-    
+
     /* Subheader styles */
     .sub-header {
         font-size: 1.5rem;
@@ -148,7 +151,7 @@ if 'training_status' in st.session_state:
         margin-bottom: 1.25rem;
         letter-spacing: -0.3px;
     }
-    
+
     /* Card container with modern shadow */
     .card-container {
         border-radius: 16px;
@@ -159,45 +162,32 @@ if 'training_status' in st.session_state:
         border: 1px solid rgba(226, 232, 240, 0.8);
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
-    
+
     .card-container:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
     }
-    
+
     /* Emotion cards */
     .emotion-card {
         background-color: white;
         border-radius: 14px;
         padding: 20px;
     }
-    
+
     .emotion-icon {
         font-size: 3rem;
         text-align: center;
         margin-bottom: 12px;
     }
-    
-    .emotion-title {
-        font-weight: 600;
-        font-size: 1.2rem;
-        text-align: center;
-        margin-bottom: 8px;
-    }
-    
-    .emotion-description {
-        color: #6B7280;
-        font-size: 0.9rem;
-        text-align: center;
-        margin-bottom: 16px;
-        line-height: 1.5;
-    }
-    
+
     /* Confidence meter */
     .confidence-meter {
         height: 8px;
-        background-color: #E2E8F0;
-        border-radius: 100px;
+"""
+, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
         margin: 16px 0;
         overflow: hidden;
     }
@@ -215,8 +205,69 @@ if 'training_status' in st.session_state:
     .accuracy-meter {
         height: 8px;
         width: 100%;
-        background-color: #E2E8F0;
-        border-radius: 100px;
+st.markdown("""
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Main header styles */
+    .main-header {
+        font-size: 2.75rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #6A11CB 0%, #2575FC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        padding-top: 1rem;
+        letter-spacing: -0.5px;
+    }
+
+    /* Subheader styles */
+    .sub-header {
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: #4F46E5;
+        margin-bottom: 1.25rem;
+        letter-spacing: -0.3px;
+    }
+
+    /* Card container with modern shadow */
+    .card-container {
+        border-radius: 16px;
+        padding: 24px;
+        background-color: #FFFFFF;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .card-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    /* Emotion cards */
+    .emotion-card {
+        background-color: white;
+        border-radius: 14px;
+        padding: 20px;
+    }
+
+    .emotion-icon {
+        font-size: 3rem;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    /* Confidence meter */
+    .confidence-meter {
+        height: 8px;
+"""
+, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
         margin-top: 10px;
         position: relative;
         overflow: hidden;
@@ -379,35 +430,73 @@ class EmotionAnalyzer:
             return False
     
     def extract_features(self, audio_file_path):
-        """Extract features from audio file for model prediction using FeatureExtractor"""
+        """Extract features from audio file for model prediction"""
         try:
             with st.spinner("Extracting audio features..."):
                 # Load audio file
                 y, sr = librosa.load(audio_file_path, sr=None)
-
+                
                 # Ensure consistent length (5 seconds)
                 target_length = 5 * sr
                 if len(y) < target_length:
+                    # If audio is shorter than 5 seconds, pad with zeros
                     y = np.pad(y, (0, target_length - len(y)))
                 else:
+                    # If longer, trim to 5 seconds
                     y = y[:target_length]
-
-                # Use FeatureExtractor to extract features
-                features = self.feature_extractor.extract_features(y, sr)
-
-                # Ensure the output shape is (1, 128, 165, 1)
+                
+                # Extract mel spectrogram with fixed parameters to match model input shape
+                mel_spec = librosa.feature.melspectrogram(
+                    y=y, sr=sr, n_fft=2048, hop_length=512, n_mels=128, fmax=8000
+                )
+                
+                # Convert to decibels
+                mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+                
+                # Expected shape for the model input is (1, 128, 165, 1)
                 expected_shape = (1, 128, 165, 1)
-                if features is not None and features.shape != expected_shape:
-                    # Attempt to fix the shape
+                
+                # Fix time dimension (axis 1 in mel_spec_db)
+                time_frames = mel_spec_db.shape[1]
+                expected_frames = expected_shape[2]  # 165 frames
+                
+                if time_frames < expected_frames:
+                    # Pad if shorter
+                    padding = ((0, 0), (0, expected_frames - time_frames))
+                    mel_spec_db = np.pad(mel_spec_db, padding, mode='constant')
+                elif time_frames > expected_frames:
+                    # Trim if longer
+                    mel_spec_db = mel_spec_db[:, :expected_frames]
+                
+                # Reshape for model input (adding batch and channel dimensions)
+                mel_spec_db = mel_spec_db.reshape(1, mel_spec_db.shape[0], mel_spec_db.shape[1], 1)
+                
+                # Double-check the shape matches what the model expects
+                actual_shape = mel_spec_db.shape
+                if actual_shape != expected_shape:
+                    st.warning(f"Feature shape mismatch: Expected {expected_shape}, got {actual_shape}. Attempting to fix...")
+                    
+                    # Create a new array with the correct shape
                     fixed_features = np.zeros(expected_shape)
-                    min_batch = min(features.shape[0], expected_shape[0])
-                    min_freq = min(features.shape[1], expected_shape[1])
-                    min_time = min(features.shape[2], expected_shape[2])
-                    min_channel = min(features.shape[3], expected_shape[3])
+                    
+                    # Copy data, trimming or padding as needed for each dimension
+                    # Handle batch dimension (usually 1)
+                    min_batch = min(actual_shape[0], expected_shape[0])
+                    # Handle frequency dimension (128 mel bands)
+                    min_freq = min(actual_shape[1], expected_shape[1])
+                    # Handle time dimension (165 frames)
+                    min_time = min(actual_shape[2], expected_shape[2])
+                    # Handle channel dimension (usually 1)
+                    min_channel = min(actual_shape[3], expected_shape[3])
+                    
+                    # Copy only what fits
                     fixed_features[:min_batch, :min_freq, :min_time, :min_channel] = \
-                        features[:min_batch, :min_freq, :min_time, :min_channel]
-                    features = fixed_features
-                return y, sr, features
+                        mel_spec_db[:min_batch, :min_freq, :min_time, :min_channel]
+                    
+                    mel_spec_db = fixed_features
+                    st.success(f"Fixed feature shape to {mel_spec_db.shape}")
+                
+                return y, sr, mel_spec_db
         except Exception as e:
             st.error(f"Error extracting features: {e}")
             import traceback

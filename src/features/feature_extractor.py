@@ -31,58 +31,149 @@ class FeatureExtractor:
         self.scaler_mfcc = StandardScaler()
         self.scaler_spec = StandardScaler()
     
-    def extract_features(self, audio_data, sr=22050):
+    def augment_audio(self, audio_data, sr, apply_all=False):
+        """
+        Apply data augmentation to audio data.
+        
+        Args:
+            audio_data (numpy.ndarray): Audio time series
+            sr (int): Sample rate
+            apply_all (bool): Whether to apply all augmentations or randomly choose one
+            
+        Returns:
+            numpy.ndarray: Augmented audio data
+        """
+        try:
+            augmented_data = audio_data.copy()
+            
+            augmentations = [
+                (self._time_stretch, {'rate': np.random.uniform(0.8, 1.2)}),
+                (self._pitch_shift, {'steps': np.random.randint(-4, 5)}),
+                (self._add_noise, {'noise_factor': np.random.uniform(0.001, 0.015)}),
+            ]
+            
+            if apply_all:
+                # Apply all augmentations in sequence
+                for aug_func, params in augmentations:
+                    augmented_data = aug_func(augmented_data, sr, **params)
+            else:
+                # Randomly choose one augmentation
+                aug_func, params = np.random.choice(augmentations)
+                augmented_data = aug_func(augmented_data, sr, **params)
+            
+            return augmented_data
+            
+        except Exception as e:
+            logger.error(f"Error in audio augmentation: {e}")
+            return audio_data
+    
+    def _time_stretch(self, audio_data, sr, rate=1.0):
+        """Time stretching augmentation"""
+        try:
+            return librosa.effects.time_stretch(y=audio_data, rate=rate)
+        except Exception as e:
+            logger.error(f"Error in time stretching: {e}")
+            return audio_data
+    
+    def _pitch_shift(self, audio_data, sr, steps=0):
+        """Pitch shifting augmentation"""
+        try:
+            return librosa.effects.pitch_shift(y=audio_data, sr=sr, n_steps=steps)
+        except Exception as e:
+            logger.error(f"Error in pitch shifting: {e}")
+            return audio_data
+    
+    def _add_noise(self, audio_data, sr, noise_factor=0.005):
+        """Add white noise augmentation"""
+        try:
+            noise = np.random.normal(0, 1, len(audio_data))
+            return audio_data + noise_factor * noise
+        except Exception as e:
+            logger.error(f"Error adding noise: {e}")
+            return audio_data
+    
+    def _time_mask(self, features, max_width=40):
+        """Apply time masking to spectrogram/MFCC features"""
+        try:
+            time_len = features.shape[1]
+            width = np.random.randint(1, max_width)
+            start = np.random.randint(0, time_len - width)
+            
+            masked_features = features.copy()
+            masked_features[:, start:start+width, :] = 0
+            return masked_features
+            
+        except Exception as e:
+            logger.error(f"Error in time masking: {e}")
+            return features
+    
+    def _freq_mask(self, features, max_width=20):
+        """Apply frequency masking to spectrogram/MFCC features"""
+        try:
+            freq_len = features.shape[0]
+            width = np.random.randint(1, max_width)
+            start = np.random.randint(0, freq_len - width)
+            
+            masked_features = features.copy()
+            masked_features[start:start+width, :, :] = 0
+            return masked_features
+            
+        except Exception as e:
+            logger.error(f"Error in frequency masking: {e}")
+            return features
+    
+    def extract_features(self, audio_data, sr=22050, augment=False):
         """
         Extract features from raw audio data for model prediction.
         
         Args:
             audio_data (numpy.ndarray): Raw audio data
             sr (int): Sample rate of the audio, defaults to 22050 Hz
+            augment (bool): Whether to apply data augmentation
             
         Returns:
             numpy.ndarray: Processed features ready for model input
-            shape: (None, 128, 165, 1) for CNN model input
+            shape: (1, 128, 165, 1) for CNN model input
         """
         try:
-            # Extract mel spectrogram
-            mel_spec = librosa.feature.melspectrogram(
-                y=audio_data, 
-                sr=sr,
-                n_mels=self.n_mels,
-                hop_length=self.hop_length,
-                n_fft=self.n_fft
-            )
+            # Apply data augmentation if requested
+            if augment:
+                audio_data = self.augment_audio(audio_data, sr)
             
-            # Convert to log scale (dB)
-            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            # Extract mel spectrogram with fixed shape (128, 165, 1)
+            mel_spec_db = self.extract_spectrogram(audio_data, sr)
             
-            # mel_spec_db shape is (n_mels, time) at this point
-            # Need to reshape to (batch_size, height, width, channels) = (1, 128, 165, 1)
+            # Verify the shape from spectrogram extraction
+            if mel_spec_db.shape != (self.n_mels, 165, 1):
+                logger.warning(f"Unexpected spectrogram shape: {mel_spec_db.shape}, expected ({self.n_mels}, 165, 1)")
+                
+                # Fix shape if needed
+                fixed_spec = np.zeros((self.n_mels, 165, 1))
+                min_mels = min(mel_spec_db.shape[0], self.n_mels)
+                min_frames = min(mel_spec_db.shape[1], 165)
+                min_channels = min(mel_spec_db.shape[2], 1)
+                fixed_spec[:min_mels, :min_frames, :min_channels] = \
+                    mel_spec_db[:min_mels, :min_frames, :min_channels]
+                mel_spec_db = fixed_spec
             
-            # First handle the time dimension padding/truncation
-            time_frames = mel_spec_db.shape[1]
-            target_frames = 165  # Expected width
+            # Apply frequency and time masking augmentations if requested
+            if augment:
+                if np.random.random() > 0.5:
+                    mel_spec_db = self._freq_mask(mel_spec_db)
+                if np.random.random() > 0.5:
+                    mel_spec_db = self._time_mask(mel_spec_db)
             
-            if time_frames < target_frames:
-                # Pad if shorter
-                padding = ((0, 0), (0, target_frames - time_frames))
-                mel_spec_db = np.pad(mel_spec_db, padding, mode='constant')
-            elif time_frames > target_frames:
-                # Truncate if longer
-                mel_spec_db = mel_spec_db[:, :target_frames]
-            
-            # At this point mel_spec_db shape is (128, 165)
             # Reshape to (batch_size, height, width, channels) = (1, 128, 165, 1)
-            features = mel_spec_db.reshape(1, self.n_mels, target_frames, 1)
+            features = mel_spec_db.reshape(1, self.n_mels, 165, 1)
             
-            # Verify shape
+            # Verify final shape
             logger.info(f"Feature shape after processing: {features.shape}")
             
             return features
             
         except Exception as e:
-            logger.error(f"Error extracting features: {e}")
-            return None
+            logger.error(f"Error in feature extraction: {e}")
+            return np.zeros((1, self.n_mels, 165, 1))
     
     def extract_mfcc(self, audio_data, sr):
         """
@@ -126,14 +217,14 @@ class FeatureExtractor:
             sr (int): Sample rate of the audio.
             
         Returns:
-            numpy.ndarray: Extracted spectrogram features.
+            numpy.ndarray: Extracted spectrogram features with shape (n_mels, 165, 1).
         """
         try:
             # Ensure audio data is not empty
             if len(audio_data) == 0:
                 logger.error("Empty audio data provided")
-                # Return a small placeholder spectrogram with zeros
-                return np.zeros((self.n_mels, 1, 1))
+                # Return a placeholder with correct shape
+                return np.zeros((self.n_mels, 165, 1))
                 
             # Fix potential NaN values in audio data
             audio_data = np.nan_to_num(audio_data)
@@ -152,15 +243,27 @@ class FeatureExtractor:
             mel_spec_safe = np.maximum(mel_spec, 1e-10)
             log_mel_spec = librosa.power_to_db(mel_spec_safe, ref=np.max(mel_spec_safe))
             
-            # Reshape for CNN input: (n_mels, time, 1)
-            spec_features = log_mel_spec.reshape(self.n_mels, -1, 1)
+            # Ensure consistent time dimension (165 frames)
+            target_frames = 165
+            time_frames = log_mel_spec.shape[1]
+            
+            if time_frames < target_frames:
+                # Pad if shorter
+                padding = ((0, 0), (0, target_frames - time_frames))
+                log_mel_spec = np.pad(log_mel_spec, padding, mode='constant')
+            elif time_frames > target_frames:
+                # Truncate if longer
+                log_mel_spec = log_mel_spec[:, :target_frames]
+            
+            # Reshape to (n_mels, time_frames, 1)
+            spec_features = log_mel_spec.reshape(self.n_mels, target_frames, 1)
             
             return spec_features
         
         except Exception as e:
             logger.error(f"Error extracting spectrogram: {e}")
-            # Return a placeholder in case of error
-            return np.zeros((self.n_mels, 1, 1))
+            # Return a placeholder with correct shape
+            return np.zeros((self.n_mels, 165, 1))
     
     def process_audio_file(self, file_path, feature_type='both'):
         """
@@ -191,17 +294,19 @@ class FeatureExtractor:
             logger.error(f"Error processing audio file {file_path}: {e}")
             raise
     
-    def process_dataset(self, dataset, feature_type='both', max_length=None):
+    def process_dataset(self, dataset, feature_type='both', max_length=None, augment=False, augment_size=1):
         """
         Process a dataset to extract features from all audio files.
         
         Args:
             dataset (pandas.DataFrame): Dataset containing audio paths and labels.
-            feature_type (str): Type of features to extract ('mfcc', 'spectrogram', or 'both').
+            feature_type (str): Type of features to extract ('mfcc', 'mel_spectrogram', or 'both').
             max_length (int): Maximum length for spectrograms. If None, will use the longest found.
+            augment (bool): Whether to apply data augmentation
+            augment_size (int): Number of augmented samples to generate per original sample
             
         Returns:
-            tuple: Tuple containing features and labels.
+            dict: Dictionary containing extracted features and labels
         """
         mfcc_features = []
         spec_features = []
@@ -239,17 +344,37 @@ class FeatureExtractor:
                 # Get label from the identified column
                 label = row[label_column]
                 
+                # Load and process audio file
                 features = self.process_audio_file(audio_path, feature_type)
                 
+                # Store original features
                 if 'mfcc' in features:
                     mfcc_features.append(features['mfcc'])
-                
                 if 'mel_spectrogram' in features:
                     spec = features['mel_spectrogram']
                     spec_features.append(spec)
-                    spec_lengths.append(spec.shape[1])  # Store the length for padding later
-                
+                    spec_lengths.append(spec.shape[1])
                 labels.append(label)
+                
+                # Generate augmented samples if requested
+                if augment and augment_size > 0:
+                    audio_data, sr = librosa.load(audio_path, sr=None)
+                    
+                    for _ in range(augment_size):
+                        # Apply data augmentation
+                        aug_audio = self.augment_audio(audio_data, sr)
+                        
+                        # Extract features from augmented audio
+                        if 'mfcc' in features:
+                            aug_mfcc = self.extract_mfcc(aug_audio, sr)
+                            mfcc_features.append(aug_mfcc)
+                        
+                        if 'mel_spectrogram' in features:
+                            aug_spec = self.extract_spectrogram(aug_audio, sr)
+                            spec_features.append(aug_spec)
+                            spec_lengths.append(aug_spec.shape[1])
+                        
+                        labels.append(label)
             
             # Convert lists to numpy arrays
             labels = np.array(labels)
@@ -294,7 +419,7 @@ class FeatureExtractor:
             logger.info(f"Processed {len(dataset)} audio files successfully")
             
             return result
-        
+            
         except Exception as e:
             logger.error(f"Error processing dataset: {e}")
             raise
@@ -359,6 +484,85 @@ class FeatureExtractor:
         except Exception as e:
             logger.error(f"Error normalizing features: {e}")
             raise
+
+    def save_normalization_params(self, filepath):
+        """
+        Save the fitted scaler parameters to a file.
+        
+        Args:
+            filepath (str): Path to save the normalization parameters.
+        """
+        try:
+            params = {
+                'mfcc_scaler': {
+                    'mean': self.scaler_mfcc.mean_,
+                    'scale': self.scaler_mfcc.scale_,
+                    'var': self.scaler_mfcc.var_,
+                },
+                'spec_scaler': {
+                    'mean': self.scaler_spec.mean_,
+                    'scale': self.scaler_spec.scale_,
+                    'var': self.scaler_spec.var_,
+                }
+            }
+            np.save(filepath, params)
+            logger.info(f"Saved normalization parameters to {filepath}")
+            
+        except Exception as e:
+            logger.error(f"Error saving normalization parameters: {e}")
+            raise
+
+    def load_normalization_params(self, filepath):
+        """
+        Load previously saved scaler parameters.
+        
+        Args:
+            filepath (str): Path to the saved normalization parameters.
+        """
+        try:
+            params = np.load(filepath, allow_pickle=True).item()
+            
+            # Restore MFCC scaler parameters
+            self.scaler_mfcc.mean_ = params['mfcc_scaler']['mean']
+            self.scaler_mfcc.scale_ = params['mfcc_scaler']['scale']
+            self.scaler_mfcc.var_ = params['mfcc_scaler']['var']
+            
+            # Restore spectrogram scaler parameters
+            self.scaler_spec.mean_ = params['spec_scaler']['mean']
+            self.scaler_spec.scale_ = params['spec_scaler']['scale']
+            self.scaler_spec.var_ = params['spec_scaler']['var']
+            
+            logger.info(f"Loaded normalization parameters from {filepath}")
+            
+        except Exception as e:
+            logger.error(f"Error loading normalization parameters: {e}")
+            raise
+
+    def get_normalization_params(self):
+        """
+        Get the current normalization parameters.
+        
+        Returns:
+            dict: Dictionary containing the normalization parameters for both scalers.
+        """
+        try:
+            params = {
+                'mfcc_scaler': {
+                    'mean': self.scaler_mfcc.mean_.tolist(),
+                    'scale': self.scaler_mfcc.scale_.tolist(),
+                    'var': self.scaler_mfcc.var_.tolist(),
+                },
+                'spec_scaler': {
+                    'mean': self.scaler_spec.mean_.tolist(),
+                    'scale': self.scaler_spec.scale_.tolist(),
+                    'var': self.scaler_spec.var_.tolist(),
+                }
+            }
+            return params
+            
+        except Exception as e:
+            logger.error(f"Error getting normalization parameters: {e}")
+            return None
 
 
 if __name__ == "__main__":

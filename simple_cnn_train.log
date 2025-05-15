@@ -1,0 +1,99 @@
+2025-05-15 04:11:15,702 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 04:11:15,702 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 04:11:15,702 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 04:11:15,836 - __main__ - INFO - X_train shape: (500, 128, 128, 1), y_train shape: (500,)
+2025-05-15 04:11:15,836 - __main__ - INFO - X_val shape: (100, 128, 128, 1), y_val shape: (100,)
+2025-05-15 04:11:15,836 - __main__ - INFO - X_test shape: (100, 128, 128, 1), y_test shape: (100,)
+2025-05-15 04:11:16,074 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 04:11:18,330 - __main__ - ERROR - Error during training: Python int too large to convert to C long
+2025-05-15 04:11:18,339 - __main__ - ERROR - Traceback (most recent call last):
+  File "C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\simple_cnn_train.py", line 223, in train_and_evaluate
+    history = model.fit(
+              ^^^^^^^^^^
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\utils\traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\tensorflow\numpy.py", line 2079, in signbit
+    tf.constant(0x80000000, dtype=tf.int32),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: Python int too large to convert to C long
+
+2025-05-15 04:11:18,352 - __main__ - ERROR - Training failed.
+2025-05-15 04:54:39,047 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 04:54:39,047 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 04:54:39,047 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 04:54:39,047 - __main__ - INFO - X_train shape: (200, 32, 32, 1), y_train shape: (200,)
+2025-05-15 04:54:39,047 - __main__ - INFO - X_val shape: (50, 32, 32, 1), y_val shape: (50,)
+2025-05-15 04:54:39,047 - __main__ - INFO - X_test shape: (50, 32, 32, 1), y_test shape: (50,)
+2025-05-15 04:54:39,208 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 04:54:40,101 - __main__ - ERROR - Error during training: Python int too large to convert to C long
+2025-05-15 04:54:40,125 - __main__ - ERROR - Traceback (most recent call last):
+  File "C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\simple_cnn_train.py", line 286, in train_and_evaluate
+    history = model.fit(
+              ^^^^^^^^^^
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\utils\traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\tensorflow\numpy.py", line 2079, in signbit
+    tf.constant(0x80000000, dtype=tf.int32),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: Python int too large to convert to C long
+
+2025-05-15 04:54:40,126 - __main__ - ERROR - Training failed.
+2025-05-15 05:26:34,224 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 05:26:34,225 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 05:26:34,225 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 05:26:34,228 - __main__ - INFO - X_train shape: (200, 32, 32, 1), y_train shape: (200,)
+2025-05-15 05:26:34,229 - __main__ - INFO - X_val shape: (50, 32, 32, 1), y_val shape: (50,)
+2025-05-15 05:26:34,229 - __main__ - INFO - X_test shape: (50, 32, 32, 1), y_test shape: (50,)
+2025-05-15 05:26:34,399 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 05:26:35,467 - __main__ - ERROR - Error during training: Python int too large to convert to C long
+2025-05-15 05:26:35,495 - __main__ - ERROR - Traceback (most recent call last):
+  File "C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\simple_cnn_train.py", line 286, in train_and_evaluate
+    history = model.fit(
+              ^^^^^^^^^^
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\utils\traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\tensorflow\numpy.py", line 2079, in signbit
+    tf.constant(0x80000000, dtype=tf.int32),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: Python int too large to convert to C long
+
+2025-05-15 05:26:35,496 - __main__ - ERROR - Training failed.
+2025-05-15 05:33:13,954 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 05:33:13,955 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 05:33:13,955 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 05:33:13,959 - __main__ - INFO - X_train shape: (200, 32, 32, 1), y_train shape: (200,)
+2025-05-15 05:33:13,960 - __main__ - INFO - X_val shape: (50, 32, 32, 1), y_val shape: (50,)
+2025-05-15 05:33:13,960 - __main__ - INFO - X_test shape: (50, 32, 32, 1), y_test shape: (50,)
+2025-05-15 05:33:14,078 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 05:33:15,032 - __main__ - ERROR - Error during training: Python int too large to convert to C long
+2025-05-15 05:33:15,033 - __main__ - ERROR - Traceback (most recent call last):
+  File "C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\simple_cnn_train.py", line 286, in train_and_evaluate
+    history = model.fit(
+              ^^^^^^^^^^
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\utils\traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\tensorflow\numpy.py", line 2079, in signbit
+    tf.constant(0x80000000, dtype=tf.int32),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: Python int too large to convert to C long
+
+2025-05-15 05:33:15,034 - __main__ - ERROR - Training failed.
+2025-05-15 05:36:01,524 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 05:36:01,525 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 05:36:01,525 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 05:36:01,528 - __main__ - INFO - X_train shape: (200, 32, 32, 1), y_train shape: (200,)
+2025-05-15 05:36:01,529 - __main__ - INFO - X_val shape: (50, 32, 32, 1), y_val shape: (50,)
+2025-05-15 05:36:01,529 - __main__ - INFO - X_test shape: (50, 32, 32, 1), y_test shape: (50,)
+2025-05-15 05:36:01,640 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 05:36:05,578 - __main__ - INFO - Training completed in 3.94 seconds (0.07 minutes)
+2025-05-15 05:36:05,691 - __main__ - INFO - Model saved to models\cnn_emotion_model.keras
+2025-05-15 05:36:07,867 - __main__ - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 05:36:07,870 - __main__ - INFO - Evaluating model on test data
+2025-05-15 05:36:07,957 - __main__ - INFO - Test loss: 1.9764
+2025-05-15 05:36:07,957 - __main__ - INFO - Test accuracy: 0.1000
+2025-05-15 05:36:08,730 - __main__ - INFO - Model info saved to models\model_info.json
+2025-05-15 05:36:08,730 - __main__ - INFO - ===== Training Summary =====
+2025-05-15 05:36:08,731 - __main__ - INFO - Model saved to: models\cnn_emotion_model.keras
+2025-05-15 05:36:08,731 - __main__ - INFO - Accuracy: 0.1000
+2025-05-15 05:36:08,731 - __main__ - INFO - F1 Score: 0.0305
+2025-05-15 05:36:08,731 - __main__ - INFO - ============================

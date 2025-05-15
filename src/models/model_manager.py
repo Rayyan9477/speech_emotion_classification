@@ -140,49 +140,90 @@ class ModelManager:
     
     def load_model(self, model_id=None, model_path=None):
         """
-        Load a model from the registry or direct path
+        Load a model from disk by ID or path
         
         Args:
-            model_id (str): ID of the model to load
-            model_path (str): Direct path to the model file
+            model_id (str, optional): ID of the model to load
+            model_path (str, optional): Direct path to the model file
             
         Returns:
-            tf.keras.Model: Loaded model
+            tensorflow.keras.models.Model: The loaded model
         """
-        try:
-            if model_id is not None:
-                # Find model in registry
-                models = [m for m in self.model_registry["models"] if m["id"] == model_id]
-                if not models:
-                    logger.error(f"Model with ID {model_id} not found in registry")
-                    return None
-                
-                model_path = models[0]["path"]
-                logger.info(f"Loading model {model_id} from {model_path}")
-            
-            elif model_path is None:
-                # Try to load the best model
-                best_model = self.get_best_model()
-                if best_model is None:
-                    logger.error("No models found in registry")
-                    return None
-                
-                model_path = best_model["path"]
-                logger.info(f"Loading best model from {model_path}")
-            
-            # Check if model file exists
-            if not os.path.exists(model_path):
-                logger.error(f"Model file not found: {model_path}")
+        # Determine the model path
+        if model_id is not None:
+            # Find the model in the registry
+            model_entry = next((m for m in self.model_registry["models"] if m["id"] == model_id), None)
+            if model_entry is None:
+                logger.error(f"Model with ID {model_id} not found in registry")
                 return None
-            
-            # Load the model
-            model = tf.keras.models.load_model(model_path)
-            logger.info(f"Model loaded successfully from {model_path}")
-            return model
+            model_path = model_entry["path"]
         
-        except Exception as e:
-            logger.error(f"Error loading model: {e}")
+        if model_path is None:
+            logger.error("No models found in registry")
             return None
+        
+        # Check if the model file exists
+        if not os.path.exists(model_path):
+            logger.info(f"Model file not found at {model_path}, trying alternatives")
+            
+            # Try alternative file extensions
+            for ext in [".keras", ".h5", ".tf"]:
+                alt_path = os.path.splitext(model_path)[0] + ext
+                if os.path.exists(alt_path):
+                    logger.info(f"Found alternative model file: {alt_path}")
+                    model_path = alt_path
+                    break
+            
+            # If still not found, try looking in the models directory
+            if not os.path.exists(model_path):
+                base_name = os.path.basename(model_path)
+                alt_path = os.path.join(self.models_dir, base_name)
+                if os.path.exists(alt_path):
+                    logger.info(f"Found model in models directory: {alt_path}")
+                    model_path = alt_path
+                else:
+                    # Try finding any model with similar name pattern
+                    model_files = [f for f in os.listdir(self.models_dir) 
+                                  if f.endswith(('.keras', '.h5', '.tf')) and 'best_model' in f]
+                    if model_files:
+                        alt_path = os.path.join(self.models_dir, model_files[0])
+                        logger.info(f"Found alternative model: {alt_path}")
+                        model_path = alt_path
+                    else:
+                        logger.error(f"Model file not found after attempting format conversion")
+                        return None
+        
+        # Load the model with error handling
+        try:
+            # Apply monkey patch before loading model
+            try:
+                from src.utils.monkey_patch import monkeypatch
+                monkeypatch()
+                logger.info("Applied monkey patch before loading model")
+            except ImportError:
+                logger.warning("Could not import monkey_patch module")
+                
+            # First try loading with tf.keras.models.load_model
+            model = tf.keras.models.load_model(model_path)
+            logger.info(f"Successfully loaded model from {model_path}")
+            return model
+        except Exception as e:
+            logger.error(f"Error loading model from {model_path}: {e}")
+            try:
+                # Try loading with a custom_objects dictionary for custom layers
+                model = tf.keras.models.load_model(model_path, compile=False)
+                logger.info(f"Loaded model without compilation from {model_path}")
+                # Recompile the model with default settings
+                model.compile(
+                    optimizer='adam',
+                    loss='sparse_categorical_crossentropy',
+                    metrics=['accuracy']
+                )
+                logger.info("Recompiled model with default settings")
+                return model
+            except Exception as e:
+                logger.error(f"Error loading model: {e}")
+                return None
     
     def delete_model(self, model_id, delete_files=True):
         """
@@ -281,7 +322,7 @@ class ModelManager:
             X_test (np.ndarray): Test features
             y_test (np.ndarray): Test labels
             model_type (str): Type of model
-            
+        
         Returns:
             tuple: Paths to the saved test data files
         """
@@ -289,19 +330,15 @@ class ModelManager:
             # Create filenames
             X_test_path = os.path.join(self.results_dir, f"{model_type}_X_test.npy")
             y_test_path = os.path.join(self.results_dir, f"{model_type}_y_test.npy")
-            
             # Save arrays
             np.save(X_test_path, X_test)
             np.save(y_test_path, y_test)
-            
             logger.info(f"Test data saved to {X_test_path} and {y_test_path}")
-            
             return X_test_path, y_test_path
-        
         except Exception as e:
             logger.error(f"Error saving test data: {e}")
             return None, None
-
+            
     def get_latest_model(self, model_type=None):
         """
         Get the most recently created model from the registry
@@ -318,3 +355,22 @@ class ModelManager:
             
         # Sort by creation date and return most recent
         return max(models, key=lambda x: x.get("created", ""))
+        
+    def _scan_for_new_models(self):
+        """Scan models directory for unregistered models and add them to registry"""
+        registered_paths = [m["path"] for m in self.model_registry["models"]]
+        
+        # Scan directory for model files
+        for file in os.listdir(self.models_dir):
+            if file.endswith(".keras") and "_emotion_model" in file:
+                model_path = os.path.join(self.models_dir, file)
+                
+                if model_path not in registered_paths:
+                    # Determine model type from filename
+                    model_type = file.split("_")[0].lower()
+                    
+                    # Register model with basic info
+                    self.register_model(
+                        model_path=model_path,
+                        model_type=model_type
+                    )

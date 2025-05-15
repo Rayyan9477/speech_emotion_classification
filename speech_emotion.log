@@ -896,3 +896,469 @@
 2025-05-14 11:15:21,575 - src.models.trainer - ERROR - Error training model: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
 2025-05-14 11:15:21,575 - __main__ - ERROR - Error during training: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
 2025-05-14 11:15:21,575 - __main__ - ERROR - Unhandled exception: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
+2025-05-14 11:17:15,033 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:15,034 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:18,771 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-14 11:17:18,771 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-14 11:17:20,604 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-14 11:17:20,988 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-14 11:17:20,988 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-14 11:17:20,988 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-14 11:17:21,638 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:21,638 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:21,642 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:21,643 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:21,646 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:21,647 - __main__ - INFO - Loading dataset...
+2025-05-14 11:17:21,647 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-14 11:17:40,673 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-14 11:17:40,675 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:40,676 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:40,677 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:40,679 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-14 11:17:40,679 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-14 11:17:40,691 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-14 11:17:40,695 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-14 11:17:40,696 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-14 11:17:40,697 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:40,697 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-14 11:17:44,081 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-14 11:17:45,240 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-14 11:17:45,544 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-14 11:17:46,324 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-14 11:17:46,577 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-14 11:17:46,711 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-14 11:17:46,930 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-14 11:17:47,444 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-14 11:17:48,532 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-14 11:17:49,451 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-14 11:17:49,585 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-14 11:17:49,595 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-14 11:17:49,975 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-14 11:17:50,869 - src.features.feature_extractor - INFO - Padding spectrograms to length 151
+2025-05-14 11:17:50,900 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-14 11:17:50,902 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-14 11:17:51,429 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-05-14 11:17:51,448 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-05-14 11:17:51,827 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-05-14 11:17:52,106 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-05-14 11:17:52,148 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-05-14 11:17:52,178 - src.features.feature_extractor - INFO - Padding spectrograms to length 150
+2025-05-14 11:17:52,207 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-14 11:17:52,526 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-14 11:17:52,549 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-14 11:17:52,574 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-14 11:17:52,575 - __main__ - INFO - Creating CNN model...
+2025-05-14 11:17:52,577 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,579 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,581 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,582 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,583 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,584 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,586 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,726 - src.models.emotion_model - INFO - CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-14 11:17:52,726 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-14 11:17:52,754 - src.core.config - INFO - Directory structure validated
+2025-05-14 11:17:52,754 - src.models.trainer - INFO - Starting CNN model training for 50 epochs with batch size 32
+2025-05-14 11:18:20,274 - src.models.trainer - ERROR - Error training model: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
+2025-05-14 11:18:20,275 - __main__ - ERROR - Error during training: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
+2025-05-14 11:18:20,275 - __main__ - ERROR - Unhandled exception: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 128, 165, 1), found shape=(None, 128, 151)
+2025-05-15 02:25:29,097 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:29,100 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:40,622 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 02:25:40,623 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 02:25:46,377 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 02:25:48,616 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-15 02:25:48,628 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-15 02:25:48,631 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-15 02:25:50,985 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:50,986 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:50,987 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:50,989 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:50,990 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:25:51,003 - __main__ - INFO - Loading dataset...
+2025-05-15 02:25:51,003 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-15 02:26:10,434 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-15 02:26:10,436 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:10,437 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:10,438 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:10,440 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-15 02:26:10,440 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-15 02:26:10,450 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-15 02:26:10,455 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-15 02:26:10,456 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-15 02:26:10,458 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:10,458 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:26:17,278 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-15 02:26:20,532 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-15 02:26:21,258 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-15 02:26:23,114 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-15 02:26:23,743 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-15 02:26:24,083 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-15 02:26:24,670 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-15 02:26:25,902 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-15 02:26:28,772 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-15 02:26:30,976 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:26:31,005 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-15 02:26:31,020 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:26:31,875 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-15 02:26:34,029 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:26:34,035 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:26:34,038 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:26:35,415 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-05-15 02:26:35,461 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-05-15 02:26:36,457 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-05-15 02:26:37,101 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-05-15 02:26:37,184 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-05-15 02:26:37,254 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:26:37,260 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:26:37,560 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:26:37,588 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:26:37,610 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:26:37,611 - __main__ - INFO - Creating CNN model...
+2025-05-15 02:26:37,614 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,615 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,616 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,617 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,618 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,620 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,622 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,762 - src.models.emotion_model - INFO - CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 02:26:37,762 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-15 02:26:37,864 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:26:37,865 - src.models.trainer - INFO - Starting CNN model training for 50 epochs with batch size 32
+2025-05-15 02:29:03,274 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 02:29:03,965 - src.models.trainer - INFO - Test loss: 5.8056
+2025-05-15 02:29:03,965 - src.models.trainer - INFO - Test accuracy: 0.1296
+2025-05-15 02:29:05,349 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 02:29:05,350 - src.models.trainer - ERROR - Error saving metrics to CSV: 'NoneType' object is not iterable
+2025-05-15 02:29:05,352 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:29:05,353 - src.models.trainer - ERROR - Error saving model: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:29:05,353 - __main__ - ERROR - Error during training: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:29:05,353 - __main__ - ERROR - Unhandled exception: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:30:31,800 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:31,802 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:35,542 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 02:30:35,542 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 02:30:37,517 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 02:30:37,907 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-15 02:30:37,908 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-15 02:30:37,908 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-15 02:30:38,465 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:38,466 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:38,468 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:38,470 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:38,472 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:38,473 - __main__ - INFO - Loading dataset...
+2025-05-15 02:30:38,473 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-15 02:30:59,297 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-15 02:30:59,297 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:59,300 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:59,301 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:59,303 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-15 02:30:59,303 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-15 02:30:59,312 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-15 02:30:59,318 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-15 02:30:59,318 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-15 02:30:59,320 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:30:59,320 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:31:02,882 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-15 02:31:04,175 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-15 02:31:04,563 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-15 02:31:05,374 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-15 02:31:05,663 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-15 02:31:05,797 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-15 02:31:06,054 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-15 02:31:06,616 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-15 02:31:07,772 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-15 02:31:08,784 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:31:08,806 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-15 02:31:08,820 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:31:09,218 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-15 02:31:10,174 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:31:10,180 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:31:10,183 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:31:10,794 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-05-15 02:31:10,814 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-05-15 02:31:11,282 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-05-15 02:31:11,658 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-05-15 02:31:11,708 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-05-15 02:31:11,747 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:31:11,751 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:31:12,094 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:31:12,124 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:31:12,148 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:31:12,150 - __main__ - INFO - Creating CNN model...
+2025-05-15 02:31:12,154 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,155 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,156 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,158 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,159 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,159 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,162 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,286 - src.models.emotion_model - INFO - CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 02:31:12,287 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-15 02:31:12,316 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:31:12,317 - src.models.trainer - INFO - Starting CNN model training for 50 epochs with batch size 32
+2025-05-15 02:35:00,753 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 02:35:01,421 - src.models.trainer - INFO - Test loss: 2.2750
+2025-05-15 02:35:01,421 - src.models.trainer - INFO - Test accuracy: 0.1343
+2025-05-15 02:35:02,693 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 02:35:02,695 - src.models.trainer - ERROR - Error saving metrics to CSV: 'NoneType' object is not iterable
+2025-05-15 02:35:02,695 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:35:02,695 - src.models.trainer - ERROR - Error saving model: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:35:02,695 - __main__ - ERROR - Error during training: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:35:02,695 - __main__ - ERROR - Unhandled exception: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:43:41,551 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:43:41,551 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:43:52,869 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 02:43:52,869 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 02:43:57,942 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 02:43:59,922 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-15 02:43:59,933 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-15 02:43:59,936 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-15 02:44:02,051 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:02,053 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:02,055 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:02,056 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:02,058 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:02,070 - __main__ - INFO - Loading dataset...
+2025-05-15 02:44:02,070 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-15 02:44:22,349 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-15 02:44:22,349 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:22,349 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:22,349 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:22,357 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-15 02:44:22,357 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-15 02:44:22,369 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-15 02:44:22,373 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-15 02:44:22,373 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-15 02:44:22,374 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:22,374 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:44:28,159 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-15 02:44:31,161 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-15 02:44:31,986 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-15 02:44:34,092 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-15 02:44:34,744 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-15 02:44:35,139 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-15 02:44:35,788 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-15 02:44:37,083 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-15 02:44:39,793 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-15 02:44:42,069 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:44:42,096 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-15 02:44:42,110 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:44:43,125 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-15 02:44:45,519 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:44:45,526 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:44:45,529 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:44:46,805 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-05-15 02:44:46,850 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-05-15 02:44:47,856 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-05-15 02:44:48,539 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-05-15 02:44:48,639 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-05-15 02:44:48,725 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:44:48,734 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:44:49,205 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:44:49,239 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:44:49,272 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:44:49,274 - __main__ - INFO - Creating CNN model...
+2025-05-15 02:44:49,276 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,278 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,281 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,283 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,284 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,286 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,288 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,498 - src.models.emotion_model - INFO - CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 02:44:49,499 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-15 02:44:49,627 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:44:49,627 - src.models.trainer - INFO - Starting CNN model training for 100 epochs with batch size 32
+2025-05-15 02:50:39,266 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 02:50:39,914 - src.models.trainer - INFO - Test loss: 2.2724
+2025-05-15 02:50:39,914 - src.models.trainer - INFO - Test accuracy: 0.1343
+2025-05-15 02:50:41,249 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 02:50:41,249 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:50:41,249 - src.models.trainer - ERROR - Error saving model: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:50:41,249 - __main__ - ERROR - Error during training: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:50:41,249 - __main__ - ERROR - Unhandled exception: 'WindowsPath' object has no attribute 'endswith'
+2025-05-15 02:53:21,792 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:21,792 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:26,261 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 02:53:26,265 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 02:53:28,582 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 02:53:28,991 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-15 02:53:28,991 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-15 02:53:28,991 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-15 02:53:29,717 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:29,717 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:29,717 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:29,725 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:29,726 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:29,727 - __main__ - INFO - Loading dataset...
+2025-05-15 02:53:29,727 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-15 02:53:49,624 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-15 02:53:49,624 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:49,624 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:49,624 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:49,631 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-15 02:53:49,631 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-15 02:53:49,642 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-15 02:53:49,647 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-15 02:53:49,647 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-15 02:53:49,649 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:53:49,649 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:53:53,074 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-15 02:53:54,456 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-15 02:53:54,800 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-15 02:53:55,632 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-15 02:53:55,942 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-15 02:53:56,096 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-15 02:53:56,325 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-15 02:53:56,845 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-15 02:53:57,993 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-15 02:53:58,895 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:53:58,929 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-15 02:53:58,943 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:53:59,311 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-15 02:54:00,240 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:54:00,240 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:54:00,253 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 02:54:00,779 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-05-15 02:54:00,804 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-05-15 02:54:01,202 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-05-15 02:54:01,480 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-05-15 02:54:01,528 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-05-15 02:54:01,561 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 02:54:01,562 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-05-15 02:54:01,871 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:54:01,908 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:54:01,935 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-05-15 02:54:01,935 - __main__ - INFO - Creating CNN model...
+2025-05-15 02:54:01,939 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,940 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,942 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,944 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,945 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,947 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:01,948 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:02,074 - src.models.emotion_model - INFO - CNN model built with 3 convolutional layers and 2 dense layers
+2025-05-15 02:54:02,074 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-05-15 02:54:02,107 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:54:02,107 - src.models.trainer - INFO - Starting CNN model training for 100 epochs with batch size 32
+2025-05-15 02:55:25,003 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 02:55:25,300 - src.models.trainer - INFO - Test loss: 2.0050
+2025-05-15 02:55:25,300 - src.models.trainer - INFO - Test accuracy: 0.1991
+2025-05-15 02:55:26,360 - src.models.trainer - INFO - Confusion matrix plot saved to results/cnn_confusion_matrix.png
+2025-05-15 02:55:26,362 - src.core.config - INFO - Directory structure validated
+2025-05-15 02:55:26,492 - src.models.trainer - INFO - Model saved to C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\models\cnn_emotion_model_20250515_025526.keras
+2025-05-15 02:55:26,500 - src.models.trainer - INFO - Model architecture saved to C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\models\cnn_emotion_model_20250515_025526_architecture.json
+2025-05-15 02:55:26,500 - absl - WARNING - You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2025-05-15 02:55:26,601 - src.models.trainer - INFO - Model saved to C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\models\cnn_emotion_model_20250515_025526.h5
+2025-05-15 02:55:26,608 - src.models.trainer - INFO - Model architecture saved to C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\models\cnn_emotion_model_20250515_025526_architecture.json
+2025-05-15 02:55:26,611 - src.models.model_manager - ERROR - Error saving model registry: Object of type CNNConfig is not JSON serializable
+2025-05-15 02:55:26,612 - src.models.model_manager - INFO - Registered model cnn_20250515_025526 in registry
+2025-05-15 02:55:26,613 - src.models.model_manager - INFO - Training history saved to results\cnn_training_history.json
+2025-05-15 02:55:26,615 - src.models.model_manager - ERROR - Error saving model registry: Object of type CNNConfig is not JSON serializable
+2025-05-15 02:55:26,628 - src.models.model_manager - INFO - Test data saved to results\cnn_X_test.npy and results\cnn_y_test.npy
+2025-05-15 02:55:26,629 - __main__ - ERROR - Error during training: 'FeatureExtractor' object has no attribute 'get_normalization_params'
+2025-05-15 02:55:26,629 - __main__ - ERROR - Unhandled exception: 'FeatureExtractor' object has no attribute 'get_normalization_params'
+2025-05-15 03:11:05,011 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-15 03:14:42,293 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 03:14:42,295 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 03:14:45,316 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:14:45,316 - __main__ - INFO - Using upload directory: C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\uploads
+2025-05-15 03:14:45,469 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-15 03:14:50,845 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:14:50,846 - __main__ - INFO - Using upload directory: C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\uploads
+2025-05-15 03:14:50,855 - __main__ - ERROR - Error loading model: 'ModelManager' object has no attribute 'get_latest_model_path'
+2025-05-15 03:15:04,744 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:15:04,745 - __main__ - INFO - Using upload directory: C:\Users\rayyan.a\Downloads\Repo\speech_emotion_classification\uploads
+2025-05-15 03:15:04,753 - __main__ - ERROR - Error loading model: 'ModelManager' object has no attribute 'get_latest_model_path'
+2025-05-15 03:15:04,755 - __main__ - ERROR - Error loading model: 'ModelManager' object has no attribute 'get_latest_model_path'
+2025-05-15 03:30:20,695 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:30:20,695 - speech_emotion_analyzer - ERROR - Error initializing analyzer: 'ModelManager' object has no attribute '_scan_for_new_models'
+2025-05-15 03:30:21,943 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-15 03:30:38,285 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:30:38,285 - speech_emotion_analyzer - ERROR - Error initializing analyzer: 'ModelManager' object has no attribute '_scan_for_new_models'
+2025-05-15 03:30:51,259 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:30:51,261 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:30:54,680 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-05-15 03:30:54,681 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-05-15 03:30:56,411 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 03:30:58,433 - datasets - INFO - PyTorch version 2.7.0+cu118 available.
+2025-05-15 03:30:58,447 - datasets - INFO - Polars version 1.27.1 available.
+2025-05-15 03:30:58,448 - datasets - INFO - TensorFlow version 2.16.1 available.
+2025-05-15 03:31:00,550 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:00,551 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:00,553 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:00,555 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:00,556 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:00,557 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:31:00,557 - __main__ - INFO - Loading dataset...
+2025-05-15 03:31:00,557 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-05-15 03:31:22,851 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-05-15 03:31:22,852 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:22,853 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:22,854 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:22,858 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-05-15 03:31:22,858 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-05-15 03:31:22,867 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-05-15 03:31:22,871 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-05-15 03:31:22,871 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-05-15 03:31:22,873 - src.core.config - INFO - Directory structure validated
+2025-05-15 03:31:22,873 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 03:31:29,942 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-05-15 03:31:32,781 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-05-15 03:31:33,554 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-05-15 03:31:35,508 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-05-15 03:31:36,127 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-05-15 03:31:36,465 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-05-15 03:31:37,090 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-05-15 03:31:38,401 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-05-15 03:31:41,076 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-05-15 03:31:43,332 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-05-15 03:31:43,357 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-05-15 03:31:43,371 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-05-15 03:31:44,338 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-05-15 03:31:45,759 - __main__ - INFO - Process interrupted by user
+2025-05-15 03:32:09,577 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:32:09,577 - speech_emotion_analyzer - ERROR - Error initializing analyzer: 'ModelManager' object has no attribute '_scan_for_new_models'
+2025-05-15 03:32:11,058 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-15 03:33:11,004 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:33:11,004 - speech_emotion_analyzer - ERROR - Error initializing analyzer: 'ModelManager' object has no attribute '_scan_for_new_models'
+2025-05-15 03:35:22,141 - src.models.model_manager - ERROR - Error loading model registry: Expecting value: line 213 column 33 (char 7084)
+2025-05-15 03:35:22,142 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 03:35:22,142 - src.models.model_manager - INFO - Registered model cnn_20250515_033522 in registry
+2025-05-15 03:35:22,144 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 03:35:22,145 - src.models.model_manager - INFO - Registered model cnn_20250515_033522 in registry
+2025-05-15 03:35:22,146 - src.models.model_manager - INFO - Model registry saved to models\model_registry.json
+2025-05-15 03:35:22,146 - src.models.model_manager - INFO - Registered model cnn_20250515_033522 in registry
+2025-05-15 03:35:22,146 - speech_emotion_analyzer - INFO - Found latest model: cnn_20250515_033522
+2025-05-15 03:35:22,146 - src.models.model_manager - INFO - Loading model cnn_20250515_033522 from models\cnn_emotion_model.keras
+2025-05-15 03:35:22,678 - src.models.model_manager - INFO - Model loaded successfully from models\cnn_emotion_model.keras
+2025-05-15 03:35:22,678 - speech_emotion_analyzer - INFO - Successfully loaded CNN model from models\cnn_emotion_model.keras
+2025-05-15 03:35:24,099 - tensorflow - WARNING - From C:\Users\rayyan.a\AppData\Local\anaconda3\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-05-15 07:26:49,044 - __main__ - INFO - TensorFlow version: 2.16.1
+2025-05-15 07:26:49,044 - __main__ - WARNING - No GPU detected. Training will be slower on CPU.
+2025-05-15 07:26:49,044 - __main__ - INFO - Generating random data for demonstration.
+2025-05-15 07:26:49,044 - __main__ - INFO - X_train shape: (200, 32, 32, 1), y_train shape: (200,)
+2025-05-15 07:26:49,044 - __main__ - INFO - X_val shape: (50, 32, 32, 1), y_val shape: (50,)
+2025-05-15 07:26:49,044 - __main__ - INFO - X_test shape: (50, 32, 32, 1), y_test shape: (50,)
+2025-05-15 07:26:49,177 - __main__ - INFO - Starting CNN model training for 50 epochs
+2025-05-15 07:27:09,876 - __main__ - INFO - Training completed in 20.70 seconds (0.34 minutes)
+2025-05-15 07:27:09,923 - __main__ - INFO - Model saved to models\cnn_emotion_model.keras
+2025-05-15 07:27:10,450 - __main__ - INFO - Training history plot saved to results/cnn_training_history.png
+2025-05-15 07:27:10,463 - __main__ - INFO - Evaluating model on test data
+2025-05-15 07:27:10,542 - __main__ - INFO - Test loss: 4.0617
+2025-05-15 07:27:10,542 - __main__ - INFO - Test accuracy: 0.2000
+2025-05-15 07:27:11,466 - __main__ - INFO - Model info saved to models\model_info.json
+2025-05-15 07:27:11,466 - __main__ - INFO - ===== Training Summary =====
+2025-05-15 07:27:11,466 - __main__ - INFO - Model saved to: models\cnn_emotion_model.keras
+2025-05-15 07:27:11,466 - __main__ - INFO - Accuracy: 0.2000
+2025-05-15 07:27:11,467 - __main__ - INFO - F1 Score: 0.0678
+2025-05-15 07:27:11,467 - __main__ - INFO - ============================

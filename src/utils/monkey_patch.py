@@ -14,8 +14,7 @@ import tensorflow as tf
 
 def monkeypatch():
     """Apply monkey patch to fix the OverflowError when handling floating point numbers."""
-    try:
-        # Try to locate the module where the issue is occurring
+    try:        # Try to locate the module where the issue is occurring
         if 'keras.src.backend.tensorflow.numpy' in sys.modules:
             numpy_module = sys.modules['keras.src.backend.tensorflow.numpy']
             
@@ -44,10 +43,10 @@ def monkeypatch():
                 # Replace -0.0 with small negative number
                 eps = np.finfo(np.float32).tiny
                 zero_mask = tf.equal(x, 0.0)
+                
                 # We need to detect negative zeros
                 # For any operation where -0.0 behaves differently from +0.0:
                 # 1.0 / (-0.0) gives -inf, 1.0 / 0.0 gives inf
-                
                 reciprocal = tf.where(zero_mask, tf.ones_like(x), 1.0 / x)
                 neg_zero_mask = tf.logical_and(zero_mask, tf.less(reciprocal, 0.0))
                 x = tf.where(neg_zero_mask, -eps, x)
@@ -63,10 +62,10 @@ def monkeypatch():
             # Replace the original argmax function
             numpy_module.argmax = safe_argmax
             
-            return True
+            return "TensorFlow patched successfully to avoid overflow errors"
     except Exception as e:
         print(f"Error applying monkey patch: {e}")
-        return False
+        return f"Patching failed: {e}"
 
 if __name__ == "__main__":
     if monkeypatch():

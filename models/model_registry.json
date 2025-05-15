@@ -1,67 +1,155 @@
 {
     "models": [
         {
-            "id": "cnn_20250511_161533",
-            "path": "models/cnn_emotion_model.keras",
+            "id": "cnn_20250515_072411",
+            "path": "models\\basic_emotion_model_20250515_072411.keras",
             "type": "cnn",
-            "created": "2025-05-11 16:15:33",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model trained on RAVDESS dataset"
+            "created": "2025-05-15 07:24:11",
+            "size_mb": 1.46,
+            "metrics": {
+                "accuracy": 0.13333334028720856,
+                "loss": 5.428486347198486
+            },
+            "description": "Basic CNN model for speech emotion classification"
         },
         {
-            "id": "cnn_20250511_161533",
-            "path": "models/cnn_emotion_model.h5",
+            "id": "cnn_20250515_072614",
+            "path": "models\\cnn_emotion_model_20250515_072614.keras",
             "type": "cnn",
-            "created": "2025-05-11 16:15:33",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model trained on RAVDESS dataset"
-        },
-        {
-            "id": "cnn_20250511_180843",
-            "path": "models/cnn_emotion_model.keras",
-            "type": "cnn",
-            "created": "2025-05-11 18:08:43",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model loaded directly"
-        },
-        {
-            "id": "cnn_20250511_181842",
-            "path": "models/cnn_emotion_model.keras",
-            "type": "cnn",
-            "created": "2025-05-11 18:18:42",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model loaded directly"
-        },
-        {
-            "id": "cnn_20250511_181859",
-            "path": "models/cnn_emotion_model.keras",
-            "type": "cnn",
-            "created": "2025-05-11 18:18:59",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model loaded directly"
-        },
-        {
-            "id": "cnn_20250511_181931",
-            "path": "models/cnn_emotion_model.keras",
-            "type": "cnn",
-            "created": "2025-05-11 18:19:31",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model loaded directly"
-        },
-        {
-            "id": "cnn_20250511_181937",
-            "path": "models/cnn_emotion_model.keras",
-            "type": "cnn",
-            "created": "2025-05-11 18:19:37",
-            "size_mb": 123.4,
-            "metrics": {},
-            "description": "CNN model loaded directly"
+            "created": "2025-05-15 07:26:14",
+            "size_mb": 1.46,
+            "metrics": {
+                "accuracy": 0.15000000596046448,
+                "loss": 1.9762736558914185,
+                "precision_avg": 0.0225,
+                "recall_avg": 0.15,
+                "f1_avg": 0.0391304347826087,
+                "roc_auc": null,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 20.0
+                    },
+                    "1": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 11.0
+                    },
+                    "2": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 16.0
+                    },
+                    "3": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 16.0
+                    },
+                    "4": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 11.0
+                    },
+                    "5": {
+                        "precision": 0.15,
+                        "recall": 1.0,
+                        "f1-score": 0.2608695652173913,
+                        "support": 15.0
+                    },
+                    "6": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 11.0
+                    },
+                    "accuracy": 0.15,
+                    "macro avg": {
+                        "precision": 0.02142857142857143,
+                        "recall": 0.14285714285714285,
+                        "f1-score": 0.037267080745341616,
+                        "support": 100.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.0225,
+                        "recall": 0.15,
+                        "f1-score": 0.0391304347826087,
+                        "support": 100.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        20,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        11,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        16,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        16,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        11,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        15,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        11,
+                        0
+                    ]
+                ]
+            },
+            "description": "CNN model trained on speech emotion dataset with 0.1500 accuracy",
+            "training_history_path": "results\\cnn_training_history.json"
         }
     ]
 }
