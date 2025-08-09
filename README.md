@@ -34,6 +34,8 @@ speech_emotion_classification/
 │       ├── __init__.py
 │       ├── app.py            # Streamlit application
 │       └── dashboard.py      # Analysis dashboard
+│   └── scripts/              # Utility scripts
+│       └── train.py          # Wrapper to launch training with defaults
 │
 ├── tests/                    # Test suite
 │   ├── conftest.py          # Test fixtures
@@ -66,10 +68,28 @@ speech_emotion_classification/
 pip install -r requirements.txt
 ```
 
+If you're on Windows and encounter TensorFlow DLL issues, ensure you install a compatible TensorFlow version for your Python and CUDA setup. This project includes a TensorFlow monkey patch to avoid known signbit/argmax issues.
+
 ## Usage
 
+Basic CLI for training/evaluation:
+
 ```bash
-python main.py
+# Train CNN using mel spectrograms (recommended)
+python -m src.main --train --model-type cnn --feature-type mel_spectrogram
+
+# Train MLP using MFCCs
+python -m src.main --train --model-type mlp --feature-type mfcc
+
+# Evaluate an existing model by ID (see models/model_registry.json)
+python -m src.main --evaluate --model-id <MODEL_ID>
+```
+
+Run the Streamlit app locally:
+
+```bash
+pip install -r requirements.txt
+streamlit run src/ui/streamlit_app.py --server.port 8501 --server.headless true
 ```
 
 ## Expected Performance
@@ -100,13 +120,13 @@ The `model_manager.py` module provides a comprehensive system for managing train
 
 ```bash
 # Train a new CNN model
-python main.py --model_type cnn
+python -m src.main --train --model-type cnn --feature-type mel_spectrogram
 
 # Train a new MLP model
-python main.py --model_type mlp
+python -m src.main --train --model-type mlp --feature-type mfcc
 
 # Train with hyperparameter optimization
-python main.py --model_type cnn --optimize
+# (future) python -m src.main --train --model-type cnn --optimize
 ```
 
 ### Model Selection in the UI
@@ -166,10 +186,17 @@ The speech emotion classification system includes a comprehensive model manageme
 
 ### Running the Application
 
-To run the application with all model management features:
+To run the Streamlit application with model management features:
 
 ```bash
-python run_app.py
+streamlit run src/ui/streamlit_app.py --server.port 8501 --server.headless true
 ```
 
-This will start the Streamlit application and initialize the model management system.
+The app attempts to load the latest model from `models/` or recent training logs. If no model exists, it can initialize a default architecture, but you should train a model first for meaningful predictions.
+
+Docker:
+
+```bash
+docker build -t speech-emotion-app .
+docker run -p 8501:8501 speech-emotion-app
+```

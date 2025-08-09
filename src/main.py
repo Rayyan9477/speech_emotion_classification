@@ -104,12 +104,19 @@ def train_model(args):
         logger.info(f"Creating {args.model_type.upper()} model...")
         emotion_model = EmotionModel(
             num_classes=len(config.Config().training.emotion_labels)
-        )        # Build model with appropriate configuration
+        )
+        # Build model with appropriate configuration
         if args.model_type == 'mlp':
+            mlp_hidden = config.Config().models.mlp.hidden_layers
+            mlp_params = {
+                'learning_rate': config.Config().models.mlp.learning_rate,
+                'num_layers': len(mlp_hidden),
+                'units': mlp_hidden,
+                'dropout_rate': config.Config().models.mlp.dropout_rate,
+            }
             model = emotion_model.build_mlp(
                 input_shape=train_features['mfcc'][0].shape,
-                hidden_layers=config.Config().models.mlp.hidden_layers,
-                dropout_rate=config.Config().models.mlp.dropout_rate
+                params=mlp_params
             )
         else:  # cnn
             # Define CNN parameters
@@ -133,21 +140,23 @@ def train_model(args):
                 input_shape=input_shape,
                 params=params
             )
-          # Configure trainer
+        # Configure trainer
         model_config = config.Config().models.cnn if args.model_type == 'cnn' else config.Config().models.mlp
         trainer = ModelTrainer(
             model=model,
             model_type=args.model_type
-        )        # Configure callbacks
+        )
+        # Configure callbacks
         callbacks = emotion_model.get_callbacks(
             patience=args.patience
         )
         
         # Train model
+        feature_key = 'mel_spectrogram' if args.feature_type == 'mel_spectrogram' else 'mfcc'
         history = trainer.train(
-            X_train=train_features['mel_spectrogram'],
+            X_train=train_features[feature_key],
             y_train=train_features['labels'],
-            X_val=val_features['mel_spectrogram'],
+            X_val=val_features[feature_key],
             y_val=val_features['labels'],
             batch_size=args.batch_size,
             epochs=args.epochs,
@@ -191,7 +200,7 @@ def train_model(args):
         
         # Save test data for future evaluation
         model_manager.save_test_data(
-            X_test=test_features[args.feature_type],
+            X_test=test_features[feature_key],
             y_test=test_features['labels'],
             model_type=args.model_type
         )
@@ -227,12 +236,12 @@ def evaluate_model(args):
             return
         
         # Load test data from results directory
-        test_data_path = config.RESULTS_DIR / f"{model_info['type']}"
+        results_dir = Path(config.Config().paths.results_dir)
         try:
-            X_test = np.load(test_data_path / "X_test.npy")
-            y_test = np.load(test_data_path / "y_test.npy")
+            X_test = np.load(results_dir / f"{model_info['type']}_X_test.npy")
+            y_test = np.load(results_dir / f"{model_info['type']}_y_test.npy")
         except FileNotFoundError:
-            logger.error(f"Test data not found in {test_data_path}")
+            logger.error(f"Test data not found in {results_dir}")
             logger.info("Please run training first to generate test data")
             return
         
@@ -240,8 +249,7 @@ def evaluate_model(args):
         model_config = config.Config().models.cnn if model_info['type'] == 'cnn' else config.Config().models.mlp
         trainer = ModelTrainer(
             model=model, 
-            model_type=model_info['type'],
-            learning_rate=model_config.learning_rate
+            model_type=model_info['type']
         )
         
         # Evaluate model

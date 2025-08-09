@@ -15,6 +15,7 @@ if project_root not in sys.path:
 from src.models.model_manager import ModelManager
 from src.models.emotion_model import EmotionModel
 from src.features.feature_extractor import FeatureExtractor
+from src.core import config as core_config
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,9 @@ class SpeechEmotionAnalyzer:
         self.model_type = "cnn"  # Default model type
         self.model_manager = ModelManager()
         self.feature_extractor = FeatureExtractor()
-        self.emotion_labels = ['angry', 'calm', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+        # Use centralized labels from configuration for consistency across training/inference
+        self.emotion_labels = core_config.Config().training.emotion_labels
+        self.feature_info = None
         
         # Try to load the latest model
         self.initialize()
@@ -44,6 +47,10 @@ class SpeechEmotionAnalyzer:
                 if self.model:
                     self.model_path = latest_model['path']
                     self.model_type = latest_model['type']
+                    # Load feature normalization sidecar (if available)
+                    self.feature_info = self.model_manager.load_feature_info(model_path=self.model_path)
+                    if self.feature_info and 'normalization_params' in self.feature_info:
+                        self.feature_extractor.set_normalization_params(self.feature_info['normalization_params'])
                     self.loaded = True
                     logger.info(f"Successfully loaded {self.model_type.upper()} model from {self.model_path}")
                     return True
@@ -55,6 +62,9 @@ class SpeechEmotionAnalyzer:
                 self.model = self.model_manager.load_model(model_id=latest_model['id'])
                 if self.model:
                     self.model_path = latest_model['path']
+                    self.feature_info = self.model_manager.load_feature_info(model_path=self.model_path)
+                    if self.feature_info and 'normalization_params' in self.feature_info:
+                        self.feature_extractor.set_normalization_params(self.feature_info['normalization_params'])
                     self.loaded = True
                     logger.info(f"Successfully loaded newly found {self.model_type.upper()} model")
                     return True
@@ -117,6 +127,9 @@ class SpeechEmotionAnalyzer:
                     try:
                         self.model = tf.keras.models.load_model(str(model_path))
                         self.model_path = str(model_path)
+                        self.feature_info = self.model_manager.load_feature_info(model_path=self.model_path)
+                        if self.feature_info and 'normalization_params' in self.feature_info:
+                            self.feature_extractor.set_normalization_params(self.feature_info['normalization_params'])
                         self.loaded = True
                         logger.info(f"Loaded model from {model_path}")
                         
@@ -146,6 +159,8 @@ class SpeechEmotionAnalyzer:
             
             # Extract features
             features = self.feature_extractor.extract_features(y, sr)
+            # Apply normalization learned at training if available
+            features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
             if features is None:
                 st.error("❌ Failed to extract features from audio!")
                 return None, None, None
@@ -165,8 +180,11 @@ class SpeechEmotionAnalyzer:
                 return None, None
                 
             predictions = self.model.predict(features, verbose=0)
-            emotion_probs = dict(zip(self.emotion_labels, predictions[0]))
-            predicted_emotion = max(emotion_probs.items(), key=lambda x: x[1])[0]
+            probs = predictions[0]
+            # Align labels length to model outputs
+            labels = self.emotion_labels[: len(probs)]
+            emotion_probs = dict(zip(labels, probs))
+            predicted_emotion = labels[int(np.argmax(probs))]
             
             return predicted_emotion, emotion_probs
             
@@ -267,8 +285,12 @@ class SpeechEmotionAnalyzer:
 
 def main():
     """Main entry point for the application"""
-    app = SpeechEmotionAnalyzer()
-    app.run()
+    try:
+        app = SpeechEmotionAnalyzer()
+        app.run()
+    except Exception as e:
+        logger.error(f"Unhandled exception in app: {e}")
+        st.error(f"❌ Unhandled exception: {e}")
 
 if __name__ == "__main__":
     main()

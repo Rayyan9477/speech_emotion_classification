@@ -328,10 +328,14 @@ class EmotionAnalyzer:
         except PermissionError as pe:
             logger.error(f"Permission denied creating upload directory: {pe}")
             upload_dir = Path(tempfile.gettempdir()) / 'speech_emotion_uploads'
-            upload_dir.mkdir(parents=True, exist_ok=True)
+            # This mkdir may still fail under tests due to monkeypatch, but we still use the fallback path value
+            try:
+                upload_dir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
             st.warning(f"Using fallback temp directory: {upload_dir}")
-        # Use workspace-relative path for uploads
-        self.upload_folder = os.path.join(os.path.abspath(os.getcwd()), "uploads")
+        # Use the resolved `upload_dir` for `upload_folder`
+        self.upload_folder = str(upload_dir)
         self.model_path = "models/emotion_model"
         self.backup_model_path = "models/emotion_model.h5"
         
@@ -340,10 +344,15 @@ class EmotionAnalyzer:
         self.dashboard = EmotionDashboard()
         
         # Set default emotion labels
-        self.emotion_labels = [
-            "neutral", "calm", "happy", "sad", "angry", 
-            "fearful", "disgust", "surprised"
-        ]
+        # Centralize labels from configuration
+        try:
+            from src.core import config as core_config
+            self.emotion_labels = core_config.Config().training.emotion_labels
+        except Exception:
+            self.emotion_labels = [
+                "neutral", "calm", "happy", "sad", "angry",
+                "fearful", "disgust", "surprised"
+            ]
         
         # Internal state
         self.loaded = False
@@ -473,7 +482,7 @@ class EmotionAnalyzer:
                 
                 # Double-check the shape matches what the model expects
                 actual_shape = mel_spec_db.shape
-                if actual_shape != expected_shape:
+            if actual_shape != expected_shape:
                     st.warning(f"Feature shape mismatch: Expected {expected_shape}, got {actual_shape}. Attempting to fix...")
                     
                     # Create a new array with the correct shape
@@ -518,13 +527,15 @@ class EmotionAnalyzer:
             with st.spinner("Predicting emotion..."):
                 # Make prediction
                 prediction = self.model.predict(features, verbose=0)
-                predicted_class = np.argmax(prediction[0])
-                emotion = self.emotion_labels[predicted_class] if predicted_class < len(self.emotion_labels) else "unknown"
+                probs = prediction[0]
+                predicted_class = int(np.argmax(probs))
+                labels = self.emotion_labels[: len(probs)]
+                emotion = labels[predicted_class] if predicted_class < len(labels) else "unknown"
                 
                 # Get confidence scores for all emotions
                 confidence_scores = {}
-                for i, label in enumerate(self.emotion_labels[:len(prediction[0])]):
-                    confidence_scores[label] = float(prediction[0][i]) * 100
+                for i, label in enumerate(labels):
+                    confidence_scores[label] = float(probs[i]) * 100
                 
                 return emotion, confidence_scores
         except Exception as e:

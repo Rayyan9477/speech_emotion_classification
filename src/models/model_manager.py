@@ -53,6 +53,29 @@ class ModelManager:
         except Exception as e:
             logger.error(f"Error saving model registry: {e}")
     
+    def get_model_by_id(self, model_id):
+        """Return a model entry by its ID, or None if not found."""
+        try:
+            for model in self.model_registry.get("models", []):
+                if model.get("id") == model_id:
+                    return model
+            return None
+        except Exception as e:
+            logger.error(f"Error getting model by id {model_id}: {e}")
+            return None
+
+    def get_model_by_path(self, model_path):
+        """Return a model entry by its exact path, or None if not found."""
+        try:
+            normalized = os.path.normpath(model_path)
+            for model in self.model_registry.get("models", []):
+                if os.path.normpath(model.get("path", "")) == normalized:
+                    return model
+            return None
+        except Exception as e:
+            logger.error(f"Error getting model by path {model_path}: {e}")
+            return None
+    
     def register_model(self, model_path, model_type, metrics=None, description=None):
         """
         Register a model in the registry with its metadata
@@ -313,6 +336,103 @@ class ModelManager:
         except Exception as e:
             logger.error(f"Error saving training history: {e}")
             return None
+
+    def save_model_metrics(self, model_path, metrics):
+        """Persist model evaluation metrics to registry and a JSON report."""
+        try:
+            # Update registry entry or register if missing
+            entry = self.get_model_by_path(model_path)
+            if entry is None:
+                # Best-effort type inference from filename
+                base = os.path.basename(model_path).lower()
+                if base.startswith('cnn'):
+                    mtype = 'cnn'
+                elif base.startswith('mlp'):
+                    mtype = 'mlp'
+                else:
+                    mtype = 'unknown'
+                self.register_model(model_path=model_path, model_type=mtype, metrics=metrics)
+            else:
+                entry["metrics"] = metrics or {}
+                self._save_registry()
+
+            # Also save a general evaluation report for convenience
+            os.makedirs(self.results_dir, exist_ok=True)
+            report_path = os.path.join(self.results_dir, "model_evaluation_report.json")
+            with open(report_path, 'w') as f:
+                json.dump(metrics or {}, f, indent=4)
+            logger.info(f"Saved model evaluation report to {report_path}")
+        except Exception as e:
+            logger.error(f"Error saving model metrics: {e}")
+
+    def save_feature_info(self, feature_info, model_path=None):
+        """Save feature extraction configuration alongside the model and in results dir."""
+        try:
+            os.makedirs(self.results_dir, exist_ok=True)
+            # Save generic copy in results
+            results_feature_info = os.path.join(self.results_dir, 'feature_info.json')
+            with open(results_feature_info, 'w') as f:
+                json.dump(feature_info or {}, f, indent=4)
+            logger.info(f"Saved feature info to {results_feature_info}")
+
+            # If model_path provided, save next to it as well
+            if model_path:
+                base = os.path.splitext(model_path)[0]
+                sidecar = f"{base}_feature_info.json"
+                with open(sidecar, 'w') as f:
+                    json.dump(feature_info or {}, f, indent=4)
+                logger.info(f"Saved feature info sidecar to {sidecar}")
+        except Exception as e:
+            logger.error(f"Error saving feature info: {e}")
+
+    def load_feature_info(self, model_path=None):
+        """Load feature extraction info sidecar if available, else generic results copy.
+
+        Args:
+            model_path (str|None): If provided, tries `<model>_feature_info.json`.
+
+        Returns:
+            dict|None: Feature info if found, else None.
+        """
+        try:
+            candidates = []
+            if model_path:
+                base = os.path.splitext(model_path)[0]
+                candidates.append(f"{base}_feature_info.json")
+            candidates.append(os.path.join(self.results_dir, 'feature_info.json'))
+
+            for path in candidates:
+                if os.path.exists(path):
+                    with open(path, 'r') as f:
+                        return json.load(f)
+            return None
+        except Exception as e:
+            logger.error(f"Error loading feature info: {e}")
+            return None
+
+    def get_model_evaluation_report(self, model_id=None, model_path=None):
+        """Retrieve stored evaluation metrics by id/path or from last saved report."""
+        try:
+            # If id/path provided, try registry first
+            entry = None
+            if model_id:
+                entry = self.get_model_by_id(model_id)
+            elif model_path:
+                entry = self.get_model_by_path(model_path)
+
+            if entry and entry.get("metrics"):
+                return entry["metrics"]
+
+            # Fallback: read general report
+            general_report = os.path.join(self.results_dir, "model_evaluation_report.json")
+            if os.path.exists(general_report):
+                with open(general_report, 'r') as f:
+                    return json.load(f)
+
+            return None
+        except Exception as e:
+            logger.error(f"Error retrieving model evaluation report: {e}")
+            return None
     
     def save_test_data(self, X_test, y_test, model_type):
         """
@@ -359,17 +479,12 @@ class ModelManager:
     def _scan_for_new_models(self):
         """Scan models directory for unregistered models and add them to registry"""
         registered_paths = [m["path"] for m in self.model_registry["models"]]
-        
         # Scan directory for model files
         for file in os.listdir(self.models_dir):
-            if file.endswith(".keras") and "_emotion_model" in file:
+            if file.endswith((".keras", ".h5")) and "_emotion_model" in file:
                 model_path = os.path.join(self.models_dir, file)
-                
                 if model_path not in registered_paths:
-                    # Determine model type from filename
                     model_type = file.split("_")[0].lower()
-                    
-                    # Register model with basic info
                     self.register_model(
                         model_path=model_path,
                         model_type=model_type

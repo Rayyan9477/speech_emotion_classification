@@ -66,3 +66,11 @@ The improved system includes fallback mechanisms when components are unavailable
 2. **Model Experimentation**: Add support for different model architectures and hyperparameter tuning
 3. **Visualization**: Enhance the visualization capabilities for model performance analysis
 4. **Real-time Prediction**: Add support for real-time emotion prediction from audio input
+
+## Production-readiness Changes (MVP)
+
+- Unified emotion labels across UI and training via `src.core.config.Config().training.emotion_labels`.
+- Exposed missing model management methods used by CLI/tests (`get_model_by_id`, `get_model_by_path`, `save_model_metrics`, `save_feature_info`, `get_model_evaluation_report`).
+- Fixed training/evaluation flow in `src/main.py` (feature key selection, results paths, MLP params).
+- Added Streamlit dependencies and Dockerfile for one-command deployment.
+- UI fixes to align probabilities and labels lengths; consistent label source.

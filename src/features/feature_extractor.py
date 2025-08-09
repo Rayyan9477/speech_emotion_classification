@@ -174,6 +174,74 @@ class FeatureExtractor:
         except Exception as e:
             logger.error(f"Error in feature extraction: {e}")
             return np.zeros((1, self.n_mels, 165, 1))
+
+    def set_normalization_params(self, params):
+        """
+        Set internal scaler parameters from a dictionary structure produced by
+        get_normalization_params(). This enables applying the same normalization
+        at inference time that was learned during training.
+
+        Args:
+            params (dict): Dict with keys 'mfcc_scaler' and/or 'spec_scaler',
+                           each containing 'mean', 'scale', 'var' lists.
+        """
+        if not params or not isinstance(params, dict):
+            return
+        try:
+            if 'mfcc_scaler' in params:
+                self.scaler_mfcc.mean_ = np.asarray(params['mfcc_scaler']['mean'])
+                self.scaler_mfcc.scale_ = np.asarray(params['mfcc_scaler']['scale'])
+                self.scaler_mfcc.var_ = np.asarray(params['mfcc_scaler']['var'])
+            if 'spec_scaler' in params:
+                self.scaler_spec.mean_ = np.asarray(params['spec_scaler']['mean'])
+                self.scaler_spec.scale_ = np.asarray(params['spec_scaler']['scale'])
+                self.scaler_spec.var_ = np.asarray(params['spec_scaler']['var'])
+            logger.info("Normalization parameters set on feature extractor")
+        except Exception as e:
+            logger.error(f"Error setting normalization params: {e}")
+
+    def normalize_single(self, features, feature_type='mel_spectrogram'):
+        """
+        Normalize a single feature tensor using fitted scalers.
+
+        Args:
+            features (np.ndarray): For 'mel_spectrogram', shape (1, n_mels, T, 1).
+                                   For 'mfcc', shape (1, n_features) or (n_features,).
+            feature_type (str): 'mel_spectrogram' or 'mfcc'
+
+        Returns:
+            np.ndarray: Normalized features with the same shape as input.
+        """
+        try:
+            if feature_type == 'mel_spectrogram':
+                if features is None:
+                    return features
+                original_shape = features.shape  # (1, n_mels, T, 1)
+                # Flatten to 2D (N, 1)
+                reshaped = features.reshape(-1, 1)
+                # scaler_spec must be already fitted (mean_/scale_ attributes exist)
+                if not hasattr(self.scaler_spec, 'mean_'):
+                    return features
+                normalized = self.scaler_spec.transform(reshaped)
+                return normalized.reshape(original_shape)
+            elif feature_type == 'mfcc':
+                x = features
+                if x.ndim == 1:
+                    x2d = x.reshape(1, -1)
+                elif x.ndim == 2 and x.shape[0] == 1:
+                    x2d = x
+                else:
+                    # Unexpected shape; best-effort to flatten last dim as features
+                    x2d = x.reshape(1, -1)
+                if not hasattr(self.scaler_mfcc, 'mean_'):
+                    return features
+                normalized = self.scaler_mfcc.transform(x2d)
+                return normalized.reshape(x.shape)
+            else:
+                return features
+        except Exception as e:
+            logger.error(f"Error normalizing single sample: {e}")
+            return features
     
     def extract_mfcc(self, audio_data, sr):
         """

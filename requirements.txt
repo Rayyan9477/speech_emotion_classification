@@ -22,6 +22,11 @@ seaborn>=0.11.0
 plotly>=5.10.0
 kaleido>=0.2.1  # Required for plotly static image export
 
+# UI
+streamlit>=1.32.0
+streamlit-extras>=0.4.0
+streamlit-option-menu>=0.3.6
+
 # Dimensionality reduction for visualization
 umap-learn>=0.5.3
 
@@ -31,3 +36,7 @@ graphviz>=0.19  # For model architecture visualization
 
 # Utilities
 tqdm>=4.62.0
+
+# API (optional)
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
