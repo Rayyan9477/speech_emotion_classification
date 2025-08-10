@@ -15,6 +15,7 @@ loaded = False
 model = None
 feature_extractor = FeatureExtractor()
 emotion_labels = None
+model_feature_type = "mel_spectrogram"  # default; will be overwritten on startup if present
 
 class PredictResponse(BaseModel):
     emotion: str
@@ -22,17 +23,37 @@ class PredictResponse(BaseModel):
 
 @app.on_event("startup")
 def load_model_on_startup():
-    global model, loaded, emotion_labels
+    global model, loaded, emotion_labels, model_feature_type
     latest = model_manager.get_latest_model(model_type="cnn") or model_manager.get_latest_model()
     if latest:
         model = model_manager.load_model(model_id=latest['id'])
         feat_info = model_manager.load_feature_info(model_path=latest['path'])
-        if feat_info and 'normalization_params' in feat_info:
-            feature_extractor.set_normalization_params(feat_info['normalization_params'])
+        if feat_info:
+            # normalization for both mfcc/spec
+            if 'normalization_params' in feat_info:
+                feature_extractor.set_normalization_params(feat_info['normalization_params'])
+            # prefer saved training feature type
+            model_feature_type = feat_info.get('feature_type', model_feature_type)
         loaded = model is not None
     # Lazy import to avoid heavy deps before load
     from src.core import config as core_config
     emotion_labels = core_config.Config().training.emotion_labels
+
+@app.get("/health")
+def health():
+    """Health/status endpoint.
+    Always returns 200 with model loading state and labels count.
+    """
+    try:
+        return {
+            "status": "ok",
+            "model_loaded": bool(loaded and (model is not None)),
+            "labels_count": 0 if emotion_labels is None else len(emotion_labels),
+            "feature_type": model_feature_type,
+        }
+    except Exception as e:
+        # Return degraded health but still 200 to be observable
+        return {"status": "degraded", "error": str(e)}
 
 @app.post("/predict", response_model=PredictResponse)
 async def predict(file: UploadFile = File(...)):
@@ -43,8 +64,22 @@ async def predict(file: UploadFile = File(...)):
         audio, sr = sf.read(io.BytesIO(data))
         if audio.ndim > 1:
             audio = np.mean(audio, axis=1)
-        features = feature_extractor.extract_features(audio, sr)
-        features = feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+
+        # Extract features based on the model's training feature_type
+        if model_feature_type == "mfcc":
+            x = feature_extractor.extract_mfcc(audio, sr)
+            x = feature_extractor.normalize_single(x, feature_type='mfcc')
+            # ensure batch dimension
+            if x is None:
+                raise ValueError("MFCC extraction failed")
+            if x.ndim == 1:
+                x = x.reshape(1, -1)
+            features = x
+        else:
+            # default to mel_spectrogram
+            features = feature_extractor.extract_features(audio, sr)
+            features = feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+
         preds = model.predict(features, verbose=0)[0]
         labels = emotion_labels[: len(preds)]
         emotion = labels[int(np.argmax(preds))]

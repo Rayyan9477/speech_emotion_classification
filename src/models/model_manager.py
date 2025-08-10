@@ -105,6 +105,12 @@ class ModelManager:
             "metrics": metrics or {},
             "description": description or f"{model_type.upper()} model trained on RAVDESS dataset"
         }
+        # Promote commonly used metadata to top-level fields when available
+        try:
+            if metrics and isinstance(metrics, dict) and metrics.get('feature_type'):
+                model_entry['feature_type'] = metrics['feature_type']
+        except Exception:
+            pass
         
         # Add to registry
         self.model_registry["models"].append(model_entry)
@@ -478,11 +484,11 @@ class ModelManager:
         
     def _scan_for_new_models(self):
         """Scan models directory for unregistered models and add them to registry"""
-        registered_paths = [m["path"] for m in self.model_registry["models"]]
+        registered_paths = [os.path.normpath(m["path"]) for m in self.model_registry["models"]]
         # Scan directory for model files
         for file in os.listdir(self.models_dir):
             if file.endswith((".keras", ".h5")) and "_emotion_model" in file:
-                model_path = os.path.join(self.models_dir, file)
+                model_path = os.path.normpath(os.path.join(self.models_dir, file))
                 if model_path not in registered_paths:
                     model_type = file.split("_")[0].lower()
                     self.register_model(

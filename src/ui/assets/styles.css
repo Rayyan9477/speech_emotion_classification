@@ -1,0 +1,115 @@
+/* Global typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Ensure default readable text color on white surfaces */
+body, .card-container, .emotion-card, .uploadArea, .status-container {
+  color: #0F172A;
+}
+
+/* Headers */
+.main-header {
+  font-size: 2.75rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #6A11CB 0%, #2575FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-top: 1rem;
+  letter-spacing: -0.5px;
+}
+
+.sub-header {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #4F46E5;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.3px;
+}
+
+/* Cards */
+.card-container {
+  border-radius: 16px;
+  padding: 24px;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
+  margin-bottom: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+}
+
+.emotion-card {
+  background-color: white;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.emotion-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Status */
+.status-container {
+  padding: 12px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border: 1px solid transparent;
+}
+.status-progress { background-color: #E0F2FE; border-color: #38BDF8; }
+.status-success { background-color: #DCFCE7; border-color: #34D399; }
+.status-error { background-color: #FEE2E2; border-color: #F87171; }
+/* Force high-contrast text inside status banners */
+.status-container h4, .status-container p, .status-container a {
+  color: #0F172A !important;
+}
+
+/* Upload */
+.uploadArea div[data-testid="stFileUploader"] {
+  padding: 2rem 1rem;
+  background-color: #F8FAFC;
+  border: 2px dashed #CBD5E1;
+  border-radius: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.uploadArea div[data-testid="stFileUploader"]:hover {
+  border-color: #93C5FD;
+  background-color: #F0F9FF;
+}
+
+/* Make text in upload area readable regardless of theme */
+.uploadArea div[data-testid="stFileUploader"] * {
+  color: #0F172A !important;
+}
+
+/* Accuracy meter */
+.accuracy-meter {
+  height: 8px;
+  width: 100%;
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.accuracy-value {
+  position: absolute;
+  height: 100%;
+  width: 80%;
+  background: linear-gradient(90deg, #4F46E5 0%, #818CF8 100%);
+  border-radius: 100px;
+}
+
+/* Hide Streamlit status widget */
+div[data-testid="stStatusWidget"] { display: none; }
+
+

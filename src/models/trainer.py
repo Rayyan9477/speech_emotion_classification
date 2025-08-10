@@ -224,25 +224,21 @@ class ModelTrainer:
     def save_model(self, filepath):
         """Save model with proper error handling."""
         try:
-            # Convert to string if Path object
             filepath = str(filepath)
-            
-            # Ensure directory exists
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            
-            # Standardize on .keras format (preferred for TF 2.x)
+
             base_path = filepath.rsplit('.', 1)[0] if '.' in filepath else filepath
             keras_path = f"{base_path}.keras"
-            
-            # Save the model in the .keras format (primary)
-            self.model.save(keras_path, save_format='keras')
+
+            # Primary save (Keras 2/3 compatible by extension)
+            self.model.save(keras_path)
             logger.info(f"Model saved to {keras_path}")
-            
-            # Also save as h5 for backward compatibility
+
+            # Optional H5 for backward compatibility (best-effort)
             h5_path = f"{base_path}.h5"
             try:
-                self.model.save(h5_path, save_format='h5')
-                logger.info(f"Model also saved in h5 format at {h5_path} for backward compatibility")
+                self.model.save(h5_path)
+                logger.info(f"Model also saved in h5 format at {h5_path}")
             except Exception as h5_err:
                 logger.warning(f"Could not save in h5 format: {h5_err}")
 
@@ -251,10 +247,8 @@ class ModelTrainer:
             with open(arch_path, 'w') as f:
                 f.write(self.model.to_json())
             logger.info(f"Model architecture saved to {arch_path}")
-            
-            # Return the primary save path
+
             return keras_path
-            
         except Exception as e:
             logger.error(f"Error saving model: {e}")
             import traceback

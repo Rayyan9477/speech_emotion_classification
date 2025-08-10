@@ -235,9 +235,21 @@ class SpeechEmotionAnalyzer:
         """Process audio file and predict emotion"""
         try:
             if not self.loaded or self.model is None:
-                st.warning("⚠️ No trained model found. Please train a model first using:")
-                st.code("python -m src.main --train --model-type cnn")
-                return
+                st.info("📊 No trained model found. Attempting to train automatically...")
+                # Attempt to bootstrap using main UI analyzer which can train automatically
+                try:
+                    from src.ui.app import EmotionAnalyzer as _EA
+                    _ea = _EA()
+                    if not _ea.load_model():
+                        st.warning("⏳ Training in progress. Please try again shortly.")
+                        return
+                    # Reuse its loaded model and normalization
+                    self.model = _ea.model
+                    self.loaded = _ea.loaded
+                    self.feature_extractor = _ea.feature_extractor
+                except Exception:
+                    st.warning("⚠️ Please run: python -m src.main --train --model-type cnn")
+                    return
                 
             # Extract features
             y, sr, features = self.extract_features(audio_file)

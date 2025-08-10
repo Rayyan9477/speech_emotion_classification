@@ -85,11 +85,29 @@ python -m src.main --train --model-type mlp --feature-type mfcc
 python -m src.main --evaluate --model-id <MODEL_ID>
 ```
 
-Run the Streamlit app locally:
+Run the app via unified driver (recommended):
 
 ```bash
 pip install -r requirements.txt
+python app.py           # ensures model exists, then launches the UI
+python app.py --train   # train once and exit
+python app.py --api     # launch FastAPI server
+```
+
+Run the Streamlit app directly:
+
+```bash
 streamlit run src/ui/streamlit_app.py --server.port 8501 --server.headless true
+Live recording:
+
+The app supports recording in-browser via microphone. Ensure you install the UI extras:
+
+```bash
+pip install -r requirements.txt  # includes audio-recorder-streamlit
+```
+
+On first use, your browser will ask for mic permissions. Use the "Record Audio" tab to capture and analyze speech.
+
 ```
 
 ## Expected Performance

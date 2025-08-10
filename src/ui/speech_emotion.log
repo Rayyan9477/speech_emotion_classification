@@ -1,0 +1,3 @@
+2025-08-11 01:27:33,921 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:27:34,260 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+

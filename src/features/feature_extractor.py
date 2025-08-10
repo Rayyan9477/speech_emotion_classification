@@ -335,29 +335,36 @@ class FeatureExtractor:
     
     def process_audio_file(self, file_path, feature_type='both'):
         """
-        Process a single audio file to extract features.
-        
+        Process a single audio source to extract features.
+
         Args:
-            file_path (str): Path to the audio file.
-            feature_type (str): Type of features to extract ('mfcc', 'spectrogram', or 'both').
-            
+            file_path (str|dict): Path to the audio file or a HuggingFace-like dict
+                                  with keys {'path', 'array', 'sampling_rate'}.
+            feature_type (str): 'mfcc', 'mel_spectrogram', or 'both'.
+
         Returns:
-            dict: Dictionary containing the extracted features.
+            dict: Extracted features.
         """
         try:
-            # Load audio file
-            audio_data, sr = librosa.load(file_path, sr=None)
-            
+            # Support HF datasets or dummy rows: prefer in-memory array if present
+            if isinstance(file_path, dict):
+                if 'array' in file_path and 'sampling_rate' in file_path:
+                    audio_data = np.asarray(file_path['array'], dtype=np.float32)
+                    sr = int(file_path['sampling_rate'])
+                elif 'path' in file_path:
+                    audio_data, sr = librosa.load(file_path['path'], sr=None)
+                else:
+                    raise ValueError("Unsupported audio dict format")
+            else:
+                audio_data, sr = librosa.load(file_path, sr=None)
+
             features = {}
-            
             if feature_type in ['mfcc', 'both']:
                 features['mfcc'] = self.extract_mfcc(audio_data, sr)
-                
-            if feature_type in ['mel_spectrogram', 'both']:
+            if feature_type in ['mel_spectrogram', 'both', 'spectrogram']:
                 features['mel_spectrogram'] = self.extract_spectrogram(audio_data, sr)
-            
+
             return features
-        
         except Exception as e:
             logger.error(f"Error processing audio file {file_path}: {e}")
             raise
@@ -400,11 +407,11 @@ class FeatureExtractor:
                 if idx % 100 == 0:
                     logger.info(f"Processing audio {idx+1}/{len(dataset)}")
                 
-                # Handle different audio path formats
-                if isinstance(row['audio'], dict) and 'path' in row['audio']:
-                    audio_path = row['audio']['path']
+                # Handle different audio source formats (prefer in-memory arrays)
+                if isinstance(row['audio'], dict):
+                    audio_source = row['audio']
                 elif isinstance(row['audio'], str):
-                    audio_path = row['audio']
+                    audio_source = row['audio']
                 else:
                     logger.warning(f"Unexpected audio format for row {idx}, skipping")
                     continue
@@ -412,8 +419,8 @@ class FeatureExtractor:
                 # Get label from the identified column
                 label = row[label_column]
                 
-                # Load and process audio file
-                features = self.process_audio_file(audio_path, feature_type)
+                # Load and process audio source
+                features = self.process_audio_file(audio_source, feature_type)
                 
                 # Store original features
                 if 'mfcc' in features:
@@ -426,7 +433,14 @@ class FeatureExtractor:
                 
                 # Generate augmented samples if requested
                 if augment and augment_size > 0:
-                    audio_data, sr = librosa.load(audio_path, sr=None)
+                    # Determine raw audio for augmentation
+                    if isinstance(audio_source, dict) and 'array' in audio_source and 'sampling_rate' in audio_source:
+                        audio_data = np.asarray(audio_source['array'], dtype=np.float32)
+                        sr = int(audio_source['sampling_rate'])
+                    elif isinstance(audio_source, dict) and 'path' in audio_source:
+                        audio_data, sr = librosa.load(audio_source['path'], sr=None)
+                    else:
+                        audio_data, sr = librosa.load(audio_source, sr=None)
                     
                     for _ in range(augment_size):
                         # Apply data augmentation

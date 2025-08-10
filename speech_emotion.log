@@ -1,0 +1,314 @@
+2025-08-11 00:53:47,661 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 00:54:23,674 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:54:23,687 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 00:54:23,690 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:54:24,562 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-08-11 00:55:47,864 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 00:55:47,898 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:55:49,242 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:55:49,248 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:55:56,251 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 00:55:59,005 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 00:55:59,011 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:00,136 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:00,138 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:00,138 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-08-11 00:56:01,739 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 00:56:06,050 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 00:56:06,058 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:06,060 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:06,062 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:06,064 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:06,068 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:06,069 - __main__ - INFO - Loading dataset...
+2025-08-11 00:56:06,070 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-11 00:56:06,720 - src.data.data_loader - ERROR - Unexpected error loading dataset 'Codec-SUPERB/RAVDESS': Dataset 'Codec-SUPERB/RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:06,720 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'lhoestq/ravdess-emotion' (attempt 1/5)...
+2025-08-11 00:56:06,973 - src.data.data_loader - ERROR - Unexpected error loading dataset 'lhoestq/ravdess-emotion': Dataset 'lhoestq/ravdess-emotion' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:06,973 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'RAVDESS' (attempt 1/5)...
+2025-08-11 00:56:07,228 - src.data.data_loader - ERROR - Unexpected error loading dataset 'RAVDESS': Dataset 'RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:07,228 - src.data.data_loader - WARNING - Could not load any RAVDESS dataset. Creating a dummy dataset for development purposes.
+2025-08-11 00:56:07,228 - src.data.data_loader - WARNING - Creating dummy dataset with 200 samples for testing purposes
+2025-08-11 00:56:07,310 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:07,314 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:07,316 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:07,322 - src.data.data_loader - INFO - Dataset columns: ['labels', 'speaker_id', 'speaker_gender', 'audio']
+2025-08-11 00:56:07,322 - src.data.data_loader - INFO - Using 'labels' as the emotion label column
+2025-08-11 00:56:07,332 - src.data.data_loader - INFO - Dataset split into 139 training, 31 validation, and 30 test samples
+2025-08-11 00:56:07,332 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-08-11 00:56:07,337 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:07,337 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-08-11 00:56:08,349 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 00:56:11,903 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-08-11 00:56:12,583 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 00:56:13,660 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 00:56:13,665 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:13,665 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:13,665 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:13,671 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:13,672 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:13,675 - __main__ - INFO - Loading dataset...
+2025-08-11 00:56:13,675 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-11 00:56:14,044 - src.data.data_loader - ERROR - Unexpected error loading dataset 'Codec-SUPERB/RAVDESS': Dataset 'Codec-SUPERB/RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:14,044 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'lhoestq/ravdess-emotion' (attempt 1/5)...
+2025-08-11 00:56:14,392 - src.data.data_loader - ERROR - Unexpected error loading dataset 'lhoestq/ravdess-emotion': Dataset 'lhoestq/ravdess-emotion' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:14,392 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'RAVDESS' (attempt 1/5)...
+2025-08-11 00:56:14,703 - src.data.data_loader - ERROR - Unexpected error loading dataset 'RAVDESS': Dataset 'RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 00:56:14,703 - src.data.data_loader - WARNING - Could not load any RAVDESS dataset. Creating a dummy dataset for development purposes.
+2025-08-11 00:56:14,703 - src.data.data_loader - WARNING - Creating dummy dataset with 200 samples for testing purposes
+2025-08-11 00:56:14,766 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:14,768 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:14,772 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:14,772 - src.data.data_loader - INFO - Dataset columns: ['labels', 'speaker_id', 'speaker_gender', 'audio']
+2025-08-11 00:56:14,772 - src.data.data_loader - INFO - Using 'labels' as the emotion label column
+2025-08-11 00:56:14,776 - src.data.data_loader - INFO - Dataset split into 139 training, 31 validation, and 30 test samples
+2025-08-11 00:56:14,776 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-08-11 00:56:14,780 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:14,780 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-08-11 00:56:17,428 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:17,479 - src.core.config - INFO - Directory structure validated
+2025-08-11 00:56:20,482 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-08-11 00:56:20,491 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-08-11 01:11:35,394 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:11:39,067 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:39,076 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:44,730 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:11:47,450 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-08-11 01:11:47,944 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 01:11:48,747 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 01:11:48,751 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:48,753 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:48,755 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:48,757 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:48,757 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:48,757 - __main__ - INFO - Loading dataset...
+2025-08-11 01:11:48,757 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-11 01:11:49,641 - src.data.data_loader - ERROR - Unexpected error loading dataset 'Codec-SUPERB/RAVDESS': Dataset 'Codec-SUPERB/RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:11:49,641 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'lhoestq/ravdess-emotion' (attempt 1/5)...
+2025-08-11 01:11:49,891 - src.data.data_loader - ERROR - Unexpected error loading dataset 'lhoestq/ravdess-emotion': Dataset 'lhoestq/ravdess-emotion' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:11:49,891 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'RAVDESS' (attempt 1/5)...
+2025-08-11 01:11:50,225 - src.data.data_loader - ERROR - Unexpected error loading dataset 'RAVDESS': Dataset 'RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:11:50,225 - src.data.data_loader - WARNING - Could not load any RAVDESS dataset. Creating a dummy dataset for development purposes.
+2025-08-11 01:11:50,225 - src.data.data_loader - WARNING - Creating dummy dataset with 200 samples for testing purposes
+2025-08-11 01:11:50,320 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:50,322 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:50,322 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:50,322 - src.data.data_loader - INFO - Dataset columns: ['labels', 'speaker_id', 'speaker_gender', 'audio']
+2025-08-11 01:11:50,322 - src.data.data_loader - INFO - Using 'labels' as the emotion label column
+2025-08-11 01:11:50,322 - src.data.data_loader - INFO - Dataset split into 139 training, 31 validation, and 30 test samples
+2025-08-11 01:11:50,322 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-08-11 01:11:50,336 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:11:50,336 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-08-11 01:11:53,596 - src.features.feature_extractor - ERROR - Error processing audio file /tmp/dummy_audio_37.wav: [Errno 2] No such file or directory: '/tmp/dummy_audio_37.wav'
+2025-08-11 01:11:53,596 - src.features.feature_extractor - ERROR - Error processing dataset: [Errno 2] No such file or directory: '/tmp/dummy_audio_37.wav'
+2025-08-11 01:11:53,598 - __main__ - ERROR - Error during training: [Errno 2] No such file or directory: '/tmp/dummy_audio_37.wav'
+2025-08-11 01:11:53,598 - __main__ - ERROR - Unhandled exception: [Errno 2] No such file or directory: '/tmp/dummy_audio_37.wav'
+2025-08-11 01:12:37,396 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:12:56,238 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:12:56,244 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:12:56,247 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:12:57,208 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-08-11 01:13:21,792 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:13:21,801 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:22,954 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:22,958 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:26,564 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:26,790 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-08-11 01:13:26,791 - src.ui.app - ERROR - Prediction requested but model is not loaded yet
+2025-08-11 01:13:29,349 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:13:33,594 - __main__ - INFO - TensorFlow version: 2.19.0
+2025-08-11 01:13:34,422 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 01:13:35,905 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 01:13:35,912 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:35,916 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:35,920 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:35,922 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:35,927 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:35,931 - __main__ - INFO - Loading dataset...
+2025-08-11 01:13:35,931 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-11 01:13:37,124 - src.data.data_loader - ERROR - Unexpected error loading dataset 'Codec-SUPERB/RAVDESS': Dataset 'Codec-SUPERB/RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:13:37,126 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'lhoestq/ravdess-emotion' (attempt 1/5)...
+2025-08-11 01:13:37,429 - src.data.data_loader - ERROR - Unexpected error loading dataset 'lhoestq/ravdess-emotion': Dataset 'lhoestq/ravdess-emotion' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:13:37,429 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'RAVDESS' (attempt 1/5)...
+2025-08-11 01:13:37,738 - src.data.data_loader - ERROR - Unexpected error loading dataset 'RAVDESS': Dataset 'RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-08-11 01:13:37,738 - src.data.data_loader - WARNING - Could not load any RAVDESS dataset. Creating a dummy dataset for development purposes.
+2025-08-11 01:13:37,738 - src.data.data_loader - WARNING - Creating dummy dataset with 200 samples for testing purposes
+2025-08-11 01:13:37,824 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:37,824 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:37,832 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:37,832 - src.data.data_loader - INFO - Dataset columns: ['labels', 'speaker_id', 'speaker_gender', 'audio']
+2025-08-11 01:13:37,832 - src.data.data_loader - INFO - Using 'labels' as the emotion label column
+2025-08-11 01:13:37,847 - src.data.data_loader - INFO - Dataset split into 139 training, 31 validation, and 30 test samples
+2025-08-11 01:13:37,847 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-08-11 01:13:37,849 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:13:37,852 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-08-11 01:20:08,598 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:20:52,360 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 01:21:08,633 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:21:08,638 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:21:08,643 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:21:09,536 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-08-11 01:21:24,043 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:21:24,049 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:25:25,358 - src.ui.app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:25:25,365 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:26:12,219 - src.core.config - INFO - Directory structure validated
+2025-08-11 01:26:12,226 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 01:26:12,230 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:05:25,849 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 02:05:29,132 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:05:29,138 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:05:29,140 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:05:29,643 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 02:05:30,542 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:05:59,212 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-08-11 02:06:04,296 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:06:04,296 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:06:04,296 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:06:05,473 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-08-11 02:06:07,783 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:06:13,936 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-08-11 02:10:18,026 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:10:18,030 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:10:18,030 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:10:18,042 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:10:18,078 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:10:18,086 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:10:36,241 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:10:36,250 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:31,203 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:31,231 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:31,234 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:12:31,245 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:12:31,304 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:12:31,335 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:45,552 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:45,556 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:12:45,563 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:12:45,584 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:12:45,621 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:12:45,629 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:02,065 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:02,072 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:02,074 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:13:02,087 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:13:02,104 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:13:02,114 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:58,191 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:58,199 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:13:58,201 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:13:58,220 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:13:58,237 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:13:58,253 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:14:40,565 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:14:40,573 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:14:45,049 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:14:45,057 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:14:53,648 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:14:53,654 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:16:58,294 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:16:58,303 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:16:58,305 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:16:58,321 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:16:58,366 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:16:58,372 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:17:49,815 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:17:49,826 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:18:17,749 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:18:17,765 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:19:47,015 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:19:47,025 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:18,827 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:18,871 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:18,902 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:20:18,967 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:20:19,034 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:20:19,050 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:34,089 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:34,123 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:34,187 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:20:34,585 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:20:34,854 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:20:35,123 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:55,783 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:55,799 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:20:55,803 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:20:55,881 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:20:55,916 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:20:55,930 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:23:26,324 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:23:26,336 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:23:35,818 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:23:35,824 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:09,823 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:26:10,000 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:10,008 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:10,013 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:26:10,036 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:26:10,049 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:23,452 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:26:23,493 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:23,504 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:26:23,507 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:26:23,545 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:26:23,554 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:30,222 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:37:30,254 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:30,271 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:30,272 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:37:30,303 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:37:30,310 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:53,102 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:37:53,122 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:53,134 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:37:53,136 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:37:53,168 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:37:53,195 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:17,773 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:38:17,793 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:17,803 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:17,803 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:38:17,830 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:38:17,843 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:31,589 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:38:31,608 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:31,608 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:31,618 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:38:31,680 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:38:31,690 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:54,748 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:38:54,798 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:54,820 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:54,835 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:38:54,889 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:38:54,955 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:55,002 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:38:55,124 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:40:40,561 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:40:40,656 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:40:40,675 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:40:40,677 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:40:40,798 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:40:40,816 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:40:40,825 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:40:40,840 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:41:58,250 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:41:58,343 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:41:58,377 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:41:58,387 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:41:58,517 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:41:58,528 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:41:58,536 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:41:58,542 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:42:11,245 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-11 02:42:11,300 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:42:11,312 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:42:11,315 - src.main - INFO - TensorFlow version: 2.19.0
+2025-08-11 02:42:11,363 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-08-11 02:42:11,390 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:42:11,411 - src.core.config - INFO - Directory structure validated
+2025-08-11 02:42:11,433 - src.core.config - INFO - Directory structure validated
