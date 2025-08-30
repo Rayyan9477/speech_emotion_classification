@@ -312,3 +312,191 @@
 2025-08-11 02:42:11,390 - src.core.config - INFO - Directory structure validated
 2025-08-11 02:42:11,411 - src.core.config - INFO - Directory structure validated
 2025-08-11 02:42:11,433 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:05:24,513 - matplotlib.font_manager - INFO - Failed to extract font properties from /usr/share/fonts/truetype/noto/NotoColorEmoji.ttf: Can not load face (unknown file format; error code 0x2)
+2025-08-30 22:05:24,520 - matplotlib.font_manager - INFO - generated new fontManager
+2025-08-30 22:05:39,509 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-30 22:05:39,521 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:05:39,523 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:05:39,523 - src.main - INFO - TensorFlow version: 2.20.0
+2025-08-30 22:05:39,591 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:05:54,616 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-30 22:05:54,625 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:05:54,626 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:05:54,626 - src.main - INFO - TensorFlow version: 2.20.0
+2025-08-30 22:05:54,697 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:06:28,718 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-30 22:06:28,728 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:06:28,728 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:06:28,728 - src.main - INFO - TensorFlow version: 2.20.0
+2025-08-30 22:06:28,798 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:06:45,772 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:06:46,296 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-30 22:06:58,529 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-08-30 22:07:08,070 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:08,071 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,116 - __main__ - INFO - TensorFlow version: 2.20.0
+2025-08-30 22:07:10,189 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:07:10,355 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-30 22:07:10,361 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,361 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,362 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,362 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,362 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:10,362 - __main__ - INFO - Loading dataset...
+2025-08-30 22:07:10,362 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-08-30 22:07:10,385 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:10,385 - huggingface_hub.utils._http - WARNING - Retrying in 1s [Retry 1/5].
+2025-08-30 22:07:11,390 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:11,390 - huggingface_hub.utils._http - WARNING - Retrying in 2s [Retry 2/5].
+2025-08-30 22:07:13,394 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:13,394 - huggingface_hub.utils._http - WARNING - Retrying in 4s [Retry 3/5].
+2025-08-30 22:07:17,398 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:17,398 - huggingface_hub.utils._http - WARNING - Retrying in 8s [Retry 4/5].
+2025-08-30 22:07:25,403 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:25,403 - huggingface_hub.utils._http - WARNING - Retrying in 8s [Retry 5/5].
+2025-08-30 22:07:33,407 - huggingface_hub.utils._http - WARNING - HTTP Error 429 thrown while requesting HEAD https://huggingface.co/datasets/Codec-SUPERB/RAVDESS/resolve/main/README.md
+2025-08-30 22:07:33,408 - datasets.load - WARNING - Using the latest cached version of the dataset since Codec-SUPERB/RAVDESS couldn't be found on the Hugging Face Hub
+2025-08-30 22:07:33,411 - datasets.packaged_modules.cache.cache - WARNING - Found the latest cached dataset configuration 'default' at /home/ubuntu/.cache/huggingface/datasets/Codec-SUPERB___ravdess/default/0.0.0/46aa36c5fdeb1b6d63b746b74fde528a540044b2 (last modified on Sat Aug 30 22:06:58 2025).
+2025-08-30 22:07:33,430 - src.data.data_loader - INFO - Dataset loaded successfully with 1440 samples
+2025-08-30 22:07:33,430 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:33,430 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:33,430 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:33,432 - src.data.data_loader - INFO - Dataset columns: ['audio']
+2025-08-30 22:07:33,432 - src.data.data_loader - WARNING - No explicit emotion label column found. Attempting to extract from filenames.
+2025-08-30 22:07:33,434 - src.data.data_loader - INFO - Using 'emotion' as the emotion label column
+2025-08-30 22:07:33,437 - src.data.data_loader - INFO - Dataset split into 1008 training, 216 validation, and 216 test samples
+2025-08-30 22:07:33,437 - __main__ - INFO - Extracting mel_spectrogram features...
+2025-08-30 22:07:33,437 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:33,437 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-08-30 22:07:42,026 - src.features.feature_extractor - INFO - Processing audio 701/1008
+2025-08-30 22:07:42,749 - src.features.feature_extractor - INFO - Processing audio 1001/1008
+2025-08-30 22:07:42,933 - src.features.feature_extractor - INFO - Processing audio 1101/1008
+2025-08-30 22:07:43,385 - src.features.feature_extractor - INFO - Processing audio 1/1008
+2025-08-30 22:07:43,533 - src.features.feature_extractor - INFO - Processing audio 1401/1008
+2025-08-30 22:07:43,616 - src.features.feature_extractor - INFO - Processing audio 401/1008
+2025-08-30 22:07:43,752 - src.features.feature_extractor - INFO - Processing audio 901/1008
+2025-08-30 22:07:44,047 - src.features.feature_extractor - INFO - Processing audio 301/1008
+2025-08-30 22:07:44,699 - src.features.feature_extractor - INFO - Processing audio 1201/1008
+2025-08-30 22:07:45,219 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-08-30 22:07:45,301 - src.features.feature_extractor - INFO - Processed 1008 audio files successfully
+2025-08-30 22:07:45,302 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-08-30 22:07:45,516 - src.features.feature_extractor - INFO - Processing audio 501/216
+2025-08-30 22:07:46,020 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-08-30 22:07:46,022 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-08-30 22:07:46,023 - src.features.feature_extractor - INFO - Using 'emotion' as the label column for feature extraction
+2025-08-30 22:07:46,314 - src.features.feature_extractor - INFO - Processing audio 101/216
+2025-08-30 22:07:46,325 - src.features.feature_extractor - INFO - Processing audio 201/216
+2025-08-30 22:07:46,542 - src.features.feature_extractor - INFO - Processing audio 601/216
+2025-08-30 22:07:46,697 - src.features.feature_extractor - INFO - Processing audio 801/216
+2025-08-30 22:07:46,718 - src.features.feature_extractor - INFO - Processing audio 1301/216
+2025-08-30 22:07:46,736 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-08-30 22:07:46,740 - src.features.feature_extractor - INFO - Processed 216 audio files successfully
+2025-08-30 22:07:47,029 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-08-30 22:07:47,042 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-08-30 22:07:47,055 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-08-30 22:07:47,055 - __main__ - INFO - Creating CNN model...
+2025-08-30 22:07:47,055 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,056 - src.models.emotion_model - INFO - Original input shape: (128, 165, 1)
+2025-08-30 22:07:47,174 - src.models.emotion_model - INFO - Enhanced CNN model built with 3 convolutional layers and 2 dense layers
+2025-08-30 22:07:47,174 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-08-30 22:07:47,182 - src.models.emotion_model - INFO - Model: "functional"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ input_layer (InputLayer)        │ (None, 128, 165, 1)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d (Conv2D)                 │ (None, 128, 165, 16)   │           160 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization             │ (None, 128, 165, 16)   │            64 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d (MaxPooling2D)    │ (None, 64, 82, 16)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout (Dropout)               │ (None, 64, 82, 16)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_1 (Conv2D)               │ (None, 64, 82, 32)     │         4,640 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization_1           │ (None, 64, 82, 32)     │           128 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_1 (MaxPooling2D)  │ (None, 32, 41, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_1 (Dropout)             │ (None, 32, 41, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_2 (Conv2D)               │ (None, 32, 41, 32)     │         9,248 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization_2           │ (None, 32, 41, 32)     │           128 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_2 (MaxPooling2D)  │ (None, 16, 20, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_2 (Dropout)             │ (None, 16, 20, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ global_average_pooling2d        │ (None, 32)             │             0 │
+│ (GlobalAveragePooling2D)        │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense (Dense)                   │ (None, 128)            │         4,224 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization_3           │ (None, 128)            │           512 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_3 (Dropout)             │ (None, 128)            │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_1 (Dense)                 │ (None, 64)             │         8,256 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ batch_normalization_4           │ (None, 64)             │           256 │
+│ (BatchNormalization)            │                        │               │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout_4 (Dropout)             │ (None, 64)             │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_2 (Dense)                 │ (None, 8)              │           520 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+ Total params: 28,136 (109.91 KB)
+ Trainable params: 27,592 (107.78 KB)
+ Non-trainable params: 544 (2.12 KB)
+
+2025-08-30 22:07:47,183 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:47,183 - src.models.emotion_model - INFO - Callbacks prepared. Log directory: logs/run_20250830_220747
+2025-08-30 22:07:47,183 - src.models.trainer - INFO - Starting CNN model training for 1 epochs with batch size 16
+2025-08-30 22:07:47,183 - src.models.trainer - INFO - X_train shape: (1008, 128, 165, 1), y_train shape: (1008,)
+2025-08-30 22:07:47,183 - src.models.trainer - INFO - X_val shape: (216, 128, 165, 1), y_val shape: (216,)
+2025-08-30 22:07:53,593 - src.models.trainer - INFO - Training completed in 6.41 seconds (0.11 minutes)
+2025-08-30 22:07:53,962 - src.models.trainer - INFO - Training history plot saved to results/cnn_training_history.png
+2025-08-30 22:07:53,962 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:54,271 - src.models.trainer - INFO - Test loss: 2.0679
+2025-08-30 22:07:54,271 - src.models.trainer - INFO - Test accuracy: 0.1343
+2025-08-30 22:07:54,611 - src.models.trainer - WARNING - Could not calculate ROC AUC: OneHotEncoder.__init__() got an unexpected keyword argument 'sparse'
+2025-08-30 22:07:54,644 - src.models.trainer - ERROR - Error plotting confusion matrix: The number of FixedLocator locations (7), usually from a call to set_ticks, does not match the number of labels (8).
+2025-08-30 22:07:54,993 - src.models.trainer - INFO - Prediction distribution plot saved to results/cnn_prediction_distribution.png
+2025-08-30 22:07:54,997 - src.models.trainer - INFO - Class metrics saved to results/reports/cnn_class_metrics.csv
+2025-08-30 22:07:55,316 - src.models.trainer - INFO - Per-class metrics plot saved to results/cnn_per_class_metrics.png
+2025-08-30 22:07:55,317 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:07:55,364 - src.models.trainer - INFO - Model saved to /workspace/models/cnn_emotion_model_20250830_220755.keras
+2025-08-30 22:07:55,364 - absl - WARNING - You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2025-08-30 22:07:55,391 - src.models.trainer - INFO - Model also saved in h5 format at /workspace/models/cnn_emotion_model_20250830_220755.h5
+2025-08-30 22:07:55,398 - src.models.trainer - INFO - Model architecture saved to /workspace/models/cnn_emotion_model_20250830_220755_architecture.json
+2025-08-30 22:07:55,434 - src.models.trainer - INFO - Model saved to /workspace/models/cnn_emotion_model_20250830_220755.keras
+2025-08-30 22:07:55,434 - absl - WARNING - You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2025-08-30 22:07:55,460 - src.models.trainer - INFO - Model also saved in h5 format at /workspace/models/cnn_emotion_model_20250830_220755.h5
+2025-08-30 22:07:55,463 - src.models.trainer - INFO - Model architecture saved to /workspace/models/cnn_emotion_model_20250830_220755_architecture.json
+2025-08-30 22:07:55,464 - src.models.model_manager - INFO - Model registry saved to models/model_registry.json
+2025-08-30 22:07:55,464 - src.models.model_manager - INFO - Registered model cnn_20250830_220755 in registry
+2025-08-30 22:07:55,464 - src.models.model_manager - INFO - Training history saved to results/cnn_training_history.json
+2025-08-30 22:07:55,464 - src.models.model_manager - INFO - Model registry saved to models/model_registry.json
+2025-08-30 22:07:55,483 - src.models.model_manager - INFO - Test data saved to results/cnn_X_test.npy and results/cnn_y_test.npy
+2025-08-30 22:07:55,483 - src.features.feature_extractor - ERROR - Error getting normalization parameters: 'StandardScaler' object has no attribute 'mean_'
+2025-08-30 22:07:55,483 - src.models.model_manager - INFO - Saved feature info to results/feature_info.json
+2025-08-30 22:07:55,483 - src.models.model_manager - INFO - Saved feature info sidecar to /workspace/models/cnn_emotion_model_20250830_220755_feature_info.json
+2025-08-30 22:07:55,483 - __main__ - INFO - Training completed successfully!
+2025-08-30 22:09:09,987 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-08-30 22:09:09,996 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:09:09,996 - src.core.config - INFO - Directory structure validated
+2025-08-30 22:09:09,996 - src.main - INFO - TensorFlow version: 2.20.0
+2025-08-30 22:09:10,063 - datasets - INFO - TensorFlow version 2.20.0 available.
+2025-08-30 22:24:21,720 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch

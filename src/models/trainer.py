@@ -181,7 +181,7 @@ class ModelTrainer:
             # Convert to one-hot encoding for ROC AUC calculation
             try:
                 from sklearn.preprocessing import OneHotEncoder
-                encoder = OneHotEncoder(sparse=False)
+                encoder = OneHotEncoder(sparse_output=False)
                 y_test_onehot = encoder.fit_transform(y_test.reshape(-1, 1))
                 
                 # Calculate ROC AUC for multi-class (one-vs-rest)
@@ -287,21 +287,29 @@ class ModelTrainer:
         try:
             cm = confusion_matrix(y_true, y_pred)
             plt.figure(figsize=(10, 8))
-            
+
+            # Handle label mismatch - use only labels that exist in the data
             if emotion_labels:
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=emotion_labels)
+                n_classes = cm.shape[0]
+                if len(emotion_labels) > n_classes:
+                    # Use subset of labels that match the confusion matrix size
+                    display_labels = emotion_labels[:n_classes]
+                    logger.warning(f"Using subset of emotion labels ({n_classes}/{len(emotion_labels)}) to match confusion matrix size")
+                else:
+                    display_labels = emotion_labels
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_labels)
             else:
                 disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-                
+
             disp.plot(cmap='Blues', values_format='d')
             plt.title(f'{self.model_type.upper()} Model Confusion Matrix')
             plt.tight_layout()
-            
+
             plt_path = f'results/{self.model_type}_confusion_matrix.png'
             plt.savefig(plt_path, dpi=300, bbox_inches='tight')
             logger.info(f"Confusion matrix plot saved to {plt_path}")
             plt.close()
-            
+
         except Exception as e:
             logger.error(f"Error plotting confusion matrix: {e}")
             
