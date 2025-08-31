@@ -150,6 +150,215 @@
             },
             "description": "CNN model trained on speech emotion dataset with 0.1500 accuracy",
             "training_history_path": "results\\cnn_training_history.json"
+        },
+        {
+            "id": "cnn_20250830_220755",
+            "path": "/workspace/models/cnn_emotion_model_20250830_220755.keras",
+            "type": "cnn",
+            "created": "2025-08-30 22:07:55",
+            "size_mb": 0.41,
+            "metrics": {
+                "accuracy": 0.13425925374031067,
+                "loss": 2.0678951740264893,
+                "precision_avg": 0.018025548696844997,
+                "recall_avg": 0.13425925925925927,
+                "f1_avg": 0.031783824640967503,
+                "roc_auc": null,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 43.0
+                    },
+                    "1": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 28.0
+                    },
+                    "2": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "3": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "4": {
+                        "precision": 0.13425925925925927,
+                        "recall": 1.0,
+                        "f1-score": 0.23673469387755103,
+                        "support": 29.0
+                    },
+                    "5": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "6": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "accuracy": 0.13425925925925927,
+                    "macro avg": {
+                        "precision": 0.019179894179894182,
+                        "recall": 0.14285714285714285,
+                        "f1-score": 0.03381924198250729,
+                        "support": 216.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.018025548696844997,
+                        "recall": 0.13425925925925927,
+                        "f1-score": 0.031783824640967503,
+                        "support": 216.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        43,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        28,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        29,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        29,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        29,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        29,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        0,
+                        0,
+                        0,
+                        29,
+                        0,
+                        0
+                    ]
+                ],
+                "trained_on": "20250830_220755",
+                "feature_type": "mel_spectrogram",
+                "feature_config": {
+                    "enabled": true,
+                    "parameters": {
+                        "n_mels": 128,
+                        "fmax": 8000,
+                        "power": 2.0,
+                        "n_mfcc": 40,
+                        "n_fft": 2048,
+                        "hop_length": 512
+                    }
+                },
+                "model_config": {
+                    "learning_rate": 3e-05,
+                    "early_stopping_patience": 10,
+                    "reduce_lr_patience": 3,
+                    "reduce_lr_factor": 0.5,
+                    "validation_split": 0.15,
+                    "dropout_rate": 0.4,
+                    "batch_size": 32,
+                    "epochs": 100,
+                    "optimizer": "adam",
+                    "loss": "sparse_categorical_crossentropy",
+                    "metrics": [
+                        "accuracy"
+                    ],
+                    "use_weight_decay": true,
+                    "weight_decay": 0.0001,
+                    "gradient_clip": 1.0,
+                    "conv_layers": [
+                        16,
+                        32,
+                        32
+                    ],
+                    "conv_kernel_size": 3,
+                    "pool_size": 2,
+                    "pool_stride": 2,
+                    "dense_layers": [
+                        128,
+                        64
+                    ],
+                    "use_batch_norm": true,
+                    "kernel_initializer": "he_normal",
+                    "bias_initializer": "zeros",
+                    "activation": "relu",
+                    "model_path": "models/cnn_emotion_model.keras",
+                    "backup_path": "models/cnn_emotion_model.h5"
+                },
+                "num_params": 28136,
+                "training_time": 6.409840106964111
+            },
+            "description": "Trained CNN model using mel_spectrogram features",
+            "feature_type": "mel_spectrogram",
+            "training_history_path": "results/cnn_training_history.json"
+        },
+        {
+            "id": "cnn_20250830_220839",
+            "path": "models/cnn_emotion_model_20250830_220755.h5",
+            "type": "cnn",
+            "created": "2025-08-30 22:08:39",
+            "size_mb": 0.42,
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20250830_220839",
+            "path": "models/cnn_emotion_model_20250830_220755.keras",
+            "type": "cnn",
+            "created": "2025-08-30 22:08:39",
+            "size_mb": 0.41,
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
         }
     ]
 }

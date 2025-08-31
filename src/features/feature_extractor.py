@@ -623,25 +623,31 @@ class FeatureExtractor:
     def get_normalization_params(self):
         """
         Get the current normalization parameters.
-        
+
         Returns:
             dict: Dictionary containing the normalization parameters for both scalers.
         """
         try:
-            params = {
-                'mfcc_scaler': {
+            params = {}
+
+            # Check if MFCC scaler has been fitted
+            if hasattr(self.scaler_mfcc, 'mean_'):
+                params['mfcc_scaler'] = {
                     'mean': self.scaler_mfcc.mean_.tolist(),
                     'scale': self.scaler_mfcc.scale_.tolist(),
                     'var': self.scaler_mfcc.var_.tolist(),
-                },
-                'spec_scaler': {
+                }
+
+            # Check if spectrogram scaler has been fitted
+            if hasattr(self.scaler_spec, 'mean_'):
+                params['spec_scaler'] = {
                     'mean': self.scaler_spec.mean_.tolist(),
                     'scale': self.scaler_spec.scale_.tolist(),
                     'var': self.scaler_spec.var_.tolist(),
                 }
-            }
-            return params
-            
+
+            return params if params else None
+
         except Exception as e:
             logger.error(f"Error getting normalization parameters: {e}")
             return None
