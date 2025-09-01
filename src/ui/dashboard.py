@@ -33,8 +33,12 @@ class EmotionDashboard:
         os.makedirs("results", exist_ok=True)
         os.makedirs("results/visualizations", exist_ok=True)
     
-    def save_analysis_result(self, audio_path, emotion, confidence_scores):
-        """Save analysis result to CSV for dashboard visualizations"""
+    def save_analysis_result(self, audio_path, emotion, confidence_scores, uncertainty=None):
+        """Save analysis result to CSV for dashboard visualizations.
+
+        Adds uncertainty metrics (entropy_bits, top2_margin) when provided.
+        Backwards compatible: callers may omit uncertainty.
+        """
         # Create results directory if it doesn't exist
         os.makedirs("results", exist_ok=True)
         
@@ -51,6 +55,13 @@ class EmotionDashboard:
             "confidence": max_confidence,
             "audio_path": audio_path
         }
+
+        # Uncertainty metrics
+        if uncertainty and isinstance(uncertainty, dict):
+            if 'entropy_bits' in uncertainty:
+                data['entropy_bits'] = uncertainty['entropy_bits']
+            if 'top2_margin' in uncertainty:
+                data['top2_margin'] = uncertainty['top2_margin']
         
         # Add individual confidence scores for each emotion
         for emotion_name, score in confidence_scores.items():
@@ -60,12 +71,14 @@ class EmotionDashboard:
         csv_path = "results/analysis_history.csv"
         
         if os.path.exists(csv_path):
-            # Append to existing file
-            df = pd.read_csv(csv_path)
+            try:
+                df = pd.read_csv(csv_path)
+            except Exception:
+                df = pd.DataFrame()
             new_row = pd.DataFrame([data])
+            # Align columns to include any new metrics
             df = pd.concat([df, new_row], ignore_index=True)
         else:
-            # Create new file
             df = pd.DataFrame([data])
         
         # Save the dataframe

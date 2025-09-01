@@ -500,3 +500,131 @@
 2025-08-30 22:09:09,996 - src.main - INFO - TensorFlow version: 2.20.0
 2025-08-30 22:09:10,063 - datasets - INFO - TensorFlow version 2.20.0 available.
 2025-08-30 22:24:21,720 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 01:57:55,909 - src.core.config - INFO - Directory structure validated
+2025-09-01 01:57:55,915 - src.core.config - INFO - Directory structure validated
+2025-09-01 01:58:20,178 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-09-01 01:58:31,405 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 01:58:32,416 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 01:58:36,471 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 01:58:36,548 - src.core.config - INFO - Directory structure validated
+2025-09-01 01:58:36,551 - src.core.config - INFO - Directory structure validated
+2025-09-01 01:58:36,551 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:00,149 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 02:02:40,622 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 02:02:40,691 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:40,707 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:40,707 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 02:02:41,184 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 02:02:41,573 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:41,573 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:41,580 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:42,111 - app - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-09-01 02:02:42,126 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:42,131 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:02:42,133 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:30,130 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 02:54:30,223 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:30,240 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:30,242 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 02:54:31,411 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 02:54:32,239 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:32,243 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:32,249 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:32,823 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-09-01 02:54:32,833 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:32,835 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:32,839 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:54:34,142 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-09-01 02:55:51,423 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-09-01 02:55:51,429 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:55:51,441 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:55:51,447 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:56:03,484 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:56:03,487 - src.main - INFO - Loading dataset...
+2025-09-01 02:56:03,487 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'Codec-SUPERB/RAVDESS' (attempt 1/5)...
+2025-09-01 02:56:04,224 - src.core.config - INFO - Directory structure validated
+2025-09-01 02:56:04,656 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 02:56:04,658 - __main__ - ERROR - Prediction requested but model is not loaded yet
+2025-09-01 02:56:04,748 - src.data.data_loader - ERROR - Unexpected error loading dataset 'Codec-SUPERB/RAVDESS': Dataset 'Codec-SUPERB/RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-09-01 02:56:04,750 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'lhoestq/ravdess-emotion' (attempt 1/5)...
+2025-09-01 02:56:05,286 - src.data.data_loader - ERROR - Unexpected error loading dataset 'lhoestq/ravdess-emotion': Dataset 'lhoestq/ravdess-emotion' doesn't exist on the Hub or cannot be accessed.
+2025-09-01 02:56:05,286 - src.data.data_loader - INFO - Loading RAVDESS dataset from 'RAVDESS' (attempt 1/5)...
+2025-09-01 02:56:05,842 - src.data.data_loader - ERROR - Unexpected error loading dataset 'RAVDESS': Dataset 'RAVDESS' doesn't exist on the Hub or cannot be accessed.
+2025-09-01 02:56:05,844 - src.data.data_loader - WARNING - Could not load any RAVDESS dataset. Creating a dummy dataset for development purposes.
+2025-09-01 02:56:05,845 - src.data.data_loader - WARNING - Creating dummy dataset with 200 samples for testing purposes
+2025-09-01 02:56:05,998 - src.data.data_loader - INFO - Dataset columns: ['labels', 'speaker_id', 'speaker_gender', 'audio']
+2025-09-01 02:56:05,999 - src.data.data_loader - INFO - Using 'labels' as the emotion label column
+2025-09-01 02:56:06,027 - src.data.data_loader - INFO - Dataset split into 139 training, 31 validation, and 30 test samples
+2025-09-01 02:56:06,028 - src.main - INFO - Extracting mel_spectrogram features...
+2025-09-01 02:56:06,028 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-09-01 02:56:06,246 - src.features.feature_extractor - INFO - Processing audio 1/139
+2025-09-01 02:56:08,502 - src.features.feature_extractor - INFO - Processing audio 101/139
+2025-09-01 02:56:10,472 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-09-01 02:56:10,487 - src.features.feature_extractor - INFO - Processed 139 audio files successfully
+2025-09-01 02:56:10,489 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-09-01 02:56:11,249 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-09-01 02:56:11,255 - src.features.feature_extractor - INFO - Processed 31 audio files successfully
+2025-09-01 02:56:11,255 - src.features.feature_extractor - INFO - Using 'labels' as the label column for feature extraction
+2025-09-01 02:56:12,064 - src.features.feature_extractor - INFO - Padding spectrograms to length 165
+2025-09-01 02:56:12,068 - src.features.feature_extractor - INFO - Processed 30 audio files successfully
+2025-09-01 02:56:12,188 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-09-01 02:56:12,201 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-09-01 02:56:12,210 - src.features.feature_extractor - INFO - Features normalized successfully
+2025-09-01 02:56:12,211 - src.main - INFO - Creating CNN model...
+2025-09-01 02:56:12,211 - src.models.emotion_model - INFO - Original input shape: (128, 165, 1)
+2025-09-01 02:56:12,755 - src.models.emotion_model - INFO - Enhanced CNN model built with 3 convolutional layers and 2 dense layers
+2025-09-01 02:56:12,756 - src.models.emotion_model - INFO - Input shape: (128, 165, 1)
+2025-09-01 02:56:12,991 - src.models.emotion_model - INFO - Callbacks prepared. Log directory: logs\run_20250901_025612
+2025-09-01 02:56:12,996 - src.models.trainer - INFO - Starting CNN model training for 100 epochs with batch size 32
+2025-09-01 02:56:12,999 - src.models.trainer - INFO - X_train shape: (139, 128, 165, 1), y_train shape: (139,)
+2025-09-01 02:56:13,011 - src.models.trainer - INFO - X_val shape: (31, 128, 165, 1), y_val shape: (31,)
+2025-09-01 03:20:19,782 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 03:20:19,891 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:19,900 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:19,906 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 03:20:20,733 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 03:20:21,426 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:21,429 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:21,429 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:21,960 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-09-01 03:20:21,967 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:21,975 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:21,980 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:20:22,910 - tensorflow - WARNING - From R:\Anaconda\Lib\site-packages\keras\src\backend\common\global_state.py:82: The name tf.reset_default_graph is deprecated. Please use tf.compat.v1.reset_default_graph instead.
+
+2025-09-01 03:22:02,456 - __main__ - INFO - Using upload directory: C:\Users\rayyan\Downloads\VS Code Workspace\speech_emotion_classification\uploads
+2025-09-01 03:22:02,464 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:22:02,466 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:22:02,472 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:22:09,288 - __main__ - INFO - Successfully loaded model from logs: logs\run_20250901_025612\best_model.keras
+2025-09-01 03:22:09,744 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:22:09,979 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 03:22:10,005 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 03:22:10,043 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 03:22:10,065 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 03:22:10,099 - src.features.feature_extractor - INFO - Feature shape after processing: (1, 128, 165, 1)
+2025-09-01 03:25:44,192 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:25:56,284 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-09-01 03:26:00,187 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 03:26:06,807 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-09-01 03:26:28,452 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 03:26:28,497 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:26:28,507 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:26:28,507 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 03:26:29,068 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 03:26:29,532 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:26:29,538 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:26:29,539 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:27:28,724 - numexpr.utils - INFO - NumExpr defaulting to 4 threads.
+2025-09-01 03:27:32,968 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 03:28:02,340 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch
+2025-09-01 03:28:02,390 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:02,398 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:02,398 - src.main - INFO - TensorFlow version: 2.19.0
+2025-09-01 03:28:02,980 - datasets - INFO - TensorFlow version 2.19.0 available.
+2025-09-01 03:28:03,461 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:03,464 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:03,465 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:21,292 - src.core.config - INFO - Directory structure validated
+2025-09-01 03:28:21,771 - src.models.trainer - INFO - Successfully applied TensorFlow monkey patch

@@ -4,6 +4,7 @@ import shutil
 import logging
 import numpy as np
 import tensorflow as tf
+import hashlib
 from datetime import datetime
 from pathlib import Path
 
@@ -45,10 +46,12 @@ class ModelManager:
             return {"models": []}
     
     def _save_registry(self):
-        """Save the model registry to disk"""
+        """Atomically save the model registry to disk to prevent corruption."""
         try:
-            with open(self.registry_path, 'w') as f:
+            tmp_path = f"{self.registry_path}.tmp"
+            with open(tmp_path, 'w') as f:
                 json.dump(self.model_registry, f, indent=4)
+            os.replace(tmp_path, self.registry_path)
             logger.info(f"Model registry saved to {self.registry_path}")
         except Exception as e:
             logger.error(f"Error saving model registry: {e}")
@@ -95,6 +98,37 @@ class ModelManager:
         # Get file size in MB
         size_mb = os.path.getsize(model_path) / (1024 * 1024)
         
+        # Derive semantic-ish incremental version per model type
+        try:
+            existing_versions = [m.get("version", 0) for m in self.model_registry.get("models", []) if m.get("type") == model_type]
+            version = (max(existing_versions) + 1) if existing_versions else 1
+        except Exception:
+            version = 1
+
+        # Compute checksum (sha256) for integrity tracking
+        checksum = ""
+        try:
+            h = hashlib.sha256()
+            with open(model_path, 'rb') as f:
+                for chunk in iter(lambda: f.read(8192), b''):
+                    h.update(chunk)
+            checksum = h.hexdigest()
+        except Exception as e:
+            logger.warning(f"Checksum computation failed: {e}")
+
+        # Feature hash from sidecar if present
+        feature_hash = ""
+        try:
+            base = os.path.splitext(model_path)[0]
+            sidecar = f"{base}_feature_info.json"
+            if os.path.exists(sidecar):
+                with open(sidecar, 'r') as f:
+                    fi = json.load(f)
+                canonical = json.dumps(fi, sort_keys=True, separators=(",", ":"))
+                feature_hash = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+        except Exception as e:
+            logger.warning(f"Feature hash computation failed: {e}")
+
         # Create model entry
         model_entry = {
             "id": model_id,
@@ -102,6 +136,9 @@ class ModelManager:
             "type": model_type,
             "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "size_mb": round(size_mb, 2),
+            "version": version,
+            "sha256": checksum,
+            "feature_hash": feature_hash,
             "metrics": metrics or {},
             "description": description or f"{model_type.upper()} model trained on RAVDESS dataset"
         }
@@ -120,6 +157,35 @@ class ModelManager:
         
         logger.info(f"Registered model {model_id} in registry")
         return model_id
+
+    def verify_model_integrity(self, model_id=None, model_path=None):
+        """Verify stored checksum matches current file contents.
+
+        Returns (bool, details:str)."""
+        try:
+            entry = None
+            if model_id:
+                entry = self.get_model_by_id(model_id)
+            elif model_path:
+                entry = self.get_model_by_path(model_path)
+            if not entry:
+                return False, "Model entry not found"
+            path = entry.get("path")
+            if not path or not os.path.exists(path):
+                return False, "Model file missing"
+            expected = entry.get("sha256")
+            if not expected:
+                return False, "No checksum stored"
+            h = hashlib.sha256()
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(8192), b''):
+                    h.update(chunk)
+            current = h.hexdigest()
+            if current == expected:
+                return True, "Checksum match"
+            return False, f"Checksum mismatch expected={expected} got={current}"
+        except Exception as e:
+            return False, f"Integrity verification error: {e}"
     
     def get_models(self, model_type=None):
         """

@@ -41,5 +41,4 @@ tqdm>=4.62.0
 h5py>=3.8.0
 
 # API (optional)
-fastapi>=0.110.0
-uvicorn[standard]>=0.27.0
+portalocker>=2.8.2

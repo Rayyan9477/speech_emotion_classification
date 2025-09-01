@@ -1,166 +1,32 @@
 #!/usr/bin/env python3
-"""
-Unified project driver + Streamlit UI.
+"""Streamlit UI entrypoint (simplified – Streamlit only). Run with: streamlit run app.py"""
 
-Usage examples:
-  python app.py                 # Ensure model exists, then launch Streamlit UI
-  python app.py --ui            # Same as default
-  python app.py --train         # Train model once, then exit
-  python app.py --api           # Launch FastAPI server
-
-Behavior:
-- Tries to load the latest registered model. If none exists, trains once guarded by a lock file.
-- After a model exists, launches the UI (unless --train or --api is provided).
-- Can also be launched directly with: streamlit run app.py
-"""
-
-import argparse
-import subprocess
 import sys
 import os
 import time
 from pathlib import Path
-from types import SimpleNamespace
 import logging
 import json
 
-from src.models.model_manager import ModelManager as DriverModelManager
-from src.core import config
-import src.main as training_main
-
-
-LOCK_PATH = Path('models') / 'training.lock'
-
-
 def is_streamlit_runtime() -> bool:
-    """Detect if running under Streamlit runtime to avoid recursive launches."""
-    try:
-        import streamlit as st  # noqa: WPS433 (import inside function by design)
-        runtime = getattr(st, 'runtime', None)
-        if runtime and callable(getattr(runtime, 'exists', None)):
-            return bool(runtime.exists())
-    except Exception:
-        pass
-    return (
-        os.environ.get('STREAMLIT_SERVER_ENABLED') == '1'
-        or 'STREAMLIT_SCRIPT_RUN_CONTEXT' in os.environ
-    )
-
-
-def ensure_model_available(model_type: str = 'cnn') -> bool:
-    """Return True if a model is present or after successful training, else False."""
-    manager = DriverModelManager()
-    latest = manager.get_latest_model(model_type=model_type)
-    if latest and latest.get('path') and os.path.exists(latest['path']):
+    """Return True if running under Streamlit; guards optional code."""
+    try:  # lightweight detection
+        import streamlit as _st  # noqa
         return True
-
-    # No model present: trigger training exactly once using a lock file
-    Path('models').mkdir(parents=True, exist_ok=True)
-    if LOCK_PATH.exists():
-        # Respect existing training; don't auto-train again
-        print('Model training already in progress. Please wait until it completes...')
-        return False
-
-    try:
-        LOCK_PATH.write_text(json.dumps({
-            'created_at': time.time(),
-            'created_by': 'driver',
-            'pid': os.getpid(),
-        }))
     except Exception:
-        pass
-
-    print('No trained model found. Starting one-time training...')
-    try:
-        # Build inline args matching src.main.train_model signature
-        if model_type == 'cnn':
-            model_cfg = config.Config().models.cnn
-        else:
-            model_cfg = config.Config().models.mlp
-        args = SimpleNamespace(
-            train=True,
-            evaluate=False,
-            model_id=None,
-            model_type=model_type,
-            feature_type='mel_spectrogram',
-            batch_size=model_cfg.batch_size,
-            epochs=model_cfg.epochs,
-            patience=model_cfg.early_stopping_patience,
-        )
-        training_main.train_model(args)
-    except Exception as e:
-        print('Training failed:', e)
-        try:
-            LOCK_PATH.unlink(missing_ok=True)
-        except Exception:
-            pass
         return False
-
-    # Training succeeded, remove lock
-    try:
-        LOCK_PATH.unlink(missing_ok=True)
-    except Exception:
-        pass
-    return True
-
-
-def launch_ui(port: int = 8501, headless: bool = True):
-    """Launch Streamlit UI for this very file."""
-    env = os.environ.copy()
-    # Hint for our own runtime detector
-    env.setdefault('STREAMLIT_SERVER_ENABLED', '1')
-    cmd = [
-        sys.executable, '-m', 'streamlit', 'run', 'app.py',
-        '--server.port', str(port), '--server.headless', 'true' if headless else 'false'
-    ]
-    subprocess.call(cmd, env=env)
-
-
-def launch_api(host: str = '0.0.0.0', port: int = 8000):
-    cmd = [
-        sys.executable, '-m', 'uvicorn', 'src.api.server:app',
-        '--host', host, '--port', str(port)
-    ]
-    subprocess.call(cmd)
-
-
-def main():
-    parser = argparse.ArgumentParser(description='Unified project driver')
-    parser.add_argument('--ui', action='store_true', help='Launch Streamlit UI (default)')
-    parser.add_argument('--train', action='store_true', help='Train a model once and exit')
-    parser.add_argument('--api', action='store_true', help='Launch FastAPI server instead of UI')
-    parser.add_argument('--model-type', default='cnn', choices=['cnn', 'mlp'], help='Model type to use/train')
-    # Use parse_known_args so running under Streamlit doesn't break if extra args are present
-    args, _unknown = parser.parse_known_args()
-
-    if args.train:
-        ok = ensure_model_available(model_type=args.model_type)
-        sys.exit(0 if ok else 1)
-
-    if args.api:
-        # API does not require a model to start, but we try to ensure one exists
-        ensure_model_available(model_type=args.model_type)
-        launch_api()
-        return
-
-    # Default: UI
-    if not ensure_model_available(model_type=args.model_type):
-        # Model might be training; still launch UI so progress is visible in-app
-        print('Launching UI while training continues...')
-    launch_ui()
 
 
 # =======================
 # Streamlit UI (merged)
 # =======================
 import streamlit as st
-if is_streamlit_runtime():
-    st.set_page_config(
-        page_title="Speech Emotion Analyzer",
-        page_icon="🎭",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
+st.set_page_config(
+    page_title="Speech Emotion Analyzer",
+    page_icon="🎭",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -181,11 +47,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Try to import TensorFlow with error handling
+# Try to import TensorFlow with error handling (catch broad errors e.g., DLL issues)
 try:
     import tensorflow as tf
     tensorflow_available = True
-except ImportError as e:
+    tensorflow_error = ""
+except Exception as e:
     tensorflow_available = False
     tensorflow_error = str(e)
 
@@ -211,6 +78,10 @@ import io  # noqa: F401
 from src.models.emotion_model import EmotionModel  # noqa: F401
 from src.features.feature_extractor import FeatureExtractor
 from src.ui.dashboard import EmotionDashboard
+from src.models.model_manager import ModelManager as DriverModelManager
+from src.main import train_model, TrainArgs
+import portalocker
+from src.core import config as core_config
 try:
     from audio_recorder_streamlit import audio_recorder
 except Exception:
@@ -267,7 +138,7 @@ class EmotionAnalyzer:
 
     def __init__(self):
         """Initialize the Emotion Analyzer application"""
-        # Setup paths with proper permissions handling
+    # Setup paths with proper permissions handling
         try:
             upload_dir = Path('uploads')
             upload_dir.mkdir(parents=True, exist_ok=True)
@@ -294,17 +165,12 @@ class EmotionAnalyzer:
         # Set default emotion labels
         # Centralize labels from configuration
         try:
-            from src.core import config as core_config
             self.emotion_labels = core_config.Config().training.emotion_labels
         except Exception:
-            self.emotion_labels = [
-                "neutral", "calm", "happy", "sad", "angry",
-                "fearful", "disgust", "surprised"
-            ]
+            self.emotion_labels = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
 
         # Use central config model paths
         try:
-            from src.core import config as core_config
             self.model_path = core_config.Config().models.cnn.model_path
             self.backup_model_path = core_config.Config().models.cnn.backup_path
         except Exception:
@@ -364,73 +230,131 @@ class EmotionAnalyzer:
             return tf.keras.models.load_model(path)
 
         try:
-            # Try registry first
+            # Step 1: Try to load from model registry (most recent)
             try:
                 latest = self.model_manager.get_latest_model(model_type="cnn") or self.model_manager.get_latest_model(None)
-            except Exception:
-                latest = None
-            if latest and latest.get('path') and os.path.exists(latest['path']):
-                try:
-                    self.model = _cached_load(latest['path'])
-                    self.model_path = latest['path']
-                    self.loaded = True
-                    feature_info = self.model_manager.load_feature_info(model_path=self.model_path) or {}
-                    norm_params = feature_info.get('normalization_params')
-                    if norm_params:
-                        self.feature_extractor.set_normalization_params(norm_params)
-                    st.success("✅ Model loaded from registry!")
-                    return True
-                except Exception as e:
-                    logger.warning(f"Failed to load model via ModelManager path: {e}")
-
-            # Direct known path
-            if os.path.exists(self.model_path):
-                try:
-                    self.model = _cached_load(self.model_path)
-                    self.loaded = True
-                    try:
-                        feature_info = self.model_manager.load_feature_info(model_path=self.model_path) or {}
-                        norm_params = feature_info.get('normalization_params')
-                        if norm_params:
-                            self.feature_extractor.set_normalization_params(norm_params)
-                    except Exception:
-                        pass
-                    st.success("✅ Model loaded successfully!")
-                    return True
-                except Exception as e:
-                    logger.warning(f"Failed to load model from {self.model_path}: {e}")
-
-            # Logs best model
-            log_dir = Path('logs')
-            if log_dir.exists():
-                for run_dir in sorted(log_dir.glob('run_*'), reverse=True):
-                    maybe = run_dir / 'best_model.keras'
-                    if maybe.exists():
+                if latest and latest.get('path'):
+                    model_path = latest['path']
+                    if os.path.exists(model_path):
                         try:
-                            self.model = _cached_load(str(maybe))
-                            self.model_path = str(maybe)
+                            self.model = _cached_load(model_path)
+                            self.model_path = model_path
                             self.loaded = True
-                            feature_info = self.model_manager.load_feature_info(model_path=self.model_path) or {}
+                            feature_info = self.model_manager.load_feature_info(model_path=model_path) or {}
                             norm_params = feature_info.get('normalization_params')
                             if norm_params:
                                 self.feature_extractor.set_normalization_params(norm_params)
-                            st.success("✅ Model loaded from training logs!")
+                            st.success("✅ Model loaded from registry!")
+                            logger.info(f"Successfully loaded model from registry: {model_path}")
                             return True
                         except Exception as e:
-                            logger.warning(f"Failed to load model from logs {maybe}: {e}")
+                            logger.warning(f"Failed to load model from registry path {model_path}: {e}")
+            except Exception as e:
+                logger.warning(f"Error accessing model registry: {e}")
 
-            # Guarded training (single-run) using a lock file
+            # Step 2: Try known model paths
+            model_paths_to_try = [
+                self.model_path,
+                "models/cnn_emotion_model.keras",
+                "models/emotion_model.keras",
+                "models/best_model.keras"
+            ]
+
+            for model_path in model_paths_to_try:
+                if os.path.exists(model_path):
+                    try:
+                        self.model = _cached_load(model_path)
+                        self.model_path = model_path
+                        self.loaded = True
+                        try:
+                            feature_info = self.model_manager.load_feature_info(model_path=model_path) or {}
+                            norm_params = feature_info.get('normalization_params')
+                            if norm_params:
+                                self.feature_extractor.set_normalization_params(norm_params)
+                        except Exception as e:
+                            logger.warning(f"Could not load feature info: {e}")
+                        st.success("✅ Model loaded successfully!")
+                        logger.info(f"Successfully loaded model from: {model_path}")
+                        return True
+                    except Exception as e:
+                        logger.warning(f"Failed to load model from {model_path}: {e}")
+                        continue
+
+            # Step 3: Scan logs directory for recent models
+            log_dir = Path('logs')
+            if log_dir.exists():
+                run_dirs = sorted(log_dir.glob('run_*'), reverse=True)
+                for run_dir in run_dirs[:5]:  # Check last 5 runs
+                    model_candidates = [
+                        run_dir / 'best_model.keras',
+                        run_dir / 'cnn_emotion_model.keras',
+                        run_dir / 'emotion_model.keras'
+                    ]
+                    for candidate in model_candidates:
+                        if candidate.exists():
+                            try:
+                                self.model = _cached_load(str(candidate))
+                                self.model_path = str(candidate)
+                                self.loaded = True
+                                feature_info = self.model_manager.load_feature_info(model_path=str(candidate)) or {}
+                                norm_params = feature_info.get('normalization_params')
+                                if norm_params:
+                                    self.feature_extractor.set_normalization_params(norm_params)
+                                st.success("✅ Model loaded from training logs!")
+                                logger.info(f"Successfully loaded model from logs: {candidate}")
+                                return True
+                            except Exception as e:
+                                logger.warning(f"Failed to load model from {candidate}: {e}")
+                                continue
+
+            # Step 4: Scan models directory for any available models
+            models_dir = Path('models')
+            if models_dir.exists():
+                model_files = list(models_dir.glob('*.keras')) + list(models_dir.glob('*.h5'))
+                model_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)  # Most recent first
+
+                for model_file in model_files[:5]:  # Try last 5 models
+                    try:
+                        self.model = _cached_load(str(model_file))
+                        self.model_path = str(model_file)
+                        self.loaded = True
+                        try:
+                            feature_info = self.model_manager.load_feature_info(model_path=str(model_file)) or {}
+                            norm_params = feature_info.get('normalization_params')
+                            if norm_params:
+                                self.feature_extractor.set_normalization_params(norm_params)
+                        except Exception as e:
+                            logger.warning(f"Could not load feature info for {model_file}: {e}")
+                        st.success("✅ Model loaded from models directory!")
+                        logger.info(f"Successfully loaded model from models directory: {model_file}")
+                        return True
+                    except Exception as e:
+                        logger.warning(f"Failed to load model from {model_file}: {e}")
+                        continue
+
+            # Step 5: If no model found, start automatic training
             lock_file = Path('models') / 'training.lock'
             if lock_file.exists():
                 self.training_in_progress = True
-                # Respect ongoing training; do not start another
                 st.session_state.training_status = {
                     'type': 'progress',
                     'message': 'Model training is already in progress. Your upload will be analyzed automatically when ready.'
                 }
+                logger.info("Training already in progress, waiting...")
                 return False
+
+            logger.info("No trained model found, starting automatic training...")
             st.info("📊 No trained model found. Starting automatic model training...")
+
+            # Check if we have demo data to train on
+            demo_files_exist = self._check_demo_files_available()
+            if not demo_files_exist:
+                st.warning("⚠️ No training data found. Please ensure demo files exist or provide training data.")
+                st.info("💡 Tip: The system needs audio files in the 'demo_files' directory to train a model.")
+                return False
+
             return self.train_model_automatically()
+
         except Exception as e:
             logger.error(f"Error loading model: {e}")
             st.error(f"❌ Error loading model: {str(e)}")
@@ -442,18 +366,31 @@ class EmotionAnalyzer:
             with st.spinner("Extracting audio features..."):
                 # Load audio file
                 y, sr = librosa.load(audio_file_path, sr=None)
+                duration = len(y) / float(sr)
 
-                # Ensure consistent length (configurable duration seconds)
+                # Intelligent audio processing for long files
                 try:
                     from src.core.config import Config
-                    duration_s = Config().audio.duration
+                    config_duration = Config().audio.duration
                 except Exception:
-                    duration_s = 5.0
-                target_length = int(duration_s * sr)
-                if len(y) < target_length:
-                    y = np.pad(y, (0, target_length - len(y)))
-                else:
+                    config_duration = 5.0
+
+                # Handle different audio lengths intelligently
+                if duration <= config_duration:
+                    # Short audio: use as-is or pad
+                    target_length = int(config_duration * sr)
+                    if len(y) < target_length:
+                        y = np.pad(y, (0, target_length - len(y)))
+                elif duration <= 30:
+                    # Medium audio: use first segment but inform user
+                    target_length = int(config_duration * sr)
                     y = y[:target_length]
+                    st.info(f"Audio longer than 30s ({duration:.1f}s); using first 5 seconds for analysis.")
+                else:
+                    # Long audio: extract multiple segments and average predictions
+                    st.info(f"Audio very long ({duration:.1f}s); processing multiple segments for better analysis.")
+                    features = self._extract_features_from_long_audio(y, sr, config_duration)
+                    return y, sr, features
 
                 # Use standardized feature pipeline
                 features = self.feature_extractor.extract_features(y, sr)
@@ -481,12 +418,78 @@ class EmotionAnalyzer:
             st.error(f"Details: {traceback.format_exc()}")
             return None, None, None
 
+    def _extract_features_from_long_audio(self, y, sr, segment_duration=5.0):
+        """Extract features from long audio by sampling multiple segments."""
+        try:
+            segment_samples = int(segment_duration * sr)
+            total_samples = len(y)
+
+            # Sample multiple segments from the audio
+            num_segments = min(5, total_samples // segment_samples)  # Max 5 segments
+            features_list = []
+
+            for i in range(num_segments):
+                # Sample different parts of the audio
+                if num_segments == 1:
+                    start_idx = 0
+                else:
+                    # Distribute segments evenly across the audio
+                    start_idx = i * (total_samples - segment_samples) // (num_segments - 1)
+
+                end_idx = start_idx + segment_samples
+                segment = y[start_idx:end_idx]
+
+                # Extract features for this segment
+                features = self.feature_extractor.extract_features(segment, sr)
+                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+
+                if features is not None:
+                    features_list.append(features)
+
+            if features_list:
+                # Average the features from all segments
+                avg_features = np.mean(features_list, axis=0)
+                st.success(f"✅ Processed {len(features_list)} segments from long audio")
+                return avg_features
+            else:
+                # Fallback to first segment
+                y_segment = y[:segment_samples]
+                features = self.feature_extractor.extract_features(y_segment, sr)
+                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+                return features
+
+        except Exception as e:
+            st.warning(f"Error processing long audio segments: {e}. Using first segment.")
+            # Fallback to original method
+            y_segment = y[:int(segment_duration * sr)]
+            features = self.feature_extractor.extract_features(y_segment, sr)
+            features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+            return features
+
+    def _check_demo_files_available(self):
+        """Check if demo files exist for training."""
+        try:
+            demo_dir = Path('demo_files')
+            if not demo_dir.exists():
+                return False
+
+            # Look for audio files
+            audio_extensions = ['.wav', '.mp3', '.flac', '.ogg']
+            audio_files = []
+            for ext in audio_extensions:
+                audio_files.extend(list(demo_dir.glob(f'*{ext}')))
+
+            return len(audio_files) > 0
+        except Exception as e:
+            logger.warning(f"Error checking demo files: {e}")
+            return False
+
     def predict_emotion(self, features):
         """Predict emotion from audio features; return graceful defaults if not ready."""
         if not self.loaded or self.model is None:
             logger.error("Prediction requested but model is not loaded yet")
             st.warning("Model not loaded yet. Please wait for training to complete.")
-            return "unknown", {}
+            return "unknown", {}, {}
 
         try:
             with st.spinner("Predicting emotion..."):
@@ -496,10 +499,29 @@ class EmotionAnalyzer:
                 labels = self.emotion_labels[: len(probs)]
                 emotion = labels[predicted_class] if predicted_class < len(labels) else "unknown"
                 confidence_scores = {label: float(probs[i]) * 100 for i, label in enumerate(labels)}
-                return emotion, confidence_scores
+                # Uncertainty metrics
+                # Normalize probs just in case (model should already output softmax)
+                p = np.array(probs, dtype=float)
+                p = p / (p.sum() + 1e-12)
+                entropy = float(-(p * np.log(p + 1e-12)).sum())  # natural log
+                # Convert to bits for interpretability
+                entropy_bits = entropy / np.log(2.0)
+                # Margin: difference between top1 and top2 probabilities
+                if len(p) >= 2:
+                    top2 = np.sort(p)[-2:]
+                    margin = float(top2[-1] - top2[-2])
+                else:
+                    margin = 0.0
+                uncertainty = {
+                    "entropy_nats": entropy,
+                    "entropy_bits": entropy_bits,
+                    "top2_margin": margin,
+                    "num_classes": len(p)
+                }
+                return emotion, confidence_scores, uncertainty
         except Exception as e:
             st.error(f"Error predicting emotion: {e}")
-            return "unknown", {}
+            return "unknown", {}, {}
 
     def process_audio(self, audio_file_path):
         """Process audio file and display results"""
@@ -530,13 +552,17 @@ class EmotionAnalyzer:
                 return
 
             # Predict emotion
-            emotion, confidence_scores = self.predict_emotion(features)
+            emotion, confidence_scores, uncertainty = self.predict_emotion(features)
 
             # Display results
-            self.display_results(audio_file_path, y, sr, emotion, confidence_scores)
+            self.display_results(audio_file_path, y, sr, emotion, confidence_scores, uncertainty)
 
             # Save analysis results for dashboard visualization
-            self.dashboard.save_analysis_result(audio_file_path, emotion, confidence_scores)
+            try:
+                self.dashboard.save_analysis_result(audio_file_path, emotion, confidence_scores, uncertainty=uncertainty)
+            except TypeError:
+                # Backwards compatibility if method signature not yet updated
+                self.dashboard.save_analysis_result(audio_file_path, emotion, confidence_scores)
         except Exception as e:
             st.error(f"Error processing audio: {str(e)}")
             import traceback
@@ -585,29 +611,51 @@ class EmotionAnalyzer:
 
                     # Process uploaded file
                     if uploaded_file is not None:
-                        # Save uploaded file to a temporary location
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
+                        # Validation: size limit
+                        MAX_SIZE_MB = 10
+                        data = uploaded_file.getvalue()
+                        size_mb = len(data) / (1024 * 1024)
+                        if size_mb > MAX_SIZE_MB:
+                            st.error(f"File is too large ({size_mb:.2f} MB). Limit is {MAX_SIZE_MB} MB.")
+                            return
+                        # Basic MIME / extension validation
+                        import mimetypes
+                        mime, _ = mimetypes.guess_type(uploaded_file.name)
+                        allowed_mime = {"audio/wav", "audio/x-wav", "audio/mpeg"}
+                        if mime and mime not in allowed_mime:
+                            st.warning(f"Unexpected MIME type: {mime}. Proceeding cautiously.")
+                        # Persist to temp
+                        suffix = f".{uploaded_file.name.split('.')[-1].lower()}"
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
                             try:
-                                tmp_file.write(uploaded_file.getvalue())
+                                tmp_file.write(data)
                                 temp_path = os.path.abspath(tmp_file.name)
                             except IOError as e:
                                 logger.error(f"File write error: {e}")
                                 st.error(f"Failed to save uploaded file: {e}")
                                 return
-
-                        st.success(f"File uploaded successfully: {uploaded_file.name}")
-
-                        # Process the audio file
+                        # Probe duration
+                        try:
+                            y_probe, sr_probe = librosa.load(temp_path, sr=None, mono=True)
+                            duration = len(y_probe) / float(sr_probe)
+                            if duration < 0.5:
+                                st.warning("Audio clip is very short (<0.5s); prediction may be unreliable.")
+                            elif duration > 30:
+                                st.info(f"Audio longer than 30s ({duration:.1f}s); only the first segment will be used.")
+                        except Exception as e:
+                            st.info(f"Could not determine audio duration: {e}")
+                        st.success(f"File uploaded: {uploaded_file.name} ({size_mb:.2f} MB)")
                         self.process_audio(temp_path)
 
                     # Sample button with improved styling
                     st.markdown("<div style='margin-top: 20px; text-align: center;'>", unsafe_allow_html=True)
                     if st.button("🔊 Try a Sample Audio", key="try_sample", use_container_width=True):
-                        if os.path.exists("demo_files/happy_sample.wav"):
-                            self.process_audio("demo_files/happy_sample.wav")
+                        sample_path = Path("demo_files/happy_sample.wav")
+                        if sample_path.exists():
+                            self.process_audio(str(sample_path))
                             st.success("Sample audio loaded and analyzed!")
                         else:
-                            st.warning("Demo files not found. Please go to the 'View Examples' section.")
+                            st.warning("Sample file not found.")
                     st.markdown("</div>", unsafe_allow_html=True)
 
             with tab2:
@@ -628,18 +676,17 @@ class EmotionAnalyzer:
                     st.write("Click the microphone to start/stop recording, then we will analyze your speech.")
 
                     if audio_recorder is None:
-                        st.info("Microphone recording is unavailable. Install 'audio-recorder-streamlit' and restart the app.")
+                        st.info("Microphone recording unavailable (install 'audio-recorder-streamlit' to enable).")
                     else:
-                        audio_bytes = audio_recorder(text="Start recording", recording_color="#ef4444", neutral_color="#4f46e5", icon_name="microphone", icon_size="3x")
+                        audio_bytes = audio_recorder(text="Start / Stop Recording", recording_color="#ef4444", neutral_color="#4f46e5", icon_name="microphone", icon_size="3x")
                         if audio_bytes:
-                            # Persist to a temp wav file and analyze
                             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
                                 tmp_file.write(audio_bytes)
-                                temp_path = os.path.abspath(tmp_file.name)
-                            st.success("Recording captured! Analyzing...")
-                            self.process_audio(temp_path)
+                                recorded_path = os.path.abspath(tmp_file.name)
+                            st.success("Recording captured – analyzing...")
+                            self.process_audio(recorded_path)
 
-    def display_results(self, audio_file_path, y, sr, emotion, confidence_scores):
+    def display_results(self, audio_file_path, y, sr, emotion, confidence_scores, uncertainty):
         """Display emotion analysis results"""
         try:
             st.markdown("<hr style='margin: 2rem 0; border-color: #E2E8F0;'>", unsafe_allow_html=True)
@@ -693,7 +740,7 @@ class EmotionAnalyzer:
                     plt.tight_layout()
                     st.pyplot(fig)
 
-                # Column 2: Emotion confidence scores
+                # Column 2: Emotion confidence & uncertainty
                 with col2:
                     st.markdown("<h4 style='font-weight: 600; font-size: 1.1rem; margin-bottom: 1rem;'>Emotion Confidence Scores</h4>", unsafe_allow_html=True)
 
@@ -701,7 +748,7 @@ class EmotionAnalyzer:
                     fig = self.create_interactive_visualization(confidence_scores)
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # Display a table with all confidence scores
+                    # Display a table with all confidence + uncertainty
                     st.markdown("<h5 style='font-weight: 600; font-size: 0.9rem; margin: 1rem 0 0.5rem 0;'>All Detected Emotions</h5>", unsafe_allow_html=True)
 
                     # Create a DataFrame for display
@@ -715,15 +762,18 @@ class EmotionAnalyzer:
                     df["Confidence (%)"] = df["Confidence (%)"].map("{:.2f}%".format)
 
                     # Display as a modern styled table
-                    st.dataframe(
-                        df,
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "Emotion": st.column_config.TextColumn("Emotion", width="medium"),
-                            "Confidence (%)": st.column_config.TextColumn("Confidence", width="medium")
-                        }
-                    )
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+
+                    # Uncertainty metrics panel
+                    if uncertainty:
+                        ent_bits = uncertainty.get("entropy_bits")
+                        margin = uncertainty.get("top2_margin")
+                        num_classes = max(1, int(uncertainty.get("num_classes", len(confidence_scores))))
+                        # Max entropy in bits for N classes = log2(N)
+                        max_entropy_bits = np.log2(num_classes)
+                        entropy_norm_pct = (ent_bits / max_entropy_bits * 100.0) if max_entropy_bits > 0 else 0.0
+                        st.markdown("<h5 style='font-weight: 600; font-size: 0.9rem; margin: 1rem 0 0.5rem 0;'>Uncertainty Metrics</h5>", unsafe_allow_html=True)
+                        st.caption(f"Entropy: {ent_bits:.3f} bits (of {max_entropy_bits:.3f}), Normalized: {entropy_norm_pct:.1f}% | Top-2 Margin: {margin:.3f}")
 
                 # Column 3: Gauge chart and spectrogram
                 with col3:
@@ -1224,9 +1274,197 @@ class EmotionAnalyzer:
                     </div>
                     """, unsafe_allow_html=True)
 
+    def display_model_management_section(self):
+        """Display model management and settings section"""
+        with st.container():
+            # Model Management Section
+            with stylable_container(
+                key="model_management_container",
+                css_styles="""
+                    {
+                        background: rgba(255, 255, 255, 0.95);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
+                        border-radius: 20px;
+                        padding: 28px;
+                        margin-bottom: 24px;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                    }
+                """
+            ):
+                st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 16px;'>🧠 Model Management</h3>", unsafe_allow_html=True)
+
+                # Current Model Status
+                col1, col2 = st.columns([1, 1])
+
+                with col1:
+                    if self.loaded and self.model is not None:
+                        st.success("✅ Model Loaded")
+                        st.info(f"**Path:** {self.model_path}")
+                        try:
+                            model_info = self.model_manager.get_model_by_path(self.model_path)
+                            if model_info:
+                                st.info(f"**Type:** {model_info.get('type', 'Unknown').upper()}")
+                                st.info(f"**Created:** {model_info.get('created', 'Unknown')}")
+                                if 'metrics' in model_info and 'accuracy' in model_info['metrics']:
+                                    accuracy = model_info['metrics']['accuracy']
+                                    if accuracy <= 1.0:
+                                        accuracy *= 100
+                                    st.metric("Accuracy", f"{accuracy:.1f}%")
+                        except Exception:
+                            pass
+                    else:
+                        st.warning("⚠️ No Model Loaded")
+                        if st.button("🔄 Load Available Models", use_container_width=True):
+                            self.load_model()
+                            st.rerun()
+
+                with col2:
+                    # Available Models
+                    try:
+                        models = self.model_manager.get_models()
+                        st.info(f"**Available Models:** {len(models)}")
+
+                        if models:
+                            # Model selection dropdown
+                            model_options = []
+                            for model in models:
+                                accuracy = "Unknown"
+                                if 'metrics' in model and 'accuracy' in model['metrics']:
+                                    acc = model['metrics']['accuracy']
+                                    if acc <= 1.0:
+                                        acc *= 100
+                                    accuracy = ".1f"
+
+                                option_text = f"{model.get('type', 'Unknown').upper()} - {model.get('created', 'Unknown')[:16]} (Acc: {accuracy})"
+                                model_options.append((model['id'], option_text))
+
+                            if model_options:
+                                selected_model = st.selectbox(
+                                    "Switch to Model:",
+                                    options=[opt[0] for opt in model_options],
+                                    format_func=lambda x: next((opt[1] for opt in model_options if opt[0] == x), x)
+                                )
+
+                                if st.button("🔄 Switch Model", use_container_width=True):
+                                    try:
+                                        model_info = self.model_manager.get_model_by_id(selected_model)
+                                        if model_info and model_info.get('path'):
+                                            self.model = tf.keras.models.load_model(model_info['path'])
+                                            self.model_path = model_info['path']
+                                            self.loaded = True
+                                            st.success(f"✅ Switched to model: {selected_model}")
+                                            st.rerun()
+                                        else:
+                                            st.error("❌ Could not load selected model")
+                                    except Exception as e:
+                                        st.error(f"❌ Error switching model: {e}")
+
+                    except Exception as e:
+                        st.error(f"Error loading model list: {e}")
+
+            # Training Section
+            with stylable_container(
+                key="training_container",
+                css_styles="""
+                    {
+                        background: rgba(255, 255, 255, 0.95);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
+                        border-radius: 20px;
+                        padding: 28px;
+                        margin-bottom: 24px;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                    }
+                """
+            ):
+                st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 16px;'>🚀 Training Options</h3>", unsafe_allow_html=True)
+
+                col1, col2 = st.columns([1, 1])
+
+                with col1:
+                    st.markdown("**Manual Training**")
+                    st.markdown("Train a new model using the main training pipeline.")
+                    if st.button("🎯 Start Full Training", use_container_width=True, type="primary"):
+                        if not self.training_in_progress:
+                            self.train_model_automatically()
+                        else:
+                            st.warning("Training is already in progress")
+
+                with col2:
+                    st.markdown("**Quick Training**")
+                    st.markdown("Train a basic model using demo files (faster).")
+                    if st.button("⚡ Quick Train", use_container_width=True):
+                        if not self.training_in_progress:
+                            try:
+                                import subprocess
+                                st.info("Starting quick training...")
+                                result = subprocess.run([
+                                    sys.executable, 'auto_train.py'
+                                ], capture_output=True, text=True, timeout=300)
+
+                                if result.returncode == 0:
+                                    st.success("✅ Quick training completed!")
+                                    self.load_model()
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Quick training failed: {result.stderr}")
+                            except Exception as e:
+                                st.error(f"❌ Error during quick training: {e}")
+                        else:
+                            st.warning("Training is already in progress")
+
+            # System Information
+            with stylable_container(
+                key="system_info_container",
+                css_styles="""
+                    {
+                        background: rgba(255, 255, 255, 0.95);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
+                        border-radius: 20px;
+                        padding: 28px;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                    }
+                """
+            ):
+                st.markdown("<h3 style='font-weight: 600; color: #4F46E5; margin-bottom: 16px;'>📊 System Information</h3>", unsafe_allow_html=True)
+
+                col1, col2, col3 = st.columns([1, 1, 1])
+
+                with col1:
+                    st.metric("TensorFlow Available", "✅" if tensorflow_available else "❌")
+                    if tensorflow_available:
+                        try:
+                            st.metric("TensorFlow Version", tf.__version__)
+                        except:
+                            st.metric("TensorFlow Version", "Unknown")
+
+                with col2:
+                    # Check demo files
+                    demo_available = self._check_demo_files_available()
+                    st.metric("Demo Files Available", "✅" if demo_available else "❌")
+
+                    # Check models directory
+                    models_dir = Path('models')
+                    models_available = models_dir.exists() and len(list(models_dir.glob('*.keras'))) > 0
+                    st.metric("Models Available", "✅" if models_available else "❌")
+
+                with col3:
+                    # Training status
+                    training_status = "✅ Ready" if not self.training_in_progress else "🔄 In Progress"
+                    st.metric("Training Status", training_status)
+
+                    # Model loaded status
+                    model_status = "✅ Loaded" if self.loaded and self.model else "❌ Not Loaded"
+                    st.metric("Model Status", model_status)
+
     def display_settings_section(self):
-        """Display settings section"""
-        pass  # Implement settings section
+        """Legacy settings section - now redirects to model management"""
+        self.display_model_management_section()
         
     def run(self):
         """Main method to run the Streamlit application"""
@@ -1345,12 +1583,12 @@ class EmotionAnalyzer:
             
         elif selected == "Settings":
             st.markdown("""
-            <div style=\"margin: 8px 0 12px 0;\"> 
-              <h2 style=\"margin:0; font-weight:600; color:#111827;\">Settings</h2>
-              <p style=\"margin:4px 0 0 0; color:#4B5563;\">Configure application settings</p>
+            <div style=\"margin: 8px 0 12px 0;\">
+              <h2 style=\"margin:0; font-weight:600; color:#111827;\">Settings & Model Management</h2>
+              <p style=\"margin:4px 0 0 0; color:#4B5563;\">Configure application settings and manage trained models</p>
             </div>
             """, unsafe_allow_html=True)
-            self.display_settings_section()
+            self.display_model_management_section()
         
         # Footer with credits and additional information
         st.markdown("""
@@ -1380,78 +1618,118 @@ class EmotionAnalyzer:
         """, unsafe_allow_html=True)
 
     def train_model_automatically(self):
-        """Start the model training process automatically with a cross-process lock."""
-        try:
-            # Create lock to avoid concurrent training
-            models_dir = Path('models')
-            models_dir.mkdir(parents=True, exist_ok=True)
-            lock_file = models_dir / 'training.lock'
-            if lock_file.exists():
-                # Check staleness (older than 45 minutes) and clear if stale
-                try:
-                    created_at = None
-                    content = lock_file.read_text()
-                    if content.strip().startswith('{'):
-                        import json as _json
-                        info = _json.loads(content)
-                        created_at = float(info.get('created_at', 0.0))
-                    else:
-                        created_at = float(content.strip())
-                    if created_at:
-                        age_minutes = (time.time() - created_at) / 60.0
-                    else:
-                        age_minutes = (time.time() - lock_file.stat().st_mtime) / 60.0
-                    if age_minutes > 45.0:
-                        lock_file.unlink(missing_ok=True)
-                    else:
-                        self.training_in_progress = True
-                        st.info("⏳ Model training is already in progress. We'll analyze your file automatically when ready.")
-                        # Ensure pending file is queued; no-op here, caller sets it
-                        return False
-                except Exception:
-                    self.training_in_progress = True
-                    st.info("⏳ Model training is already in progress. We'll analyze your file automatically when ready.")
-                    return False
-            try:
-                import json as _json
-                lock_file.write_text(_json.dumps({'created_at': time.time(), 'created_by': 'ui', 'pid': os.getpid()}))
-            except Exception:
-                pass
+        """Run training in a background thread with file lock to avoid overlap."""
+        models_dir = Path('models')
+        models_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = models_dir / 'training.lock'
 
-            self.training_in_progress = True
-            st.info("🚀 Starting automatic model training. This may take a few minutes...")
-            
-            # Display a progress message
-            progress_placeholder = st.empty()
-            progress_placeholder.markdown("""
-            <div style='padding: 10px; border-radius: 5px; background-color: #e6f7ff; border: 1px solid #1890ff; margin: 10px 0;'>
-                <h4 style='margin: 0; color: #096dd9;'>⏳ Training in progress...</h4>
-                <p style='margin: 5px 0 0 0;'>Training a new emotion recognition model. This process may take 5-10 minutes depending on your system.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Create and start the training process
-            self.training_process = _subprocess.Popen(
-                [sys.executable, "-m", "src.main", "--train", "--model-type", "cnn"], 
-                stdout=_subprocess.PIPE, 
-                stderr=_subprocess.PIPE,
-                text=True
-            )
-            
-            # Create a thread to monitor the training process
-            self.training_thread = threading.Thread(
-                target=self._monitor_training_process,
-                args=(progress_placeholder,),
-                daemon=True
-            )
-            self.training_thread.start()
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error starting training process: {e}")
-            self.training_in_progress = False
+        if self.training_in_progress:
+            logger.info("Training already in progress, skipping...")
             return False
+
+        try:
+            lock_file = open(lock_path, 'w')
+            try:
+                portalocker.lock(lock_file, portalocker.LOCK_EX | portalocker.LOCK_NB)
+                logger.info("Acquired training lock successfully")
+            except portalocker.LockException:
+                self.training_in_progress = True
+                st.info("⏳ Model training already in progress. Your file will be analyzed when ready.")
+                logger.info("Training lock already held by another process")
+                return False
+        except Exception as e:
+            logger.warning(f"Could not acquire training lock: {e}")
+            # If locking fails, proceed but still try training (best effort)
+            lock_file = None
+
+        self.training_in_progress = True
+        st.info("🚀 Starting automatic model training. This may take a few minutes...")
+        progress_placeholder = st.empty()
+
+        def _run():
+            start = time.time()
+            model_path = None
+            try:
+                logger.info("Starting model training with CNN and mel_spectrogram features...")
+                args = TrainArgs(model_type='cnn', feature_type='mel_spectrogram')
+                model_path, metrics = train_model(args)
+
+                if model_path and os.path.exists(model_path):
+                    elapsed = time.time() - start
+                    st.session_state.training_status = {
+                        'type': 'success',
+                        'message': f'Training completed in {int(elapsed//60):02d}:{int(elapsed%60):02d}. Model saved to {model_path}'
+                    }
+                    logger.info(f"Training completed successfully. Model saved to: {model_path}")
+                else:
+                    # Try automatic training as fallback
+                    logger.warning("Main training failed, attempting automatic training...")
+                    st.session_state.training_status = {
+                        'type': 'progress',
+                        'message': 'Main training failed, trying automatic training with demo files...'
+                    }
+
+                    try:
+                        import subprocess
+                        result = subprocess.run([
+                            sys.executable, 'auto_train.py'
+                        ], capture_output=True, text=True, timeout=600)  # 10 minute timeout
+
+                        if result.returncode == 0:
+                            # Try to find the auto-trained model
+                            auto_model_path = 'models/cnn_emotion_model_auto.keras'
+                            if os.path.exists(auto_model_path):
+                                model_path = auto_model_path
+                                elapsed = time.time() - start
+                                st.session_state.training_status = {
+                                    'type': 'success',
+                                    'message': f'Automatic training completed in {int(elapsed//60):02d}:{int(elapsed%60):02d}. Model saved!'
+                                }
+                                logger.info("Automatic training completed successfully")
+                            else:
+                                raise Exception("Auto training completed but model file not found")
+                        else:
+                            raise Exception(f"Auto training failed: {result.stderr}")
+
+                    except Exception as auto_e:
+                        logger.error(f"Automatic training also failed: {auto_e}")
+                        elapsed = time.time() - start
+                        st.session_state.training_status = {
+                            'type': 'error',
+                            'message': f'Both training methods failed after {int(elapsed//60):02d}:{int(elapsed%60):02d}'
+                        }
+                        return
+
+                # Load the newly trained model
+                if model_path:
+                    success = self.load_trained_model()
+                    if success:
+                        st.success("✅ Model loaded and ready for predictions!")
+                        logger.info("Newly trained model loaded successfully")
+                    else:
+                        st.warning("⚠️ Model was trained but couldn't be loaded. Please refresh the page.")
+                        logger.warning("Failed to load newly trained model")
+
+            except Exception as e:
+                elapsed = time.time() - start
+                error_msg = f'Training failed after {int(elapsed//60):02d}:{int(elapsed%60):02d}: {str(e)}'
+                st.session_state.training_status = {'type': 'error', 'message': error_msg}
+                logger.error(f'Training error: {e}')
+                import traceback
+                logger.error(f'Training traceback: {traceback.format_exc()}')
+            finally:
+                self.training_in_progress = False
+                if lock_file:
+                    try:
+                        portalocker.unlock(lock_file)
+                        lock_file.close()
+                        lock_path.unlink(missing_ok=True)
+                        logger.info("Released training lock")
+                    except Exception as e:
+                        logger.warning(f"Error releasing training lock: {e}")
+
+        threading.Thread(target=_run, daemon=True).start()
+        return True
     
     def _monitor_training_process(self, progress_placeholder):
         """Monitor the training process and update the UI with progress"""
@@ -1681,12 +1959,8 @@ if 'real_time_enabled' not in st.session_state:
 
 
 if __name__ == '__main__':
-    if is_streamlit_runtime():
-        # Launched via: streamlit run app.py
-        _app = EmotionAnalyzer()
-        _app.run()
-    else:
-        # Launched via: python app.py [--flags]
-        main()
+    # Streamlit execution path
+    _app = EmotionAnalyzer()
+    _app.run()
 
 

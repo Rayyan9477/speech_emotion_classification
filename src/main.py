@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
-"""Main entry point for the Speech Emotion Classification system."""
+"""Training pipeline utilities (Streamlit-integrated; no CLI parsing)."""
 
-import os
 import sys
-import json
 import time
 import logging
-import argparse
 from datetime import datetime
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Tuple, Dict, Any
 
 # Import core configuration
 from src.core import config
 
 # Setup logging configuration
+try:
+    cfg = config.Config()
+    log_dir = Path(cfg.paths.logs_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "speech_emotion.log"
+except Exception:
+    # Fallback to current directory if config paths fail
+    log_file = Path("speech_emotion.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(config.Config().paths.logs_dir + "/speech_emotion.log")),
+        logging.FileHandler(str(log_file)),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -54,11 +62,26 @@ def set_seeds(seed=42):
     if tensorflow_available and tf is not None:
         tf.random.set_seed(seed)
 
-def train_model(args):
-    """Train a new model with the specified configuration."""
+@dataclass
+class TrainArgs:
+    model_type: str = "cnn"  # or 'mlp'
+    feature_type: str = "mel_spectrogram"  # or 'mfcc'
+    batch_size: int = config.Config().models.cnn.batch_size
+    epochs: int = config.Config().models.cnn.epochs
+    patience: int = config.Config().models.cnn.early_stopping_patience
+
+
+def train_model(args: TrainArgs) -> Tuple[str, Dict[str, Any]]:
+    """Train a new model.
+
+    Returns
+    -------
+    (model_path, metrics): Tuple containing the saved model path and metrics dict.
+    """
     try:
         set_seeds(42)
 
+        cfg_local = config.Config()  # fresh instance in case of dynamic config
         data_loader = DataLoader()
         feature_extractor = FeatureExtractor()
         model_manager = ModelManager()
@@ -67,35 +90,37 @@ def train_model(args):
         logger.info("Loading dataset...")
         _ = data_loader.load_dataset()
         train_data, val_data, test_data = data_loader.split_dataset(
-            train_size=config.Config().training.train_split,
-            val_size=config.Config().training.val_split,
-            test_size=config.Config().training.test_split
+            train_size=cfg_local.training.train_split,
+            val_size=cfg_local.training.val_split,
+            test_size=cfg_local.training.test_split
         )
 
         # Feature extraction
-        logger.info(f"Extracting {args.feature_type} features...")
-        feature_config = config.Config().features.mel_spectrogram if args.feature_type == 'mel_spectrogram' else config.Config().features.mfcc
+        logger.info("Extracting %s features...", args.feature_type)
+        feature_config = (cfg_local.features.mel_spectrogram
+                          if args.feature_type == 'mel_spectrogram'
+                          else cfg_local.features.mfcc)
 
         train_features = feature_extractor.process_dataset(train_data, feature_type=args.feature_type)
         val_features = feature_extractor.process_dataset(val_data, feature_type=args.feature_type)
         test_features = feature_extractor.process_dataset(test_data, feature_type=args.feature_type)
 
-        # Normalize
+        # Normalize (fit on train only)
         train_features = feature_extractor.normalize_features(train_features, feature_type=args.feature_type)
         val_features = feature_extractor.normalize_features(val_features, feature_type=args.feature_type, fit=False)
         test_features = feature_extractor.normalize_features(test_features, feature_type=args.feature_type, fit=False)
 
         # Build model
-        logger.info(f"Creating {args.model_type.upper()} model...")
-        emotion_model = EmotionModel(num_classes=len(config.Config().training.emotion_labels))
+        logger.info("Creating %s model...", args.model_type.upper())
+        emotion_model = EmotionModel(num_classes=len(cfg_local.training.emotion_labels))
 
         if args.model_type == 'mlp':
-            mlp_hidden = config.Config().models.mlp.hidden_layers
+            mlp_hidden = cfg_local.models.mlp.hidden_layers
             mlp_params = {
-                'learning_rate': config.Config().models.mlp.learning_rate,
+                'learning_rate': cfg_local.models.mlp.learning_rate,
                 'num_layers': len(mlp_hidden),
                 'units': mlp_hidden,
-                'dropout_rate': config.Config().models.mlp.dropout_rate,
+                'dropout_rate': cfg_local.models.mlp.dropout_rate,
             }
             model = emotion_model.build_mlp(
                 input_shape=train_features['mfcc'][0].shape,
@@ -103,21 +128,21 @@ def train_model(args):
             )
         else:  # cnn
             params = {
-                'learning_rate': config.Config().models.cnn.learning_rate,
-                'num_conv_layers': len(config.Config().models.cnn.conv_layers),
-                'filters': config.Config().models.cnn.conv_layers,
+                'learning_rate': cfg_local.models.cnn.learning_rate,
+                'num_conv_layers': len(cfg_local.models.cnn.conv_layers),
+                'filters': cfg_local.models.cnn.conv_layers,
                 'kernel_size': (3, 3),
                 'pool_size': (2, 2),
-                'num_dense_layers': len(config.Config().models.cnn.dense_layers),
-                'dense_units': config.Config().models.cnn.dense_layers,
-                'dropout_rate': config.Config().models.cnn.dropout_rate
+                'num_dense_layers': len(cfg_local.models.cnn.dense_layers),
+                'dense_units': cfg_local.models.cnn.dense_layers,
+                'dropout_rate': cfg_local.models.cnn.dropout_rate
             }
             input_shape = train_features['mel_spectrogram'][0].shape
-            if len(input_shape) == 2:
+            if len(input_shape) == 2:  # add channel dim if missing
                 input_shape = (*input_shape, 1)
             model = emotion_model.build_cnn(input_shape=input_shape, params=params)
 
-        model_config = config.Config().models.cnn if args.model_type == 'cnn' else config.Config().models.mlp
+        model_config = cfg_local.models.cnn if args.model_type == 'cnn' else cfg_local.models.mlp
         trainer = ModelTrainer(model=model, model_type=args.model_type)
         callbacks = emotion_model.get_callbacks(patience=args.patience)
 
@@ -132,16 +157,16 @@ def train_model(args):
             callbacks=callbacks
         )
 
-        # Evaluate on test with proper feature key
+        # Evaluate on test
         metrics = trainer.evaluate(
             X_test=test_features[feature_key],
             y_test=test_features['labels'],
-            emotion_labels=config.Config().training.emotion_labels
+            emotion_labels=cfg_local.training.emotion_labels
         )
 
         # Save model
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        model_path = Path(config.Config().paths.models_dir) / f"{args.model_type}_emotion_model_{timestamp}.keras"
+        model_path = Path(cfg_local.paths.models_dir) / f"{args.model_type}_emotion_model_{timestamp}.keras"
         backup_path = model_path.with_suffix('.h5')
 
         trainer.save_model(model_path)
@@ -150,14 +175,14 @@ def train_model(args):
         except Exception:
             pass
 
-        # Register model and save metadata properly
+        # Register model and save metadata
         metrics.update({
             'trained_on': timestamp,
             'feature_type': args.feature_type,
             'feature_config': feature_config,
             'model_config': model_config.__dict__ if hasattr(model_config, '__dict__') else str(model_config),
             'num_params': model.count_params(),
-            'training_time': trainer.training_time,
+            'training_time': getattr(trainer, 'training_time', None),
         })
 
         model_id = model_manager.register_model(
@@ -167,7 +192,7 @@ def train_model(args):
             description=f"Trained {args.model_type.upper()} model using {args.feature_type} features"
         )
 
-        # Save training history and test data using the same ID/key
+        # Persist artifacts
         model_manager.save_training_history(
             history=history,
             model_id=model_id,
@@ -179,7 +204,6 @@ def train_model(args):
             model_type=args.model_type
         )
 
-        # Save feature extraction info sidecar
         feature_info = {
             'feature_type': args.feature_type,
             'config': feature_config,
@@ -187,93 +211,9 @@ def train_model(args):
         }
         model_manager.save_feature_info(feature_info, model_path=str(model_path))
 
-        logger.info("Training completed successfully!")
+        logger.info("Training completed successfully: %s", model_path)
+        return str(model_path), metrics
     except Exception as e:
-        logger.error(f"Error during training: {e}")
+        logger.error("Error during training: %s", e, exc_info=True)
         raise
-
-def evaluate_model(args):
-    """Evaluate an existing model."""
-    try:
-        model_manager = ModelManager()
-        model = model_manager.load_model(model_id=args.model_id)
-        model_info = model_manager.get_model_by_id(args.model_id)
-
-        if model is None or not model_info:
-            logger.error(f"Could not load model or metadata for ID: {args.model_id}")
-            return
-
-        # Load test data from results directory based on detected type
-        results_dir = Path(config.Config().paths.results_dir)
-        try:
-            X_test = np.load(results_dir / f"{model_info['type']}_X_test.npy")
-            y_test = np.load(results_dir / f"{model_info['type']}_y_test.npy")
-        except FileNotFoundError:
-            logger.error(f"Test data not found in {results_dir}")
-            logger.info("Please run training first to generate test data")
-            return
-
-        trainer = ModelTrainer(model=model, model_type=model_info['type'])
-
-        start_time = time.time()
-        metrics = trainer.evaluate(X_test, y_test, emotion_labels=config.Config().training.emotion_labels)
-        eval_time = time.time() - start_time
-        metrics.update({
-            'evaluated_on': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'eval_time': eval_time,
-            'num_test_samples': len(y_test)
-        })
-
-        model_manager.save_model_metrics(model_path=model_info['path'], metrics=metrics)
-
-        logger.info(f"Evaluation metrics for model {args.model_id}:")
-        for metric, value in metrics.items():
-            if isinstance(value, (int, float)):
-                logger.info(f"{metric}: {value:.4f}")
-            else:
-                logger.info(f"{metric}: {value}")
-    except Exception as e:
-        logger.error(f"Error during evaluation: {str(e)}")
-        logger.debug("Stack trace:", exc_info=True)
-        raise
-
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Speech Emotion Classification System")
-    parser.add_argument('--train', action='store_true', help='Train a new model')
-    parser.add_argument('--evaluate', action='store_true', help='Evaluate an existing model')
-    parser.add_argument('--model-id', help='Model ID for evaluation')
-    parser.add_argument('--model-type', choices=config.Config().training.model_types, default='cnn', help='Type of model to use')
-    parser.add_argument('--feature-type', choices=['mel_spectrogram', 'mfcc'], default='mel_spectrogram', help='Type of features to extract')
-    parser.add_argument('--batch-size', type=int, 
-                       default=config.Config().models.cnn.batch_size, help='Training batch size')
-    parser.add_argument('--epochs', type=int, 
-                       default=config.Config().models.cnn.epochs, help='Number of training epochs')
-    parser.add_argument('--patience', type=int, 
-                       default=config.Config().models.cnn.early_stopping_patience, help='Early stopping patience')
     
-    args = parser.parse_args()
-    
-    # Load configuration based on model type
-    model_config = config.Config().models.cnn if args.model_type == 'cnn' else config.Config().models.mlp
-    args.batch_size = args.batch_size or model_config.batch_size
-    args.epochs = args.epochs or model_config.epochs
-    
-    if args.train:
-        train_model(args)
-    elif args.evaluate:
-        if args.model_id is None:
-            parser.error("--model-id is required for evaluation")
-        evaluate_model(args)
-    else:
-        parser.print_help()
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        logger.info("Process interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Unhandled exception: {e}")
-        sys.exit(1)

@@ -1,11 +1,13 @@
 import pytest
 from pathlib import Path
-try:
-    from src.ui.app import EmotionAnalyzer
-except ImportError:
-    import sys, os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'ui')))
-    from app import EmotionAnalyzer
+import sys, os
+
+# Ensure project root (parent of tests) is on sys.path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from app import EmotionAnalyzer  # noqa: E402
 
 @pytest.fixture
 def temp_upload_dir(tmp_path):
