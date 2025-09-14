@@ -14,7 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     ffmpeg \
     graphviz \
-  && rm -rf /var/lib/apt/lists/*
+    libgomp1 \
+    libgthread-2.0-0 \
+    libglib2.0-0 \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean
 
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt

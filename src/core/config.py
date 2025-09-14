@@ -142,7 +142,10 @@ class Config:
         """Create necessary directories after initialization"""
         for path in vars(self.paths).values():
             if path:
-                Path(path).mkdir(parents=True, exist_ok=True)
+                try:
+                    Path(path).mkdir(parents=True, exist_ok=True)
+                except (PermissionError, OSError) as e:
+                    logger.warning(f"Could not create directory {path}: {e}")
         logger.info("Directory structure validated")
 
     def get_model_config(self, model_type: str) -> ModelArchConfig:

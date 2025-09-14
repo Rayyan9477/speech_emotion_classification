@@ -40,5 +40,5 @@ graphviz>=0.19  # For model architecture visualization
 tqdm>=4.62.0
 h5py>=3.8.0
 
-# API (optional)
+# Utilities
 portalocker>=2.8.2

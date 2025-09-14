@@ -12,20 +12,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Import monkey patch to fix TensorFlow overflow issues
-try:
-    from src.utils.monkey_patch import monkeypatch
-    # Apply the patch
-    if monkeypatch():
-        logger.info("Successfully applied TensorFlow monkey patch")
-    else:
-        logger.warning("Failed to apply TensorFlow monkey patch")
-except ImportError:
-    logger.warning("Could not import monkey_patch, some TensorFlow operations may fail")
+# Monkey patch is now applied in src/__init__.py
 
 class ModelTrainer:
     """
@@ -38,9 +27,18 @@ class ModelTrainer:
         self.history = None
         self.training_time = None
         
-        # Create required directories
-        for dir_path in ['results', 'results/reports']:
-            os.makedirs(dir_path, exist_ok=True)
+        # Create required directories using config
+        try:
+            from src.core import config
+            cfg = config.Config()
+            results_dir = cfg.paths.results_dir
+            reports_dir = os.path.join(results_dir, 'reports')
+            os.makedirs(results_dir, exist_ok=True)
+            os.makedirs(reports_dir, exist_ok=True)
+        except ImportError:
+            # Fallback to hardcoded paths
+            for dir_path in ['results', 'results/reports']:
+                os.makedirs(dir_path, exist_ok=True)
             
     def train(self, X_train, y_train, X_val, y_val, batch_size=32, epochs=50, callbacks=None):
         """Train the model with proper error handling and advanced training features."""
@@ -50,11 +48,19 @@ class ModelTrainer:
             
             # Setup default callbacks if none provided
             if callbacks is None:
-                # Create results directory if it doesn't exist
-                os.makedirs('models', exist_ok=True)
-                
+                # Get models directory from config
+                try:
+                    from src.core import config
+                    cfg = config.Config()
+                    models_dir = cfg.paths.models_dir
+                except ImportError:
+                    models_dir = 'models'
+
+                # Create models directory if it doesn't exist
+                os.makedirs(models_dir, exist_ok=True)
+
                 # Setup model checkpoint to save best model
-                checkpoint_path = os.path.join('models', f'{self.model_type}_best_model.keras')
+                checkpoint_path = os.path.join(models_dir, f'{self.model_type}_best_model.keras')
                 checkpoint = tf.keras.callbacks.ModelCheckpoint(
                     checkpoint_path,
                     monitor='val_loss',
@@ -81,7 +87,13 @@ class ModelTrainer:
                 )
                 
                 # Add TensorBoard logging
-                log_dir = os.path.join('logs', datetime.now().strftime("%Y%m%d-%H%M%S"))
+                try:
+                    from src.core import config
+                    cfg = config.Config()
+                    logs_dir = cfg.paths.logs_dir
+                except ImportError:
+                    logs_dir = 'logs'
+                log_dir = os.path.join(logs_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))
                 tensorboard = tf.keras.callbacks.TensorBoard(
                     log_dir=log_dir,
                     histogram_freq=1,

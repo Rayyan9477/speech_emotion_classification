@@ -9,14 +9,8 @@ import logging
 import os
 import time
 
-# Import monkey patch to fix TensorFlow overflow issues
-try:
-    from src.utils.monkey_patch import monkeypatch
-    monkeypatch()
-except ImportError:
-    pass
+# Monkey patch is now applied in src/__init__.py
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class EmotionModel:

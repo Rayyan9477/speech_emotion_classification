@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Training pipeline utilities (Streamlit-integrated; no CLI parsing)."""
 
-import sys
 import time
 import logging
 from datetime import datetime
@@ -12,29 +11,24 @@ from typing import Tuple, Dict, Any
 # Import core configuration
 from src.core import config
 
-# Setup logging configuration
+logger = logging.getLogger(__name__)
+
+# Setup logging file handler if config is available
 try:
     cfg = config.Config()
     log_dir = Path(cfg.paths.logs_dir)
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "speech_emotion.log"
-except Exception:
-    # Fallback to current directory if config paths fail
-    log_file = Path("speech_emotion.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(log_file)),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
+    # Add file handler to existing logger configuration
+    file_handler = logging.FileHandler(str(log_file))
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
+except Exception as e:
+    logger.warning(f"Could not setup config-based logging file, using console only: {e}")
 
-# Import monkey patch first to fix TensorFlow issues
-from src.utils.monkey_patch import monkeypatch
-monkeypatch()
+# Monkey patch is now applied in src/__init__.py
 
 # Try to import TensorFlow with error handling (keep tf symbol)
 try:
@@ -166,7 +160,9 @@ def train_model(args: TrainArgs) -> Tuple[str, Dict[str, Any]]:
 
         # Save model
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        model_path = Path(cfg_local.paths.models_dir) / f"{args.model_type}_emotion_model_{timestamp}.keras"
+        models_dir = Path(cfg_local.paths.models_dir)
+        models_dir.mkdir(parents=True, exist_ok=True)
+        model_path = models_dir / f"{args.model_type}_emotion_model_{timestamp}.keras"
         backup_path = model_path.with_suffix('.h5')
 
         trainer.save_model(model_path)

@@ -18,12 +18,21 @@ class ModelManager:
     - Training history and evaluation metrics
     """
     
-    def __init__(self, models_dir="models", results_dir="results", logs_dir="logs"):
+    def __init__(self, models_dir=None, results_dir=None, logs_dir=None):
         """Initialize the ModelManager with directory paths"""
-        self.models_dir = models_dir
-        self.results_dir = results_dir
-        self.logs_dir = logs_dir
-        
+        # Import config here to avoid circular imports
+        try:
+            from src.core import config
+            cfg = config.Config()
+            self.models_dir = models_dir or cfg.paths.models_dir
+            self.results_dir = results_dir or cfg.paths.results_dir
+            self.logs_dir = logs_dir or cfg.paths.logs_dir
+        except ImportError:
+            # Fallback to defaults if config not available
+            self.models_dir = models_dir or "models"
+            self.results_dir = results_dir or "results"
+            self.logs_dir = logs_dir or "logs"
+
         # Create directories if they don't exist
         os.makedirs(self.models_dir, exist_ok=True)
         os.makedirs(self.results_dir, exist_ok=True)

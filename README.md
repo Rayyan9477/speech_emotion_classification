@@ -35,7 +35,6 @@ speech_emotion_classification/
 │       ├── app.py            # Streamlit application
 │       └── dashboard.py      # Analysis dashboard
 │   └── scripts/              # Utility scripts
-│       └── train.py          # Wrapper to launch training with defaults
 │
 ├── tests/                    # Test suite
 │   ├── conftest.py          # Test fixtures
@@ -64,13 +63,41 @@ speech_emotion_classification/
 
 ## Installation
 
+### Option 1: Install from source
 ```bash
+git clone <repository-url>
+cd speech_emotion_classification
 pip install -r requirements.txt
+```
+
+### Option 2: Install as package (recommended)
+```bash
+pip install -e .
+```
+
+### Development installation
+```bash
+pip install -e ".[dev]"
 ```
 
 If you're on Windows and encounter TensorFlow DLL issues, ensure you install a compatible TensorFlow version for your Python and CUDA setup. This project includes a TensorFlow monkey patch to avoid known signbit/argmax issues.
 
 ## Usage
+
+### Using Make (recommended for development)
+```bash
+make install          # Install dependencies
+make test            # Run tests
+make lint            # Run linting
+make format          # Format code
+make train           # Train CNN model
+make ui              # Start Streamlit UI
+make api             # Start FastAPI server
+make docker-build    # Build Docker image
+make docker-run      # Run Docker container
+```
+
+### Direct commands
 
 Basic CLI for training/evaluation:
 
@@ -88,10 +115,13 @@ python -m src.main --evaluate --model-id <MODEL_ID>
 Run the app via unified driver (recommended):
 
 ```bash
-pip install -r requirements.txt
-python app.py           # ensures model exists, then launches the UI
-python app.py --train   # train once and exit
-python app.py --api     # launch FastAPI server
+python driver.py --app    # Start Streamlit UI
+python driver.py --api    # Start FastAPI server
+```
+
+Or run directly:
+```bash
+python app.py             # ensures model exists, then launches the UI
 ```
 
 Run the Streamlit app directly:

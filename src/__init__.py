@@ -1,20 +1,28 @@
 """
 Speech Emotion Classification Package
 
-A deep learning system for classifying emotions in speech using various neural network architectures.
+This package provides tools for classifying emotions from speech audio using
+neural networks and machine learning techniques.
 """
 
 import logging
+from pathlib import Path
 
-# Configure root logger
+# Configure package-level logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("speech_emotion.log"),
-        logging.StreamHandler()
-    ]
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Version of the speech_emotion_classification package
-__version__ = "1.0.0"
+# Apply monkey patch on import to fix TensorFlow issues
+try:
+    from .utils.monkey_patch import monkeypatch
+    monkeypatch()
+    logging.getLogger(__name__).info("TensorFlow monkey patch applied successfully")
+except ImportError:
+    logging.getLogger(__name__).warning("Could not apply TensorFlow monkey patch")
+except Exception as e:
+    logging.getLogger(__name__).warning(f"Error applying TensorFlow monkey patch: {e}")
+
+__version__ = "0.1.0"
+__author__ = "Speech Emotion Classification Team"

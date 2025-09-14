@@ -1,11 +1,8 @@
-import os
 import numpy as np
 import librosa
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class FeatureExtractor:
