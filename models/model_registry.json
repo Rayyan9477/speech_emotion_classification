@@ -359,6 +359,75 @@
             "size_mb": 0.41,
             "metrics": {},
             "description": "CNN model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20251017_232646",
+            "path": "models/improved_cnn_emotion_model_20251017_232646.keras",
+            "type": "cnn",
+            "created": "2025-10-17 23:26:46",
+            "size_mb": 8.0,
+            "version": 1,
+            "sha256": "54c15901a0cde3bdafceb6b8845ba6f7a70ab0310a960c37619933d36d3ef371",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.25,
+                "loss": 7.325883865356445,
+                "feature_type": "mel_spectrogram",
+                "num_classes": 8,
+                "emotion_labels": [
+                    "neutral",
+                    "calm",
+                    "happy",
+                    "sad",
+                    "angry",
+                    "fearful",
+                    "disgust",
+                    "surprised"
+                ]
+            },
+            "description": "Improved CNN model with balanced training data - Accuracy: 0.2500",
+            "feature_type": "mel_spectrogram"
+        },
+        {
+            "id": "improved_20251017_234505",
+            "path": "C:\\Users\\rayyan\\Downloads\\VS Code Workspace\\speech_emotion_classification\\models\\improved_cnn_emotion_model_20251017_232646.keras",
+            "type": "improved",
+            "created": "2025-10-17 23:45:05",
+            "size_mb": 8.0,
+            "version": 1,
+            "sha256": "54c15901a0cde3bdafceb6b8845ba6f7a70ab0310a960c37619933d36d3ef371",
+            "feature_hash": "",
+            "metrics": {},
+            "description": "IMPROVED model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20251018_022713",
+            "path": "models/corrected_cnn_emotion_model_20251018_022713.keras",
+            "type": "cnn",
+            "created": "2025-10-18 02:27:14",
+            "size_mb": 8.0,
+            "version": 2,
+            "sha256": "4f69adc59a35e9915b229dbe2b52adc1bd902df40035d4ef8070f8539d59c58f",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.12777778506278992,
+                "loss": 2.379836082458496,
+                "feature_type": "mel_spectrogram",
+                "num_classes": 8,
+                "emotion_labels": [
+                    "neutral",
+                    "calm",
+                    "happy",
+                    "sad",
+                    "angry",
+                    "fearful",
+                    "disgust",
+                    "surprised"
+                ],
+                "corrected_labels": true
+            },
+            "description": "Corrected CNN model with proper label mapping - Accuracy: 0.1278",
+            "feature_type": "mel_spectrogram"
         }
     ]
 }

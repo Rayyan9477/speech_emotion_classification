@@ -60,12 +60,12 @@ class FeatureConfig:
 @dataclass
 class ModelArchConfig:
     """Base model architecture configuration"""
-    learning_rate: float = 0.00003  # Much lower learning rate
-    early_stopping_patience: int = 10
-    reduce_lr_patience: int = 3
+    learning_rate: float = 0.001  # Increased learning rate for better learning
+    early_stopping_patience: int = 15  # Increased patience
+    reduce_lr_patience: int = 5  # Increased patience
     reduce_lr_factor: float = 0.5  # Less aggressive LR reduction
     validation_split: float = 0.15
-    dropout_rate: float = 0.4  # Increased dropout
+    dropout_rate: float = 0.3  # Reduced dropout for better learning
     batch_size: int = 32
     epochs: int = 100
     optimizer: str = "adam"
@@ -77,12 +77,12 @@ class ModelArchConfig:
 
 @dataclass
 class CNNConfig(ModelArchConfig):
-    """CNN model configuration with simpler architecture"""
-    conv_layers: List[int] = field(default_factory=lambda: [16, 32, 32])  # Fewer filters
+    """CNN model configuration with improved architecture"""
+    conv_layers: List[int] = field(default_factory=lambda: [32, 64, 128, 256])  # More filters for better capacity
     conv_kernel_size: int = 3
     pool_size: int = 2
     pool_stride: int = 2
-    dense_layers: List[int] = field(default_factory=lambda: [128, 64])  # Smaller dense layers
+    dense_layers: List[int] = field(default_factory=lambda: [512, 256, 128])  # Larger dense layers
     use_batch_norm: bool = True
     kernel_initializer: str = "he_normal"  # Better initialization for ReLU
     bias_initializer: str = "zeros"

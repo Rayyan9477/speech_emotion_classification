@@ -129,7 +129,10 @@ def train_model(args: TrainArgs) -> Tuple[str, Dict[str, Any]]:
                 'pool_size': (2, 2),
                 'num_dense_layers': len(cfg_local.models.cnn.dense_layers),
                 'dense_units': cfg_local.models.cnn.dense_layers,
-                'dropout_rate': cfg_local.models.cnn.dropout_rate
+                'dropout_rate': cfg_local.models.cnn.dropout_rate,
+                'use_batch_norm': cfg_local.models.cnn.use_batch_norm,
+                'use_global_pooling': True,
+                'l2_regularization': cfg_local.models.cnn.weight_decay
             }
             input_shape = train_features['mel_spectrogram'][0].shape
             if len(input_shape) == 2:  # add channel dim if missing

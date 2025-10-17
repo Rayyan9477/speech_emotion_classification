@@ -95,15 +95,17 @@ class EmotionModel:
         if params is None:
             params = {
                 'learning_rate': 0.001,
-                'num_conv_layers': 3,  # Increased from 2 to 3
-                'filters': [32, 64, 128],  # Added third layer with more filters
+                'num_conv_layers': 4,  # Increased to 4 layers
+                'filters': [32, 64, 128, 256],  # More filters for better capacity
                 'kernel_size': (3, 3),
                 'pool_size': (2, 2),
-                'num_dense_layers': 2,
-                'dense_units': [128, 64],
+                'num_dense_layers': 3,  # Increased dense layers
+                'dense_units': [512, 256, 128],  # Larger dense layers
                 'dropout_rate': 0.3,
-                'use_residual': True,  # New parameter for residual connections
-                'l2_regularization': 0.0001  # L2 regularization for weights
+                'use_residual': False,  # Disable residual for now
+                'l2_regularization': 0.0001,  # L2 regularization for weights
+                'use_batch_norm': True,
+                'use_global_pooling': True
             }
         
         try:
@@ -178,7 +180,11 @@ class EmotionModel:
                 x = Dropout(params['dropout_rate'])(x)
             
             # Global average pooling to reduce parameters
-            x = tf.keras.layers.GlobalAveragePooling2D()(x)
+            if params.get('use_global_pooling', True):
+                x = tf.keras.layers.GlobalAveragePooling2D()(x)
+            else:
+                from tensorflow.keras.layers import Flatten
+                x = Flatten()(x)
             
             # Dense layers
             for i in range(params['num_dense_layers']):
@@ -188,7 +194,8 @@ class EmotionModel:
                     activation='relu',
                     kernel_regularizer=l2(params.get('l2_regularization', 0.0001))
                 )(x)
-                x = BatchNormalization()(x)
+                if params.get('use_batch_norm', True):
+                    x = BatchNormalization()(x)
                 x = Dropout(params['dropout_rate'])(x)
             
             # Output layer

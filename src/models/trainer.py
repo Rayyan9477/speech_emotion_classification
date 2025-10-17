@@ -122,19 +122,24 @@ class ModelTrainer:
                 X_train = np.nan_to_num(X_train)
                 X_val = np.nan_to_num(X_val)
             
-            # Check for class imbalance
+            # Check for class imbalance and calculate class weights
             class_counts = np.bincount(y_train)
-            if len(class_counts) > 0 and (max(class_counts) / min(class_counts) > 2):
-                logger.warning(f"Class imbalance detected. Class distribution: {class_counts}")
-                logger.info("Consider using class weights or data augmentation for better performance")
-                
-                # Calculate class weights
-                total_samples = len(y_train)
-                n_classes = len(class_counts)
-                class_weights = {i: total_samples / (n_classes * count) for i, count in enumerate(class_counts)}
-                logger.info(f"Calculated class weights: {class_weights}")
-            else:
-                class_weights = None
+            logger.info(f"Class distribution: {class_counts}")
+            
+            # Always use class weights for better training
+            from sklearn.utils.class_weight import compute_class_weight
+            class_weights = compute_class_weight(
+                'balanced',
+                classes=np.unique(y_train),
+                y=y_train
+            )
+            class_weight_dict = {i: weight for i, weight in enumerate(class_weights)}
+            logger.info(f"Using class weights: {class_weight_dict}")
+            
+            # Check for severe imbalance
+            if len(class_counts) > 0 and (max(class_counts) / min(class_counts) > 3):
+                logger.warning(f"Severe class imbalance detected. Max/min ratio: {max(class_counts) / min(class_counts):.2f}")
+                logger.info("Using class weights to address imbalance")
             
             # Configure mixed precision if available (for faster training on compatible GPUs)
             try:
@@ -147,14 +152,14 @@ class ModelTrainer:
             except Exception as mp_error:
                 logger.info(f"Mixed precision not available or not supported: {mp_error}")
             
-            # Train the model with class weights if available
+            # Train the model with class weights
             self.history = self.model.fit(
                 X_train, y_train,
                 validation_data=(X_val, y_val),
                 batch_size=batch_size,
                 epochs=epochs,
                 callbacks=callbacks,
-                class_weight=class_weights,  # Apply class weights if available
+                class_weight=class_weight_dict,  # Apply class weights
                 verbose=1
             )
             

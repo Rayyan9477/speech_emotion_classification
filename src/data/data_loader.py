@@ -30,35 +30,98 @@ class DataLoader:
         
     def _create_dummy_dataset(self, size=200):
         """
-        Create a dummy dataset when the real dataset cannot be loaded.
+        Create a balanced dummy dataset when the real dataset cannot be loaded.
         
         Args:
-            size (int): Number of samples to generate.
+            size (int): Number of samples to generate per class.
             
         Returns:
-            pandas.DataFrame: Dummy dataset with required structure.
+            pandas.DataFrame: Balanced dummy dataset with proper emotion distribution.
         """
-        logger.warning(f"Creating dummy dataset with {size} samples for testing purposes")
+        logger.warning(f"Creating balanced dummy dataset with {size} samples per emotion class")
         
-        # Create random data
-        dummy_data = {
-            'labels': np.random.randint(0, 7, size=size),
-            'speaker_id': np.random.randint(1, 25, size=size),
-            'speaker_gender': np.random.choice(['M', 'F'], size=size),
-        }
+        # Get emotion labels from config
+        try:
+            from src.core.config import Config
+            config = Config()
+            emotion_labels = config.training.emotion_labels
+        except ImportError:
+            emotion_labels = ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
         
-        # Create dummy audio paths
-        dummy_audio = []
-        for i in range(size):
-            dummy_audio.append({
-                'path': f'/tmp/dummy_audio_{i}.wav',
-                'array': np.random.random(16000),  # 1 second of random audio at 16kHz
-                'sampling_rate': 16000
-            })
+        data = []
+        labels = []
         
-        dummy_data['audio'] = dummy_audio
+        # Create balanced samples for each emotion
+        for emotion_id, emotion_name in enumerate(emotion_labels):
+            for i in range(size):
+                # Generate synthetic audio data with emotion-specific characteristics
+                duration = 3.0  # 3 seconds
+                sr = 16000
+                samples = int(duration * sr)
+                
+                # Create emotion-specific audio patterns
+                if emotion_name == 'neutral':
+                    # Steady, low amplitude
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 250 * t) * 0.2 + np.sin(2 * np.pi * 400 * t) * 0.1
+                elif emotion_name == 'calm':
+                    # Very steady, minimal variation
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 200 * t) * 0.15 + np.sin(2 * np.pi * 350 * t) * 0.1
+                elif emotion_name == 'happy':
+                    # Higher frequency, faster tempo
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 400 * t) * 0.3 + np.sin(2 * np.pi * 600 * t) * 0.2
+                elif emotion_name == 'sad':
+                    # Lower frequency, slower tempo
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 200 * t) * 0.4 + np.sin(2 * np.pi * 300 * t) * 0.3
+                elif emotion_name == 'angry':
+                    # Higher amplitude, more chaotic
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 500 * t) * 0.5 + np.random.normal(0, 0.1, samples)
+                elif emotion_name == 'fearful':
+                    # Trembling, irregular pattern
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 350 * t) * 0.3 + np.sin(2 * np.pi * 700 * t) * 0.2
+                elif emotion_name == 'disgust':
+                    # Lower frequency, distorted
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 150 * t) * 0.4 + np.sin(2 * np.pi * 450 * t) * 0.2
+                elif emotion_name == 'surprised':
+                    # Sudden changes, higher frequency
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 800 * t) * 0.3 + np.sin(2 * np.pi * 1200 * t) * 0.1
+                else:  # fallback
+                    # Default pattern
+                    t = np.linspace(0, duration, samples)
+                    audio = np.sin(2 * np.pi * 300 * t) * 0.25
+                
+                # Add some noise and normalize
+                audio += np.random.normal(0, 0.05, samples)
+                audio = audio / np.max(np.abs(audio)) * 0.8
+                
+                # Create audio dict
+                audio_dict = {
+                    'path': f'/tmp/{emotion_name}_{i}.wav',
+                    'array': audio.astype(np.float32),
+                    'sampling_rate': sr
+                }
+                
+                data.append({
+                    'audio': audio_dict,
+                    'emotion': emotion_id,
+                    'emotion_name': emotion_name,
+                    'speaker_id': i % 10 + 1,
+                    'speaker_gender': 'M' if i % 2 == 0 else 'F'
+                })
+                labels.append(emotion_id)
         
-        return pd.DataFrame(dummy_data)
+        df = pd.DataFrame(data)
+        logger.info(f"Created balanced dataset with {len(df)} samples")
+        logger.info(f"Class distribution: {pd.Series(labels).value_counts().sort_index()}")
+        
+        return df
         
     def load_dataset(self, max_retries=5, retry_delay=5, alternate_datasets=None):
         """
@@ -179,22 +242,26 @@ class DataLoader:
                         else:
                             filename = os.path.basename(str(path))
                             
+                        # Map to correct indices matching config.training.emotion_labels
+                        # ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised']
                         if 'happy' in filename.lower():
-                            return 1  # happy
+                            return 2  # happy
                         elif 'sad' in filename.lower():
-                            return 2  # sad
+                            return 3  # sad
                         elif 'angry' in filename.lower():
-                            return 3  # angry
+                            return 4  # angry
                         elif 'fear' in filename.lower() or 'fearful' in filename.lower():
-                            return 4  # fearful
+                            return 5  # fearful
                         elif 'disgust' in filename.lower():
-                            return 5  # disgust
+                            return 6  # disgust
                         elif 'surprised' in filename.lower() or 'surprise' in filename.lower():
-                            return 6  # surprised
+                            return 7  # surprised
+                        elif 'calm' in filename.lower():
+                            return 1  # calm
                         else:
-                            return 0  # calm/neutral
+                            return 0  # neutral
                     except:
-                        return 0  # default to calm/neutral
+                        return 0  # default to neutral
                 
                 # Apply the extraction function
                 if 'audio' in df.columns:
