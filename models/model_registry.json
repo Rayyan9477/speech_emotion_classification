@@ -428,6 +428,18 @@
             },
             "description": "Corrected CNN model with proper label mapping - Accuracy: 0.1278",
             "feature_type": "mel_spectrogram"
+        },
+        {
+            "id": "corrected_20251019_234214",
+            "path": "C:\\Users\\rayyan\\Downloads\\VS Code Workspace\\speech_emotion_classification\\models\\corrected_cnn_emotion_model_20251018_022713.keras",
+            "type": "corrected",
+            "created": "2025-10-19 23:42:14",
+            "size_mb": 8.0,
+            "version": 1,
+            "sha256": "4f69adc59a35e9915b229dbe2b52adc1bd902df40035d4ef8070f8539d59c58f",
+            "feature_hash": "",
+            "metrics": {},
+            "description": "CORRECTED model trained on RAVDESS dataset"
         }
     ]
 }

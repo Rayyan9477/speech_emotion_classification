@@ -252,8 +252,12 @@ class EmotionAnalyzer:
             except Exception as e:
                 logger.warning(f"Error accessing model registry: {e}")
 
-            # Step 2: Try known model paths (including improved models)
+            # Step 2: Try known model paths (prioritizing corrected models)
             model_paths_to_try = [
+                "models/best_ultimate_model.keras",
+                "models/best_corrected_model.keras",
+                "models/ultimate_cnn_emotion_model_20251018_022713.keras",
+                "models/corrected_cnn_emotion_model_20251018_022713.keras",
                 self.model_path,
                 "models/best_improved_model.keras",
                 "models/improved_cnn_emotion_model_20251017_232646.keras",
