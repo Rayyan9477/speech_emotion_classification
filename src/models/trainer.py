@@ -106,21 +106,61 @@ class ModelTrainer:
                 logger.info("Using enhanced callbacks: ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, and TensorBoard")
             
             # Data preprocessing and validation
-            # Convert input data to proper dtype if needed
-            X_train = np.asarray(X_train, dtype=np.float32)
+            # Handle multi-modal inputs differently
+            if self.model_type == 'multimodal':
+                # For multi-modal models, X_train is a list of [mfcc_features, spec_features]
+                # Keep as list for model.fit()
+                X_train_list = X_train
+                X_val_list = X_val
+                X_test_list = X_test if 'X_test' in locals() else X_val  # For evaluation
+                
+                # Convert individual arrays to proper dtype
+                X_train = [np.asarray(x, dtype=np.float32) for x in X_train_list]
+                X_val = [np.asarray(x, dtype=np.float32) for x in X_val_list]
+                
+                # Log data shapes for each input
+                for i, x in enumerate(X_train):
+                    logger.info(f"X_train[{i}] shape: {x.shape}")
+                logger.info(f"y_train shape: {np.asarray(y_train, dtype=np.int32).shape}")
+                for i, x in enumerate(X_val):
+                    logger.info(f"X_val[{i}] shape: {x.shape}")
+                logger.info(f"y_val shape: {np.asarray(y_val, dtype=np.int32).shape}")
+            else:
+                # Convert input data to proper dtype if needed
+                X_train = np.asarray(X_train, dtype=np.float32)
+                y_train = np.asarray(y_train, dtype=np.int32)
+                X_val = np.asarray(X_val, dtype=np.float32)
+                y_val = np.asarray(y_val, dtype=np.int32)
+                
+                # Log data shapes
+                logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+                logger.info(f"X_val shape: {X_val.shape}, y_val shape: {y_val.shape}")
+            
+            # Convert labels to proper dtype
             y_train = np.asarray(y_train, dtype=np.int32)
-            X_val = np.asarray(X_val, dtype=np.float32)
             y_val = np.asarray(y_val, dtype=np.int32)
             
-            # Log data shapes
-            logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-            logger.info(f"X_val shape: {X_val.shape}, y_val shape: {y_val.shape}")
-            
             # Check for NaN values
-            if np.isnan(X_train).any() or np.isnan(X_val).any():
-                logger.warning("NaN values detected in training data. Replacing with zeros.")
-                X_train = np.nan_to_num(X_train)
-                X_val = np.nan_to_num(X_val)
+            if self.model_type == 'multimodal':
+                # Check NaN values in each input array separately
+                nan_found = False
+                for i, x in enumerate(X_train):
+                    if np.isnan(x).any():
+                        logger.warning(f"NaN values detected in training data X_train[{i}]. Replacing with zeros.")
+                        X_train[i] = np.nan_to_num(x)
+                        nan_found = True
+                for i, x in enumerate(X_val):
+                    if np.isnan(x).any():
+                        logger.warning(f"NaN values detected in validation data X_val[{i}]. Replacing with zeros.")
+                        X_val[i] = np.nan_to_num(x)
+                        nan_found = True
+                if nan_found:
+                    logger.info("NaN values replaced with zeros in multi-modal inputs")
+            else:
+                if np.isnan(X_train).any() or np.isnan(X_val).any():
+                    logger.warning("NaN values detected in training data. Replacing with zeros.")
+                    X_train = np.nan_to_num(X_train)
+                    X_val = np.nan_to_num(X_val)
             
             # Check for class imbalance and calculate class weights
             class_counts = np.bincount(y_train)
@@ -178,14 +218,24 @@ class ModelTrainer:
     def evaluate(self, X_test, y_test, emotion_labels=None):
         """Evaluate model with comprehensive metrics and visualizations."""
         try:
+            # Handle multi-modal inputs for evaluation
+            if self.model_type == 'multimodal' and isinstance(X_test, list):
+                # Convert individual arrays to proper dtype
+                X_test_processed = [np.asarray(x, dtype=np.float32) for x in X_test]
+            else:
+                X_test_processed = np.asarray(X_test, dtype=np.float32)
+            
+            # Convert labels to proper dtype
+            y_test = np.asarray(y_test, dtype=np.int32)
+            
             # Basic evaluation
             metrics = {}
-            loss, accuracy = self.model.evaluate(X_test, y_test, verbose=0)
+            loss, accuracy = self.model.evaluate(X_test_processed, y_test, verbose=0)
             logger.info(f"Test loss: {loss:.4f}")
             logger.info(f"Test accuracy: {accuracy:.4f}")
             
             # Get predictions
-            y_pred = self.model.predict(X_test)
+            y_pred = self.model.predict(X_test_processed)
             y_pred_classes = np.argmax(y_pred, axis=1)
             
             # Generate classification report

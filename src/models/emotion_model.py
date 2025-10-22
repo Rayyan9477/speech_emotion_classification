@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Dense, Dropout, Activation, BatchNormalizati
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.regularizers import l2
 import logging
 import os
 import time
@@ -227,6 +228,89 @@ class EmotionModel:
             logger.error(f"Error building CNN model: {e}")
             raise
     
+    def build_multimodal(self, mfcc_input_shape, spec_input_shape, params=None):
+        """
+        Build a Multi-Modal model combining MFCC and spectrogram features.
+        
+        Args:
+            mfcc_input_shape (tuple): Shape of MFCC input (n_mfcc,).
+            spec_input_shape (tuple): Shape of spectrogram input (n_mels, time_steps, 1).
+            params (dict): Hyperparameters for the model.
+            
+        Returns:
+            tensorflow.keras.models.Model: The compiled multi-modal model.
+        """
+        if params is None:
+            params = {
+                'learning_rate': 0.001,
+                'mfcc_layers': [256, 128],
+                'spec_conv_layers': [32, 64, 128],
+                'fusion_layers': [256, 128],
+                'dropout_rate': 0.3,
+                'l2_regularization': 0.0001
+            }
+        
+        # MFCC branch
+        mfcc_input = Input(shape=mfcc_input_shape, name='mfcc_input')
+        mfcc_x = Dense(params['mfcc_layers'][0], activation='relu',
+                      kernel_regularizer=l2(params.get('l2_regularization', 0.0001)))(mfcc_input)
+        mfcc_x = BatchNormalization()(mfcc_x)
+        mfcc_x = Dropout(params['dropout_rate'])(mfcc_x)
+        
+        for units in params['mfcc_layers'][1:]:
+            mfcc_x = Dense(units, activation='relu',
+                          kernel_regularizer=l2(params.get('l2_regularization', 0.0001)))(mfcc_x)
+            mfcc_x = BatchNormalization()(mfcc_x)
+            mfcc_x = Dropout(params['dropout_rate'])(mfcc_x)
+        
+        # Spectrogram branch (CNN)
+        spec_input = Input(shape=spec_input_shape, name='spec_input')
+        spec_x = Conv2D(params['spec_conv_layers'][0], (3, 3), padding='same', activation='relu',
+                       kernel_regularizer=l2(params.get('l2_regularization', 0.0001)))(spec_input)
+        spec_x = BatchNormalization()(spec_x)
+        spec_x = MaxPooling2D((2, 2))(spec_x)
+        spec_x = Dropout(params['dropout_rate'])(spec_x)
+        
+        for filters in params['spec_conv_layers'][1:]:
+            spec_x = Conv2D(filters, (3, 3), padding='same', activation='relu',
+                           kernel_regularizer=l2(params.get('l2_regularization', 0.0001)))(spec_x)
+            spec_x = BatchNormalization()(spec_x)
+            spec_x = MaxPooling2D((2, 2))(spec_x)
+            spec_x = Dropout(params['dropout_rate'])(spec_x)
+        
+        # Flatten spectrogram features
+        spec_x = Flatten()(spec_x)
+        
+        # Concatenate both branches
+        combined = tf.keras.layers.concatenate([mfcc_x, spec_x], name='fusion_concat')
+        
+        # Fusion layers
+        fusion_x = combined
+        for units in params['fusion_layers']:
+            fusion_x = Dense(units, activation='relu',
+                            kernel_regularizer=l2(params.get('l2_regularization', 0.0001)))(fusion_x)
+            fusion_x = BatchNormalization()(fusion_x)
+            fusion_x = Dropout(params['dropout_rate'])(fusion_x)
+        
+        # Output layer
+        outputs = Dense(self.num_classes, activation='softmax')(fusion_x)
+        
+        # Create model
+        model = Model(inputs=[mfcc_input, spec_input], outputs=outputs)
+        
+        # Compile model
+        optimizer = Adam(learning_rate=params['learning_rate'])
+        model.compile(
+            optimizer=optimizer,
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        logger.info(f"Multi-modal model built with MFCC branch ({mfcc_input_shape}) and spectrogram branch ({spec_input_shape})")
+        model.summary(print_fn=logger.info)
+        
+        return model
+        
     def get_callbacks(self, patience=5, log_dir='logs'):
         """
         Get callbacks for model training.

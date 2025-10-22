@@ -440,6 +440,899 @@
             "feature_hash": "",
             "metrics": {},
             "description": "CORRECTED model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20251022_053722",
+            "path": "models/corrected_cnn_emotion_model_20251022_053722.keras",
+            "type": "cnn",
+            "created": "2025-10-22 05:37:22",
+            "size_mb": 8.0,
+            "version": 3,
+            "sha256": "a709777ccb29bb8038684ee34a94c853b5bdb04cb49c43380308e0ad577cfad7",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.125,
+                "loss": 26.44196891784668,
+                "precision_avg": 0.015625,
+                "recall_avg": 0.125,
+                "f1_avg": 0.027777777777777776,
+                "roc_auc": 0.7301785714285713,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "1": {
+                        "precision": 0.125,
+                        "recall": 1.0,
+                        "f1-score": 0.2222222222222222,
+                        "support": 30.0
+                    },
+                    "2": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "3": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "4": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "5": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "6": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "7": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 30.0
+                    },
+                    "accuracy": 0.125,
+                    "macro avg": {
+                        "precision": 0.015625,
+                        "recall": 0.125,
+                        "f1-score": 0.027777777777777776,
+                        "support": 240.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.015625,
+                        "recall": 0.125,
+                        "f1-score": 0.027777777777777776,
+                        "support": 240.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        30,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ]
+                ],
+                "trained_on": "20251022_053722",
+                "feature_type": "mel_spectrogram",
+                "gpu_training": false,
+                "training_time": 736.9633696079254
+            },
+            "description": "Automatically trained corrected CNN model with enhanced architecture and class weights",
+            "feature_type": "mel_spectrogram"
+        },
+        {
+            "id": "cnn_20251022_055057",
+            "path": "models/corrected_cnn_emotion_model_20251022_055057.keras",
+            "type": "cnn",
+            "created": "2025-10-22 05:50:57",
+            "size_mb": 8.0,
+            "version": 4,
+            "sha256": "b96ef2937d8fea0e5e1ab86da91638dc3b244cefc5650c00317cccfe192ad001",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.1388888955116272,
+                "loss": 24.238319396972656,
+                "precision_avg": 0.03151192778852353,
+                "recall_avg": 0.1388888888888889,
+                "f1_avg": 0.044137819736948275,
+                "roc_auc": 0.636544646329464,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 14.0
+                    },
+                    "1": {
+                        "precision": 0.14893617021276595,
+                        "recall": 1.0,
+                        "f1-score": 0.25925925925925924,
+                        "support": 28.0
+                    },
+                    "2": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "3": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "4": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "5": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "6": {
+                        "precision": 0.09090909090909091,
+                        "recall": 0.06896551724137931,
+                        "f1-score": 0.0784313725490196,
+                        "support": 29.0
+                    },
+                    "7": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "accuracy": 0.1388888888888889,
+                    "macro avg": {
+                        "precision": 0.029980657640232108,
+                        "recall": 0.1336206896551724,
+                        "f1-score": 0.042211328976034856,
+                        "support": 216.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.03151192778852353,
+                        "recall": 0.1388888888888889,
+                        "f1-score": 0.044137819736948275,
+                        "support": 216.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        0,
+                        14,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        28,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        2,
+                        24,
+                        0,
+                        0,
+                        0,
+                        0,
+                        3,
+                        0
+                    ],
+                    [
+                        0,
+                        27,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0
+                    ],
+                    [
+                        3,
+                        23,
+                        0,
+                        0,
+                        0,
+                        0,
+                        3,
+                        0
+                    ],
+                    [
+                        1,
+                        27,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0
+                    ],
+                    [
+                        0,
+                        27,
+                        0,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0
+                    ],
+                    [
+                        0,
+                        18,
+                        0,
+                        0,
+                        0,
+                        0,
+                        11,
+                        0
+                    ]
+                ],
+                "trained_on": "20251022_055057",
+                "feature_type": "mel_spectrogram",
+                "gpu_training": false,
+                "training_time": 657.9953639507294
+            },
+            "description": "Automatically trained corrected CNN model with enhanced architecture and class weights",
+            "feature_type": "mel_spectrogram"
+        },
+        {
+            "id": "cnn_20251022_062758",
+            "path": "models/corrected_cnn_emotion_model_20251022_062758.keras",
+            "type": "cnn",
+            "created": "2025-10-22 06:27:58",
+            "size_mb": 8.0,
+            "version": 5,
+            "sha256": "96ecf3354a30fa7b99ce26200404437d45a2a099b30918f9f6cc2fb16523b8d4",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.13425925374031067,
+                "loss": 26.696928024291992,
+                "precision_avg": 0.02285613701325649,
+                "recall_avg": 0.13425925925925927,
+                "f1_avg": 0.03897410766845734,
+                "roc_auc": 0.6231568440010459,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.02127659574468085,
+                        "recall": 0.07142857142857142,
+                        "f1-score": 0.03278688524590164,
+                        "support": 14.0
+                    },
+                    "1": {
+                        "precision": 0.16568047337278108,
+                        "recall": 1.0,
+                        "f1-score": 0.28426395939086296,
+                        "support": 28.0
+                    },
+                    "2": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "3": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "4": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "5": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "6": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "7": {
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1-score": 0.0,
+                        "support": 29.0
+                    },
+                    "accuracy": 0.13425925925925927,
+                    "macro avg": {
+                        "precision": 0.02336963363968274,
+                        "recall": 0.13392857142857142,
+                        "f1-score": 0.03963135557959557,
+                        "support": 216.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.02285613701325649,
+                        "recall": 0.13425925925925927,
+                        "f1-score": 0.03897410766845734,
+                        "support": 216.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        1,
+                        13,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        28,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        11,
+                        18,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        2,
+                        27,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        16,
+                        13,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        4,
+                        25,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        6,
+                        23,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        7,
+                        22,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ]
+                ],
+                "trained_on": "20251022_062758",
+                "feature_type": "mel_spectrogram",
+                "gpu_training": false,
+                "training_time": 673.7602782249451
+            },
+            "description": "Automatically trained corrected CNN model with enhanced architecture and class weights",
+            "feature_type": "mel_spectrogram"
+        },
+        {
+            "id": "mlp_20251022_063159",
+            "path": "models/corrected_cnn_emotion_model_20251022_063158.keras",
+            "type": "mlp",
+            "created": "2025-10-22 06:31:59",
+            "size_mb": 2.06,
+            "version": 1,
+            "sha256": "a81d9cee2a205fcdc6ed944c0f5be0bc1a82d77d237a1f88c29e4c981b1409cf",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.5509259104728699,
+                "loss": 1.4107329845428467,
+                "precision_avg": 0.5774460450434425,
+                "recall_avg": 0.5509259259259259,
+                "f1_avg": 0.5523412691292231,
+                "roc_auc": 0.8935508095031447,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.2903225806451613,
+                        "recall": 0.6428571428571429,
+                        "f1-score": 0.4,
+                        "support": 14.0
+                    },
+                    "1": {
+                        "precision": 0.4857142857142857,
+                        "recall": 0.6071428571428571,
+                        "f1-score": 0.5396825396825397,
+                        "support": 28.0
+                    },
+                    "2": {
+                        "precision": 0.6060606060606061,
+                        "recall": 0.6896551724137931,
+                        "f1-score": 0.6451612903225806,
+                        "support": 29.0
+                    },
+                    "3": {
+                        "precision": 0.6363636363636364,
+                        "recall": 0.4827586206896552,
+                        "f1-score": 0.5490196078431373,
+                        "support": 29.0
+                    },
+                    "4": {
+                        "precision": 0.7931034482758621,
+                        "recall": 0.7931034482758621,
+                        "f1-score": 0.7931034482758621,
+                        "support": 29.0
+                    },
+                    "5": {
+                        "precision": 0.6111111111111112,
+                        "recall": 0.3793103448275862,
+                        "f1-score": 0.46808510638297873,
+                        "support": 29.0
+                    },
+                    "6": {
+                        "precision": 0.5652173913043478,
+                        "recall": 0.4482758620689655,
+                        "f1-score": 0.5,
+                        "support": 29.0
+                    },
+                    "7": {
+                        "precision": 0.48,
+                        "recall": 0.41379310344827586,
+                        "f1-score": 0.4444444444444444,
+                        "support": 29.0
+                    },
+                    "accuracy": 0.5509259259259259,
+                    "macro avg": {
+                        "precision": 0.5584866324343762,
+                        "recall": 0.5571120689655172,
+                        "f1-score": 0.5424370546189429,
+                        "support": 216.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.5774460450434425,
+                        "recall": 0.5509259259259259,
+                        "f1-score": 0.5523412691292231,
+                        "support": 216.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        9,
+                        2,
+                        0,
+                        1,
+                        0,
+                        0,
+                        1,
+                        1
+                    ],
+                    [
+                        9,
+                        17,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        2,
+                        1,
+                        20,
+                        0,
+                        1,
+                        2,
+                        1,
+                        2
+                    ],
+                    [
+                        8,
+                        5,
+                        1,
+                        14,
+                        0,
+                        1,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        1,
+                        2,
+                        0,
+                        23,
+                        0,
+                        2,
+                        1
+                    ],
+                    [
+                        0,
+                        2,
+                        7,
+                        4,
+                        1,
+                        11,
+                        0,
+                        4
+                    ],
+                    [
+                        1,
+                        5,
+                        0,
+                        1,
+                        3,
+                        2,
+                        13,
+                        4
+                    ],
+                    [
+                        2,
+                        2,
+                        3,
+                        1,
+                        1,
+                        2,
+                        6,
+                        12
+                    ]
+                ],
+                "trained_on": "20251022_063158",
+                "feature_type": "mfcc",
+                "gpu_training": false,
+                "training_time": 20.312811613082886
+            },
+            "description": "Automatically trained MLP model with MFCC features and enhanced architecture",
+            "feature_type": "mfcc"
+        },
+        {
+            "id": "multimodal_20251022_065209",
+            "path": "models/corrected_cnn_emotion_model_20251022_065208.keras",
+            "type": "multimodal",
+            "created": "2025-10-22 06:52:09",
+            "size_mb": 122.4,
+            "version": 1,
+            "sha256": "72a4c8fb343e60e54c82a331eb327fb585c46c5b6de183a6252efe770afa7909",
+            "feature_hash": "",
+            "metrics": {
+                "accuracy": 0.42129629850387573,
+                "loss": 3.9394729137420654,
+                "precision_avg": 0.7252636013411875,
+                "recall_avg": 0.4212962962962963,
+                "f1_avg": 0.4090370303641013,
+                "roc_auc": 0.8328122392965204,
+                "per_class_metrics": {
+                    "0": {
+                        "precision": 0.7142857142857143,
+                        "recall": 0.35714285714285715,
+                        "f1-score": 0.47619047619047616,
+                        "support": 14.0
+                    },
+                    "1": {
+                        "precision": 0.3103448275862069,
+                        "recall": 0.9642857142857143,
+                        "f1-score": 0.46956521739130436,
+                        "support": 28.0
+                    },
+                    "2": {
+                        "precision": 1.0,
+                        "recall": 0.06896551724137931,
+                        "f1-score": 0.12903225806451613,
+                        "support": 29.0
+                    },
+                    "3": {
+                        "precision": 0.25,
+                        "recall": 0.6551724137931034,
+                        "f1-score": 0.3619047619047619,
+                        "support": 29.0
+                    },
+                    "4": {
+                        "precision": 0.8571428571428571,
+                        "recall": 0.41379310344827586,
+                        "f1-score": 0.5581395348837209,
+                        "support": 29.0
+                    },
+                    "5": {
+                        "precision": 0.7272727272727273,
+                        "recall": 0.27586206896551724,
+                        "f1-score": 0.4,
+                        "support": 29.0
+                    },
+                    "6": {
+                        "precision": 1.0,
+                        "recall": 0.20689655172413793,
+                        "f1-score": 0.34285714285714286,
+                        "support": 29.0
+                    },
+                    "7": {
+                        "precision": 0.9230769230769231,
+                        "recall": 0.41379310344827586,
+                        "f1-score": 0.5714285714285714,
+                        "support": 29.0
+                    },
+                    "accuracy": 0.4212962962962963,
+                    "macro avg": {
+                        "precision": 0.7227653811705537,
+                        "recall": 0.41948891625615764,
+                        "f1-score": 0.4136397453400617,
+                        "support": 216.0
+                    },
+                    "weighted avg": {
+                        "precision": 0.7252636013411875,
+                        "recall": 0.4212962962962963,
+                        "f1-score": 0.4090370303641013,
+                        "support": 216.0
+                    }
+                },
+                "confusion_matrix": [
+                    [
+                        5,
+                        7,
+                        0,
+                        2,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        27,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        11,
+                        2,
+                        11,
+                        2,
+                        2,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        10,
+                        0,
+                        19,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        0,
+                        9,
+                        0,
+                        6,
+                        12,
+                        1,
+                        0,
+                        1
+                    ],
+                    [
+                        0,
+                        5,
+                        0,
+                        16,
+                        0,
+                        8,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        14,
+                        0,
+                        8,
+                        0,
+                        0,
+                        6,
+                        0
+                    ],
+                    [
+                        0,
+                        4,
+                        0,
+                        13,
+                        0,
+                        0,
+                        0,
+                        12
+                    ]
+                ],
+                "trained_on": "20251022_065208",
+                "feature_type": "multimodal",
+                "gpu_training": false,
+                "training_time": 798.4422850608826
+            },
+            "description": "Multi-modal emotion classification model with MFCC + spectrogram features",
+            "feature_type": "multimodal"
+        },
+        {
+            "id": "corrected_20251022_071015",
+            "path": "D:\\Repo\\speech_emotion_classification\\models\\corrected_cnn_emotion_model_20251022_065208.h5",
+            "type": "corrected",
+            "created": "2025-10-22 07:10:15",
+            "size_mb": 122.4,
+            "version": 2,
+            "sha256": "faf6fe96f2b5cb8c3636bfb29f5cbba519ebfe70490bc322baf5d9ff831bb594",
+            "feature_hash": "c2e182bc9072401a6acc9af3831bd6589217dc5f177f16dfc48f020be2f2f61c",
+            "metrics": {},
+            "description": "CORRECTED model trained on RAVDESS dataset"
+        },
+        {
+            "id": "corrected_20251022_071015",
+            "path": "D:\\Repo\\speech_emotion_classification\\models\\corrected_cnn_emotion_model_20251022_065208.keras",
+            "type": "corrected",
+            "created": "2025-10-22 07:10:15",
+            "size_mb": 122.4,
+            "version": 3,
+            "sha256": "72a4c8fb343e60e54c82a331eb327fb585c46c5b6de183a6252efe770afa7909",
+            "feature_hash": "c2e182bc9072401a6acc9af3831bd6589217dc5f177f16dfc48f020be2f2f61c",
+            "metrics": {},
+            "description": "CORRECTED model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20251022_074753",
+            "path": "D:\\Repo\\speech_emotion_classification\\models\\cnn_emotion_model_20251022_065208.h5",
+            "type": "cnn",
+            "created": "2025-10-22 07:47:53",
+            "size_mb": 122.4,
+            "version": 6,
+            "sha256": "faf6fe96f2b5cb8c3636bfb29f5cbba519ebfe70490bc322baf5d9ff831bb594",
+            "feature_hash": "c2e182bc9072401a6acc9af3831bd6589217dc5f177f16dfc48f020be2f2f61c",
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
+        },
+        {
+            "id": "cnn_20251022_074753",
+            "path": "D:\\Repo\\speech_emotion_classification\\models\\cnn_emotion_model_20251022_065208.keras",
+            "type": "cnn",
+            "created": "2025-10-22 07:47:53",
+            "size_mb": 122.4,
+            "version": 7,
+            "sha256": "72a4c8fb343e60e54c82a331eb327fb585c46c5b6de183a6252efe770afa7909",
+            "feature_hash": "c2e182bc9072401a6acc9af3831bd6589217dc5f177f16dfc48f020be2f2f61c",
+            "metrics": {},
+            "description": "CNN model trained on RAVDESS dataset"
         }
     ]
 }

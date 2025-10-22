@@ -254,16 +254,9 @@ class EmotionAnalyzer:
 
             # Step 2: Try known model paths (prioritizing corrected models)
             model_paths_to_try = [
-                "models/best_ultimate_model.keras",
-                "models/best_corrected_model.keras",
-                "models/ultimate_cnn_emotion_model_20251018_022713.keras",
-                "models/corrected_cnn_emotion_model_20251018_022713.keras",
+                "models/cnn_emotion_model_20251022_065208.keras",  # Latest multimodal model
                 self.model_path,
-                "models/best_improved_model.keras",
-                "models/improved_cnn_emotion_model_20251017_232646.keras",
-                "models/cnn_emotion_model.keras",
-                "models/emotion_model.keras",
-                "models/best_model.keras"
+                "models/cnn_emotion_model.keras"
             ]
 
             for model_path in model_paths_to_try:
@@ -398,24 +391,64 @@ class EmotionAnalyzer:
                     features = self._extract_features_from_long_audio(y, sr, config_duration)
                     return y, sr, features
 
-                # Use standardized feature pipeline
-                features = self.feature_extractor.extract_features(y, sr)
-                # Apply normalization learned at training if available
-                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+                # Check if model is multimodal (has multiple inputs)
+                is_multimodal = self.model is not None and len(self.model.inputs) > 1
 
-                # Validate expected shape
-                expected_shape = (1, 128, 165, 1)
-                if features is None or features.shape != expected_shape:
-                    st.warning(f"Feature shape mismatch: Expected {expected_shape}, got {None if features is None else features.shape}. Attempting to fix...")
-                    fixed = np.zeros(expected_shape)
-                    if features is not None:
-                        min_batch = min(features.shape[0], expected_shape[0])
-                        min_freq = min(features.shape[1], expected_shape[1])
-                        min_time = min(features.shape[2], expected_shape[2])
-                        min_channel = min(features.shape[3], expected_shape[3])
-                        fixed[:min_batch, :min_freq, :min_time, :min_channel] = features[:min_batch, :min_freq, :min_time, :min_channel]
-                    features = fixed
-                    st.success(f"Fixed feature shape to {features.shape}")
+                if is_multimodal:
+                    # Extract both MFCC and spectrogram features for multimodal model
+                    mfcc_features = self.feature_extractor.extract_mfcc(y, sr)
+                    spec_features = self.feature_extractor.extract_spectrogram(y, sr)
+
+                    # Normalize features
+                    mfcc_features = self.feature_extractor.normalize_single(mfcc_features, feature_type='mfcc')
+                    spec_features = self.feature_extractor.normalize_single(spec_features, feature_type='mel_spectrogram')
+
+                    # Validate shapes
+                    expected_mfcc_shape = (13,)  # MFCC features
+                    expected_spec_shape = (128, 165, 1)  # Spectrogram features
+
+                    # Fix MFCC shape if needed
+                    if mfcc_features.shape != expected_mfcc_shape:
+                        if mfcc_features.ndim == 1 and len(mfcc_features) == expected_mfcc_shape[0]:
+                            pass  # Already correct
+                        else:
+                            # Try to reshape or truncate/pad
+                            fixed_mfcc = np.zeros(expected_mfcc_shape[0])
+                            min_len = min(len(mfcc_features) if mfcc_features.ndim == 1 else mfcc_features.shape[0], expected_mfcc_shape[0])
+                            fixed_mfcc[:min_len] = mfcc_features[:min_len] if mfcc_features.ndim == 1 else mfcc_features[:min_len]
+                            mfcc_features = fixed_mfcc
+
+                    # Fix spectrogram shape if needed
+                    if spec_features.shape != expected_spec_shape:
+                        fixed_spec = np.zeros(expected_spec_shape)
+                        min_mels = min(spec_features.shape[0], expected_spec_shape[0])
+                        min_frames = min(spec_features.shape[1], expected_spec_shape[1])
+                        min_channels = min(spec_features.shape[2], expected_spec_shape[2])
+                        fixed_spec[:min_mels, :min_frames, :min_channels] = spec_features[:min_mels, :min_frames, :min_channels]
+                        spec_features = fixed_spec
+
+                    features = [mfcc_features.reshape(1, -1), spec_features.reshape(1, 128, 165, 1)]
+                    st.success(f"✅ Extracted multimodal features: MFCC {mfcc_features.shape}, Spectrogram {spec_features.shape}")
+
+                else:
+                    # Standard single-input model (spectrogram only)
+                    features = self.feature_extractor.extract_features(y, sr)
+                    # Apply normalization learned at training if available
+                    features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+
+                    # Validate expected shape
+                    expected_shape = (1, 128, 165, 1)
+                    if features is None or features.shape != expected_shape:
+                        st.warning(f"Feature shape mismatch: Expected {expected_shape}, got {None if features is None else features.shape}. Attempting to fix...")
+                        fixed = np.zeros(expected_shape)
+                        if features is not None:
+                            min_batch = min(features.shape[0], expected_shape[0])
+                            min_freq = min(features.shape[1], expected_shape[1])
+                            min_time = min(features.shape[2], expected_shape[2])
+                            min_channel = min(features.shape[3], expected_shape[3])
+                            fixed[:min_batch, :min_freq, :min_time, :min_channel] = features[:min_batch, :min_freq, :min_time, :min_channel]
+                        features = fixed
+                        st.success(f"Fixed feature shape to {features.shape}")
 
                 return y, sr, features
         except Exception as e:
@@ -434,6 +467,9 @@ class EmotionAnalyzer:
             num_segments = min(5, total_samples // segment_samples)  # Max 5 segments
             features_list = []
 
+            # Check if model is multimodal
+            is_multimodal = self.model is not None and len(self.model.inputs) > 1
+
             for i in range(num_segments):
                 # Sample different parts of the audio
                 if num_segments == 1:
@@ -445,31 +481,79 @@ class EmotionAnalyzer:
                 end_idx = start_idx + segment_samples
                 segment = y[start_idx:end_idx]
 
-                # Extract features for this segment
-                features = self.feature_extractor.extract_features(segment, sr)
-                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+                if is_multimodal:
+                    # Extract both MFCC and spectrogram features
+                    mfcc_features = self.feature_extractor.extract_mfcc(segment, sr)
+                    spec_features = self.feature_extractor.extract_spectrogram(segment, sr)
+
+                    # Normalize features
+                    mfcc_features = self.feature_extractor.normalize_single(mfcc_features, feature_type='mfcc')
+                    spec_features = self.feature_extractor.normalize_single(spec_features, feature_type='mel_spectrogram')
+
+                    # Fix shapes if needed
+                    if mfcc_features.shape != (13,):
+                        fixed_mfcc = np.zeros(13)
+                        min_len = min(len(mfcc_features), 13)
+                        fixed_mfcc[:min_len] = mfcc_features[:min_len]
+                        mfcc_features = fixed_mfcc
+
+                    if spec_features.shape != (128, 165, 1):
+                        fixed_spec = np.zeros((128, 165, 1))
+                        min_mels = min(spec_features.shape[0], 128)
+                        min_frames = min(spec_features.shape[1], 165)
+                        min_channels = min(spec_features.shape[2], 1)
+                        fixed_spec[:min_mels, :min_frames, :min_channels] = spec_features[:min_mels, :min_frames, :min_channels]
+                        spec_features = fixed_spec
+
+                    features = [mfcc_features, spec_features]
+                else:
+                    # Extract spectrogram features only
+                    features = self.feature_extractor.extract_features(segment, sr)
+                    features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
 
                 if features is not None:
                     features_list.append(features)
 
             if features_list:
-                # Average the features from all segments
-                avg_features = np.mean(features_list, axis=0)
+                if is_multimodal:
+                    # Average multimodal features
+                    mfcc_list = [f[0] for f in features_list]
+                    spec_list = [f[1] for f in features_list]
+                    avg_mfcc = np.mean(mfcc_list, axis=0)
+                    avg_spec = np.mean(spec_list, axis=0)
+                    avg_features = [avg_mfcc.reshape(1, -1), avg_spec.reshape(1, 128, 165, 1)]
+                else:
+                    # Average spectrogram features
+                    avg_features = np.mean(features_list, axis=0)
                 st.success(f"✅ Processed {len(features_list)} segments from long audio")
                 return avg_features
             else:
                 # Fallback to first segment
                 y_segment = y[:segment_samples]
-                features = self.feature_extractor.extract_features(y_segment, sr)
-                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+                if is_multimodal:
+                    mfcc_features = self.feature_extractor.extract_mfcc(y_segment, sr)
+                    spec_features = self.feature_extractor.extract_spectrogram(y_segment, sr)
+                    mfcc_features = self.feature_extractor.normalize_single(mfcc_features, feature_type='mfcc')
+                    spec_features = self.feature_extractor.normalize_single(spec_features, feature_type='mel_spectrogram')
+                    features = [mfcc_features.reshape(1, -1), spec_features.reshape(1, 128, 165, 1)]
+                else:
+                    features = self.feature_extractor.extract_features(y_segment, sr)
+                    features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
                 return features
 
         except Exception as e:
             st.warning(f"Error processing long audio segments: {e}. Using first segment.")
             # Fallback to original method
             y_segment = y[:int(segment_duration * sr)]
-            features = self.feature_extractor.extract_features(y_segment, sr)
-            features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
+            if is_multimodal:
+                mfcc_features = self.feature_extractor.extract_mfcc(y_segment, sr)
+                spec_features = self.feature_extractor.extract_spectrogram(y_segment, sr)
+                mfcc_features = self.feature_extractor.normalize_single(mfcc_features, feature_type='mfcc')
+                spec_features = self.feature_extractor.normalize_single(spec_features, feature_type='mel_spectrogram')
+                features = [mfcc_features.reshape(1, -1), spec_features.reshape(1, 128, 165, 1)]
+            else:
+                features = self.feature_extractor.extract_features(y_segment, sr)
+                features = self.feature_extractor.normalize_single(features, feature_type='mel_spectrogram')
             return features
 
     def _check_demo_files_available(self):
