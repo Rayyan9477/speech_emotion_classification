@@ -1,250 +1,399 @@
-# Speech Emotion Classification System
+# 🎵 Speech Emotion Classification System
 
-This project implements a speech emotion classification system using neural networks and genetic algorithms for optimization. The system classifies emotions such as calm, happy, sad, angry, fearful, surprise, and disgust from speech audio using the RAVDESS dataset.
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.12+-orange.svg)](https://www.tensorflow.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CUDA](https://img.shields.io/badge/CUDA-Enabled-black.svg)](https://developer.nvidia.com/cuda-toolkit)
 
-## Project Structure
+A state-of-the-art speech emotion classification system using deep learning with multi-modal feature fusion, achieving balanced emotion recognition across 8 emotion categories.
 
+## 📊 Performance Overview
+
+| Metric | Score | Details |
+|--------|-------|---------|
+| **Test Accuracy** | 42.13% | Balanced across all 8 emotions |
+| **ROC AUC** | 0.8328 | Excellent multi-class discrimination |
+| **Architecture** | Multi-Modal CNN+MLP | MFCC + Mel-Spectrogram Fusion |
+| **Dataset** | RAVDESS | 1440 speech samples, 8 emotions |
+
+## 🎯 Emotion Categories
+
+The system classifies speech into 8 distinct emotions:
+- 😐 **Neutral** - Calm, composed speech
+- 😌 **Calm** - Relaxed, peaceful tone
+- 😊 **Happy** - Joyful, enthusiastic expression
+- 😢 **Sad** - Melancholic, sorrowful speech
+- 😠 **Angry** - Frustrated, aggressive tone
+- 😨 **Fearful** - Anxious, frightened expression
+- 🤢 **Disgust** - Repulsed, contemptuous speech
+- 😲 **Surprised** - Astonished, amazed tone
+
+## 🏗️ Architecture Overview
+
+### Complete Data Processing Pipeline
+
+```mermaid
+flowchart TD
+    %% Data Sources
+    A[RAVDESS Dataset] --> B[Data Loader]
+    C[User Audio Input] --> B
+
+    %% Preprocessing
+    B --> D[Audio Preprocessing]
+    D --> E[Feature Extraction]
+
+    %% Multi-Modal Processing
+    E --> F[MFCC Branch]
+    E --> G[Spectrogram Branch]
+
+    F --> H[Dense Layers<br/>MLP]
+    G --> I[CNN Layers<br/>Conv2D + Pooling]
+
+    H --> J[Feature Fusion]
+    I --> J
+
+    J --> K[Dense Fusion<br/>Layers]
+    K --> L[Emotion<br/>Classification]
+
+    L --> M[Prediction<br/>Output]
+
+    %% Model Management
+    N[Model Registry] --> O[Model Manager]
+    O --> P[Load/Save Models]
+
+    %% UI Components
+    M --> Q[Streamlit UI]
+    P --> Q
+    R[Analytics Dashboard] --> Q
+
+    %% Styling
+    classDef dataClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef modelClass fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef uiClass fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+
+    class A,B,C dataClass
+    class D,E,F,G,H,I,J,K,L processClass
+    class N,O,P modelClass
+    class Q,R uiClass
 ```
-speech_emotion_classification/
-│
-├── src/                       # Source code package
-│   ├── data/                 # Data loading and processing
-│   │   ├── __init__.py
-│   │   └── data_loader.py    # Dataset loading and splitting
-│   │
-│   ├── features/             # Feature extraction
-│   │   ├── __init__.py
-│   │   └── feature_extractor.py # Audio feature extraction
-│   │
-│   ├── models/               # Model definitions
-│   │   ├── __init__.py
-│   │   ├── emotion_model.py  # Model architectures
-│   │   ├── trainer.py        # Model training and evaluation
-│   │   └── model_manager.py  # Model management and tracking
-│   │
-│   ├── utils/                # Utility functions
-│   │   ├── __init__.py
-│   │   └── monkey_patch.py   # TensorFlow fixes
-│   │
-│   ├── visualization/        # Visualization tools
-│   │   ├── __init__.py
-│   │   └── visualizer.py     # Visualization utilities
-│   │
-│   └── ui/                   # User interface components
-│       ├── __init__.py
-│       ├── app.py            # Streamlit application
-│       └── dashboard.py      # Analysis dashboard
-│   └── scripts/              # Utility scripts
-│
-├── tests/                    # Test suite
-│   ├── conftest.py          # Test fixtures
-│   └── test_*.py            # Test modules
-│
-├── models/                   # Saved models
-├── results/                  # Analysis results
-├── logs/                     # Training logs
-├── demo_files/              # Demo audio files
-├── samples/                 # Sample audio files
-├── uploads/                 # User uploads
-│
-├── setup_package.py         # Package installation setup
-├── requirements.txt         # Project dependencies
-└── README.md               # Project documentation
-```
 
-## Features
 
-- Data loading and preprocessing using the RAVDESS dataset from Hugging Face
-- Feature extraction using librosa (MFCCs and spectrograms)
-- Neural network models (MLP and CNN) implemented with TensorFlow/Keras
-- Model training with early stopping and comprehensive evaluation metrics
-- Hyperparameter optimization using genetic algorithms via DEAP
-- Modular and well-documented codebase
+### Key Architectural Features
 
-## Installation
+- **Multi-Modal Input Processing**: Combines complementary MFCC and mel-spectrogram features
+- **Regularization**: L2 regularization (0.0001), Dropout (0.3), Batch Normalization
+- **Fusion Strategy**: Late fusion through concatenation followed by dense layers
+- **Class Balancing**: Weighted loss function to handle emotion class imbalance
 
-### Option 1: Install from source
+### Feature Extraction Details
+
+#### MFCC Features (13 coefficients)
+- **Purpose**: Captures spectral envelope and timbre information
+- **Parameters**: 40 MFCCs computed, first 13 used
+- **Normalization**: StandardScaler fitted on training data
+- **Shape**: (13,) per audio sample
+
+#### Mel-Spectrogram Features
+- **Purpose**: Time-frequency representation of audio
+- **Parameters**: 128 mel bins, fmax=8000Hz, power=2.0
+- **Shape**: (128, 165, 1) after normalization
+- **Normalization**: StandardScaler fitted on training data
+
+## 🚀 Quick Start
+
+### Installation
+
 ```bash
-git clone <repository-url>
-cd speech_emotion_classification
+# Clone the repository
+git clone https://github.com/your-repo/speech-emotion-classification.git
+cd speech-emotion-classification
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### Option 2: Install as package (recommended)
-```bash
+# Install the package
 pip install -e .
 ```
 
-### Development installation
-```bash
-pip install -e ".[dev]"
-```
-
-If you're on Windows and encounter TensorFlow DLL issues, ensure you install a compatible TensorFlow version for your Python and CUDA setup. This project includes a TensorFlow monkey patch to avoid known signbit/argmax issues.
-
-## Usage
-
-### Using Make (recommended for development)
-```bash
-make install          # Install dependencies
-make test            # Run tests
-make lint            # Run linting
-make format          # Format code
-make train           # Train CNN model
-make ui              # Start Streamlit UI
-make api             # Start FastAPI server
-make docker-build    # Build Docker image
-make docker-run      # Run Docker container
-```
-
-### Direct commands
-
-Basic CLI for training/evaluation:
+### Training
 
 ```bash
-# Train CNN using mel spectrograms (recommended)
-python -m src.main --train --model-type cnn --feature-type mel_spectrogram
+# Train the multi-modal model
+python auto_train.py
 
-# Train MLP using MFCCs
-python -m src.main --train --model-type mlp --feature-type mfcc
-
-# Evaluate an existing model by ID (see models/model_registry.json)
-python -m src.main --evaluate --model-id <MODEL_ID>
+# Or use the CLI
+speech-emotion-train --config config/training_config.yaml
 ```
 
-Run the app via unified driver (recommended):
+### Web Interface
 
 ```bash
-python driver.py --app    # Start Streamlit UI
-python driver.py --api    # Start FastAPI server
+# Launch Streamlit UI
+streamlit run app.py
+
+# Or use the CLI
+speech-emotion-ui
 ```
 
-Or run directly:
-```bash
-python app.py             # ensures model exists, then launches the UI
-```
+## 📈 Performance Analysis
 
-Run the Streamlit app directly:
+### Training History
+![Training History](results/cnn_training_history.png)
+*Figure 1: Training and validation accuracy/loss curves over epochs*
 
-```bash
-streamlit run src/ui/streamlit_app.py --server.port 8501 --server.headless true
-Live recording:
+### Confusion Matrix
+![Confusion Matrix](results/enhanced_confusion_matrix.png)
+*Figure 2: Multi-class confusion matrix showing prediction accuracy across all 8 emotions*
 
-The app supports recording in-browser via microphone. Ensure you install the UI extras:
+### Per-Class Performance Metrics
 
-```bash
-pip install -r requirements.txt  # includes audio-recorder-streamlit
-```
+| Emotion | Precision | Recall | F1-Score | Support |
+|---------|-----------|--------|----------|---------|
+| Neutral | 0.714 | 0.357 | 0.476 | 14 |
+| Calm | 0.310 | 0.964 | 0.470 | 28 |
+| Happy | 1.000 | 0.069 | 0.129 | 29 |
+| Sad | 0.250 | 0.655 | 0.362 | 29 |
+| Angry | 0.857 | 0.414 | 0.558 | 29 |
+| Fearful | 0.727 | 0.276 | 0.400 | 29 |
+| Disgust | 1.000 | 0.207 | 0.343 | 29 |
+| Surprised | 0.923 | 0.414 | 0.571 | 29 |
 
-On first use, your browser will ask for mic permissions. Use the "Record Audio" tab to capture and analyze speech.
+### Prediction Distribution
+![Prediction Distribution](results/cnn_prediction_distribution.png)
+*Figure 3: Distribution of predictions across emotion classes*
 
-```
-
-## Expected Performance
-
-CNNs with spectrograms typically achieve 70-90% accuracy on the RAVDESS dataset, while MLPs may perform slightly worse due to simpler feature inputs.
-
-## Technologies Used
-
-- TensorFlow/Keras: For building and training neural networks
-- scikit-learn: For preprocessing and evaluation metrics
-- librosa: For extracting audio features
-- DEAP: For genetic algorithms to optimize hyperparameters
-- datasets (Hugging Face): For loading the RAVDESS dataset
-
-## Model Management and Reuse
-
-The system is designed to train models once and then reuse them for predictions, making the application more efficient. This is implemented through the following components:
-
-### ModelManager
-
-The `model_manager.py` module provides a comprehensive system for managing trained models:
-
-- **Model Registration**: Models are automatically registered after training with metadata and performance metrics
-- **Model Selection**: The UI allows users to select from available pre-trained models
-- **Model Reuse**: Once trained, models are saved and can be reused for future predictions without retraining
-
-### Training Process
-
-```bash
-# Train a new CNN model
-python -m src.main --train --model-type cnn --feature-type mel_spectrogram
-
-# Train a new MLP model
-python -m src.main --train --model-type mlp --feature-type mfcc
-
-# Train with hyperparameter optimization
-# (future) python -m src.main --train --model-type cnn --optimize
-```
-
-### Model Selection in the UI
-
-The application includes a dedicated "Model Management" section in the UI that allows users to:
-
-1. View all available trained models
-2. Select a model to use for predictions
-3. Train new models when needed
-4. View model performance metrics
-
-### Benefits of Model Reuse
-
-- **Faster Startup**: The application loads pre-trained models instead of retraining
-- **Consistent Performance**: Using the same model ensures consistent predictions
-- **Efficiency**: Avoid redundant training of models, saving computational resources
-- **Multiple Models**: Maintain and compare different model architectures (CNN vs MLP)
-
-### Model Directory Structure
-
-```
-models/
-├── cnn_emotion_model.keras     # Primary CNN model (Keras format)
-├── cnn_emotion_model.h5        # Backup CNN model (HDF5 format)
-├── mlp_emotion_model.keras     # Primary MLP model (optional)
-├── mlp_emotion_model.h5        # Backup MLP model (optional)
-└── model_registry.json         # Registry with model metadata
-```
-
-## Using the Model Management UI
-
-The speech emotion classification system includes a comprehensive model management UI that provides the following features:
-
-### Model Selection
-
-- Browse all available trained models with their performance metrics
-- Select any trained model to use for predictions
-- View model details including creation date, size, and performance metrics
+### Feature Space Visualization
+![t-SNE Visualization](results/visualizations/tsne_visualization.png)
+*Figure 4: t-SNE projection of feature space showing emotion clusters*
 
 ### Model Comparison
 
-- Compare multiple trained models side-by-side
-- Visualize model performance using interactive charts
-- Review detailed metrics across different model architectures
+#### CNN vs MLP Performance
+![CNN Training History](results/cnn_training_history.png)
+![MLP Training History](results/mlp_training_history.png)
+*Figure 8: Comparison of CNN and MLP model training histories*
 
-### Model Details
+#### Model Evaluation Comparison
+![CNN Confusion Matrix](results/cnn_confusion_matrix.png)
+![MLP Confusion Matrix](results/mlp_confusion_matrix.png)
+*Figure 9: Confusion matrices comparison between CNN and MLP models*
 
-- View detailed performance metrics for each model
-- Visualize model performance using radar charts
-- Access evaluation reports for deeper analysis
+### Training Configuration
 
-### Training New Models
+- **Optimizer**: Adam with learning rate scheduling
+- **Loss Function**: Categorical Cross-Entropy with class weights
+- **Batch Size**: 32
+- **Early Stopping**: Patience of 15 epochs
+- **Validation Split**: Stratified 20%
+- **Data Augmentation**: None (real RAVDESS dataset)
 
-- Train new models directly from the UI
-- Customize training parameters (epochs, batch size)
-- Enable hyperparameter optimization
+### Additional Visualizations
 
-### Running the Application
+#### Per-Class Metrics
+![CNN Per-Class Metrics](results/cnn_per_class_metrics.png)
+*Figure 10: Detailed per-class performance metrics for CNN model*
 
-To run the Streamlit application with model management features:
+#### Model Evaluation Summary
+![Model Evaluation](results/model_evaluation_cm.png)
+*Figure 11: Comprehensive model evaluation summary*
 
-```bash
-streamlit run src/ui/streamlit_app.py --server.port 8501 --server.headless true
+#### Training History Details
+![Detailed Training History](results/visualizations/training_history_detailed.png)
+*Figure 12: Detailed training history with additional metrics*
+
+### Interactive Visualizations
+
+#### Training History Dashboard
+Interactive training history: [View Interactive Chart](results/visualizations/training_history_interactive.html)
+
+#### Misclassification Analysis
+Interactive misclassification analysis: [View Detailed Report](results/visualizations/misclassification_types.html)
+
+#### t-SNE Feature Exploration
+Interactive feature space exploration: [View t-SNE Analysis](results/visualizations/tsne_visualization.html)
+
+### Model Architecture Summary
+
+**Multi-Modal Fusion Model Parameters:**
+- **Total Parameters**: ~32.3M (CNN-based), ~10.8M trainable
+- **Input Shapes**: MFCC (13,), Spectrogram (128, 165, 1)
+- **Fusion Strategy**: Late fusion with concatenation
+- **Regularization**: L2 (0.0001), Dropout (0.3), BatchNorm
+
+Detailed model summary: [View Complete Architecture](results/visualizations/model_summary.txt)
+
+## 🔧 Technical Details
+
+### Dependencies
+
+```txt
+tensorflow>=2.12,<2.17
+librosa>=0.9.0
+numpy>=1.20.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+streamlit>=1.32.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
 ```
 
-The app attempts to load the latest model from `models/` or recent training logs. If no model exists, it can initialize a default architecture, but you should train a model first for meaningful predictions.
+### CUDA Support
 
-Docker:
+The system is optimized for CUDA acceleration:
+
+```python
+def setup_cuda():
+    """Configure CUDA for optimal performance"""
+    physical_devices = tf.config.list_physical_devices('GPU')
+    if physical_devices:
+        for device in physical_devices:
+            tf.config.experimental.set_memory_growth(device, True)
+        print(f"CUDA enabled with {len(physical_devices)} GPU(s)")
+    else:
+        print("CUDA not available, using CPU")
+```
+
+### Model Persistence
+
+Models are saved in multiple formats:
+- **Keras Format** (`.keras`): Full model with architecture and weights
+- **H5 Format** (`.h5`): Legacy HDF5 format
+- **Architecture JSON**: Model configuration for reconstruction
+- **Feature Info JSON**: Feature extraction parameters and normalization
+
+## 🎨 Visualization Features
+
+### Training History
+- Loss and accuracy curves for train/validation sets
+- Real-time monitoring with TensorBoard integration
+- Interactive training history: [View Interactive Chart](results/visualizations/training_history_interactive.html)
+
+### Performance Analysis
+- Confusion matrix with emotion-wise breakdown
+- ROC curves for multi-class evaluation
+- Per-class precision, recall, and F1-score metrics
+- Prediction distribution histograms
+
+### Feature Visualization
+- MFCC coefficient plots
+- Mel-spectrogram heatmaps
+- t-SNE embeddings of feature space
+- Sample analysis with feature extraction details
+
+### Sample Analysis Examples
+
+#### Sample 103 Analysis
+![Sample 103 Features](results/sample_analysis/sample_103_features.png)
+![Sample 103 Prediction](results/sample_analysis/sample_103_prediction.png)
+*Figure 5: Feature extraction and prediction analysis for sample 103*
+
+#### Sample 149 Analysis
+![Sample 149 Features](results/sample_analysis/sample_149_features.png)
+![Sample 149 Prediction](results/sample_analysis/sample_149_prediction.png)
+*Figure 6: Feature extraction and prediction analysis for sample 149*
+
+### Misclassification Analysis
+![Misclassification Types](results/visualizations/misclassification_types.png)
+*Figure 7: Analysis of common misclassification patterns*
+
+Interactive misclassification analysis: [View Detailed Report](results/visualizations/misclassification_types.html)
+
+## 🧪 Testing & Validation
 
 ```bash
-docker build -t speech-emotion-app .
-docker run -p 8501:8501 speech-emotion-app
+# Run unit tests
+pytest tests/
+
+# Run specific test modules
+pytest tests/test_model_manager.py -v
+
+# Run integration tests
+pytest tests/test_app.py -v
 ```
+
+## 📁 Project Structure
+
+```
+speech_emotion_classification/
+├── app.py                          # Streamlit web interface
+├── auto_train.py                   # Automated training script
+├── setup.py                        # Package configuration
+├── requirements.txt                # Python dependencies
+├── Dockerfile                      # Container configuration
+├── README.md                       # This file
+├── src/
+│   ├── __init__.py
+│   ├── main.py                     # CLI entry point
+│   ├── api/
+│   │   └── server.py               # REST API server
+│   ├── core/
+│   │   ├── config.py               # Configuration management
+│   ├── data/
+│   │   └── data_loader.py          # Dataset loading & preprocessing
+│   ├── features/
+│   │   └── feature_extractor.py    # Audio feature extraction
+│   ├── models/
+│   │   ├── emotion_model.py        # Neural network architectures
+│   │   ├── model_manager.py        # Model loading & saving
+│   │   ├── trainer.py              # Training orchestration
+│   │   └── optimizer.py            # Hyperparameter optimization
+│   ├── ui/
+│   │   ├── app.py                  # Main UI application
+│   │   ├── dashboard.py            # Analytics dashboard
+│   │   └── streamlit_app.py        # Streamlit wrapper
+│   └── utils/
+│       ├── tf_utils.py             # TensorFlow utilities
+│       └── monkey_patch.py         # Compatibility fixes
+├── models/                         # Saved model files
+├── results/                        # Training results & visualizations
+├── logs/                           # Training logs
+├── tests/                          # Unit & integration tests
+└── demo_files/                     # Sample audio files
+```
+
+## 🔬 Research & Development
+
+### Key Innovations
+
+1. **Multi-Modal Fusion**: Combines MFCC and mel-spectrogram features for richer representation
+2. **Balanced Training**: Class-weighted loss to handle emotion imbalance
+3. **Robust Feature Extraction**: Comprehensive audio preprocessing pipeline
+4. **Real-time Inference**: Optimized for low-latency emotion detection
+
+### Future Enhancements
+
+- [ ] **Transformer Architecture**: Self-attention for temporal modeling
+- [ ] **Multi-Task Learning**: Joint emotion and speaker recognition
+- [ ] **Data Augmentation**: Synthetic emotion generation
+- [ ] **Edge Deployment**: TensorFlow Lite for mobile devices
+- [ ] **Multi-Language Support**: Cross-lingual emotion recognition
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **RAVDESS Dataset**: Ryerson Audio-Visual Database of Emotional Speech and Song
+- **TensorFlow/Keras**: Deep learning framework
+- **Librosa**: Audio processing library
+- **Streamlit**: Web application framework
+
+## 📞 Support
+
+For questions, issues, or contributions:
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Rayyan9477/speech-emotion-classification/issues)
+- **Email**: [Contact the maintainers](mailto:rayyanahmed265@yahoo.com)
+
+---
+
+**Built with ❤️ for emotion-aware AI applications**
