@@ -244,7 +244,7 @@ class ModelManager:
     
     def load_model(self, model_id=None, model_path=None):
         """
-        Load a model from disk by ID or path
+        Load a model from disk by ID or path, handling split models automatically
         
         Args:
             model_id (str, optional): ID of the model to load
@@ -266,36 +266,71 @@ class ModelManager:
             logger.error("No models found in registry")
             return None
         
-        # Check if the model file exists
-        if not os.path.exists(model_path):
-            logger.info(f"Model file not found at {model_path}, trying alternatives")
+        # Check if this is a manifest file for a split model
+        if model_path.endswith("_manifest.txt"):
+            logger.info(f"Detected manifest file: {model_path}")
+            base_name = os.path.splitext(os.path.basename(model_path))[0].replace("_manifest", "")
+            combined_path = self._combine_split_model(base_name)
+            if combined_path:
+                model_path = combined_path
+            else:
+                logger.error("Failed to combine split model")
+                return None
+        
+        # Check if the model file exists, or if it's a split model
+        elif not os.path.exists(model_path):
+            logger.info(f"Model file not found at {model_path}, checking for split model")
             
-            # Try alternative file extensions
-            for ext in [".keras", ".h5", ".tf"]:
-                alt_path = os.path.splitext(model_path)[0] + ext
-                if os.path.exists(alt_path):
-                    logger.info(f"Found alternative model file: {alt_path}")
-                    model_path = alt_path
-                    break
+            # Check if this is a split model by looking for manifest
+            base_name = os.path.splitext(os.path.basename(model_path))[0]
+            manifest_path = os.path.join(self.models_dir, f"{base_name}_manifest.txt")
             
-            # If still not found, try looking in the models directory
-            if not os.path.exists(model_path):
-                base_name = os.path.basename(model_path)
-                alt_path = os.path.join(self.models_dir, base_name)
-                if os.path.exists(alt_path):
-                    logger.info(f"Found model in models directory: {alt_path}")
-                    model_path = alt_path
+            if os.path.exists(manifest_path):
+                logger.info(f"Found split model manifest: {manifest_path}")
+                # Combine the split model
+                combined_path = self._combine_split_model(base_name)
+                if combined_path:
+                    model_path = combined_path
                 else:
-                    # Try finding any model with similar name pattern
-                    model_files = [f for f in os.listdir(self.models_dir) 
-                                  if f.endswith(('.keras', '.h5', '.tf')) and 'best_model' in f]
-                    if model_files:
-                        alt_path = os.path.join(self.models_dir, model_files[0])
-                        logger.info(f"Found alternative model: {alt_path}")
+                    logger.error("Failed to combine split model")
+                    return None
+            else:
+                # Try alternative file extensions and split model detection
+                for ext in [".keras", ".h5", ".tf"]:
+                    alt_path = os.path.splitext(model_path)[0] + ext
+                    if os.path.exists(alt_path):
+                        logger.info(f"Found alternative model file: {alt_path}")
+                        model_path = alt_path
+                        break
+                    
+                    # Check for split model with this extension
+                    base_name = os.path.splitext(os.path.basename(alt_path))[0]
+                    manifest_path = os.path.join(self.models_dir, f"{base_name}_manifest.txt")
+                    if os.path.exists(manifest_path):
+                        logger.info(f"Found split model manifest for {ext}: {manifest_path}")
+                        combined_path = self._combine_split_model(base_name)
+                        if combined_path:
+                            model_path = combined_path
+                            break
+                
+                # If still not found, try looking in the models directory
+                if not os.path.exists(model_path):
+                    base_name = os.path.basename(model_path)
+                    alt_path = os.path.join(self.models_dir, base_name)
+                    if os.path.exists(alt_path):
+                        logger.info(f"Found model in models directory: {alt_path}")
                         model_path = alt_path
                     else:
-                        logger.error(f"Model file not found after attempting format conversion")
-                        return None
+                        # Try finding any model with similar name pattern
+                        model_files = [f for f in os.listdir(self.models_dir) 
+                                      if f.endswith(('.keras', '.h5', '.tf')) and 'emotion_model' in f]
+                        if model_files:
+                            alt_path = os.path.join(self.models_dir, model_files[0])
+                            logger.info(f"Found alternative model: {alt_path}")
+                            model_path = alt_path
+                        else:
+                            logger.error(f"Model file not found after attempting format conversion")
+                            return None
         
         # Load the model with error handling
         try:
@@ -570,3 +605,55 @@ class ModelManager:
                         model_path=model_path,
                         model_type=model_type
                     )
+    
+    def _combine_split_model(self, base_name):
+        """
+        Combine a split model back into a single file
+        
+        Args:
+            base_name (str): Base name of the model (without extension)
+            
+        Returns:
+            str: Path to the combined model file, or None if failed
+        """
+        try:
+            manifest_path = os.path.join(self.models_dir, f"{base_name}_manifest.txt")
+            
+            if not os.path.exists(manifest_path):
+                logger.error(f"Manifest file not found: {manifest_path}")
+                return None
+            
+            # Read the manifest to get chunk info
+            with open(manifest_path, 'r') as f:
+                lines = f.readlines()
+            
+            # Extract original filename
+            original_line = [line for line in lines if line.startswith("Original file:")][0]
+            original_filename = original_line.split(": ")[1].strip()
+            output_path = os.path.join(self.models_dir, original_filename)
+            
+            # Get chunk filenames
+            chunk_lines = [line.strip()[2:] for line in lines if line.strip().startswith("- ")]
+            chunk_paths = [os.path.join(self.models_dir, chunk) for chunk in chunk_lines]
+            
+            # Verify all chunks exist
+            missing_chunks = [chunk for chunk in chunk_paths if not os.path.exists(chunk)]
+            if missing_chunks:
+                logger.error(f"Missing chunks: {missing_chunks}")
+                return None
+            
+            logger.info(f"Combining {len(chunk_paths)} chunks into {output_path}")
+            
+            # Combine the chunks
+            with open(output_path, 'wb') as output_file:
+                for chunk_path in chunk_paths:
+                    with open(chunk_path, 'rb') as chunk_file:
+                        output_file.write(chunk_file.read())
+                    logger.info(f"Combined chunk: {os.path.basename(chunk_path)}")
+            
+            logger.info(f"Successfully combined split model: {output_path}")
+            return output_path
+            
+        except Exception as e:
+            logger.error(f"Error combining split model {base_name}: {e}")
+            return None

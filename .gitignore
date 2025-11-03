@@ -4,11 +4,10 @@ logs/
 speech_emotion.log
 
 # Models and large files
-*.h5
-*.keras
+
 *.pkl
 *.pickle
-models/
+
 results/
 __pycache__/
 *.pyc

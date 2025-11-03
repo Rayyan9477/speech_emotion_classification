@@ -1,0 +1,5 @@
+Original file: cnn_emotion_model_20251022_065208.keras
+Split into 3 parts:
+- cnn_emotion_model_20251022_065208_part1.keras
+- cnn_emotion_model_20251022_065208_part2.keras
+- cnn_emotion_model_20251022_065208_part3.keras
