@@ -1,7 +1,7 @@
 # Core libraries
-# Pin TensorFlow to exact version for deployment compatibility
-tensorflow==2.16.2
-tensorboard>=2.16.2
+# TensorFlow version compatible with Python 3.13.9 deployment environment
+tensorflow==2.17.1
+tensorboard>=2.17.0
 numpy>=1.24.0
 pandas>=2.0.0
 scikit-learn>=1.3.0

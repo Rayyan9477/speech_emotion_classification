@@ -270,9 +270,11 @@ class ModelManager:
         if model_path.endswith("_manifest.txt"):
             logger.info(f"Detected manifest file: {model_path}")
             base_name = os.path.splitext(os.path.basename(model_path))[0].replace("_manifest", "")
-            combined_path = self._combine_split_model(base_name)
-            if combined_path:
-                model_path = combined_path
+            combined_model = self._combine_split_model(base_name)
+            if combined_model:
+                # _combine_split_model now returns a loaded model object
+                logger.info("Successfully loaded split model directly from temporary file")
+                return combined_model
             else:
                 logger.error("Failed to combine split model")
                 return None
@@ -288,9 +290,11 @@ class ModelManager:
             if os.path.exists(manifest_path):
                 logger.info(f"Found split model manifest: {manifest_path}")
                 # Combine the split model
-                combined_path = self._combine_split_model(base_name)
-                if combined_path:
-                    model_path = combined_path
+                combined_model = self._combine_split_model(base_name)
+                if combined_model:
+                    # _combine_split_model now returns a loaded model object
+                    logger.info("Successfully loaded split model directly from temporary file")
+                    return combined_model
                 else:
                     logger.error("Failed to combine split model")
                     return None
@@ -308,10 +312,11 @@ class ModelManager:
                     manifest_path = os.path.join(self.models_dir, f"{base_name}_manifest.txt")
                     if os.path.exists(manifest_path):
                         logger.info(f"Found split model manifest for {ext}: {manifest_path}")
-                        combined_path = self._combine_split_model(base_name)
-                        if combined_path:
-                            model_path = combined_path
-                            break
+                        combined_model = self._combine_split_model(base_name)
+                        if combined_model:
+                            # _combine_split_model now returns a loaded model object
+                            logger.info("Successfully loaded split model directly from temporary file")
+                            return combined_model
                 
                 # If still not found, try looking in the models directory
                 if not os.path.exists(model_path):
@@ -608,52 +613,72 @@ class ModelManager:
     
     def _combine_split_model(self, base_name):
         """
-        Combine a split model back into a single file
-        
+        Combine a split model into a temporary file and load it into memory
+
         Args:
             base_name (str): Base name of the model (without extension)
-            
+
         Returns:
-            str: Path to the combined model file, or None if failed
+            tensorflow.keras.models.Model: The loaded model, or None if failed
         """
+        import tempfile
+
         try:
             manifest_path = os.path.join(self.models_dir, f"{base_name}_manifest.txt")
-            
+
             if not os.path.exists(manifest_path):
                 logger.error(f"Manifest file not found: {manifest_path}")
                 return None
-            
+
             # Read the manifest to get chunk info
             with open(manifest_path, 'r') as f:
                 lines = f.readlines()
-            
-            # Extract original filename
-            original_line = [line for line in lines if line.startswith("Original file:")][0]
-            original_filename = original_line.split(": ")[1].strip()
-            output_path = os.path.join(self.models_dir, original_filename)
-            
+
             # Get chunk filenames
             chunk_lines = [line.strip()[2:] for line in lines if line.strip().startswith("- ")]
             chunk_paths = [os.path.join(self.models_dir, chunk) for chunk in chunk_lines]
-            
+
             # Verify all chunks exist
             missing_chunks = [chunk for chunk in chunk_paths if not os.path.exists(chunk)]
             if missing_chunks:
                 logger.error(f"Missing chunks: {missing_chunks}")
                 return None
-            
-            logger.info(f"Combining {len(chunk_paths)} chunks into {output_path}")
-            
-            # Combine the chunks
-            with open(output_path, 'wb') as output_file:
+
+            logger.info(f"Combining {len(chunk_paths)} chunks into temporary file")
+
+            # Create a temporary file for the combined model
+            with tempfile.NamedTemporaryFile(suffix='.keras', delete=False) as temp_file:
+                temp_path = temp_file.name
+
+                # Combine the chunks into the temporary file
                 for chunk_path in chunk_paths:
                     with open(chunk_path, 'rb') as chunk_file:
-                        output_file.write(chunk_file.read())
+                        temp_file.write(chunk_file.read())
                     logger.info(f"Combined chunk: {os.path.basename(chunk_path)}")
-            
-            logger.info(f"Successfully combined split model: {output_path}")
-            return output_path
-            
+
+            try:
+                # Apply monkey patch before loading model
+                try:
+                    from src.utils.monkey_patch import monkeypatch
+                    monkeypatch()
+                    logger.info("Applied monkey patch before loading temporary model")
+                except ImportError:
+                    logger.warning("Could not import monkey_patch module")
+
+                # Load the model from the temporary file
+                model = tf.keras.models.load_model(temp_path)
+                logger.info(f"Successfully loaded model from temporary combined file")
+
+                return model
+
+            finally:
+                # Clean up the temporary file
+                try:
+                    os.unlink(temp_path)
+                    logger.info("Cleaned up temporary combined model file")
+                except Exception as e:
+                    logger.warning(f"Could not clean up temporary file {temp_path}: {e}")
+
         except Exception as e:
             logger.error(f"Error combining split model {base_name}: {e}")
             return None

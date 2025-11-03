@@ -1,399 +1,296 @@
-# 🎵 Speech Emotion Classification System
+---
+language:
+- en
+license: mit
+library_name: tensorflow
+tags:
+- audio
+- speech
+- emotion-recognition
+- deep-learning
+- classification
+datasets:
+- ravdess
+metrics:
+- accuracy
+- precision
+- recall
+- f1
+model-index:
+- name: Speech Emotion Classification
+  results:
+  - task:
+      name: Audio Classification
+      type: audio-classification
+    dataset:
+      name: RAVDESS
+      type: ravdess
+    metrics:
+    - name: Accuracy
+      type: accuracy
+      value: 0.4213
+    - name: Precision (weighted)
+      type: precision
+      value: 0.7253
+    - name: Recall (weighted)
+      type: recall
+      value: 0.4213
+    - name: F1-Score (weighted)
+      type: f1
+      value: 0.4090
+---
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.12+-orange.svg)](https://www.tensorflow.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![CUDA](https://img.shields.io/badge/CUDA-Enabled-black.svg)](https://developer.nvidia.com/cuda-toolkit)
+# Speech Emotion Classification
 
-A state-of-the-art speech emotion classification system using deep learning with multi-modal feature fusion, achieving balanced emotion recognition across 8 emotion categories.
+<div align="center">
 
-## 📊 Performance Overview
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue)](https://www.python.org/downloads/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0%2B-orange)](https://www.tensorflow.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97-Hugging%20Face-yellow)](https://huggingface.co)
 
-| Metric | Score | Details |
-|--------|-------|---------|
-| **Test Accuracy** | 42.13% | Balanced across all 8 emotions |
-| **ROC AUC** | 0.8328 | Excellent multi-class discrimination |
-| **Architecture** | Multi-Modal CNN+MLP | MFCC + Mel-Spectrogram Fusion |
-| **Dataset** | RAVDESS | 1440 speech samples, 8 emotions |
+**Detect emotions from speech using advanced deep learning models**
 
-## 🎯 Emotion Categories
+</div>
 
-The system classifies speech into 8 distinct emotions:
-- 😐 **Neutral** - Calm, composed speech
-- 😌 **Calm** - Relaxed, peaceful tone
-- 😊 **Happy** - Joyful, enthusiastic expression
-- 😢 **Sad** - Melancholic, sorrowful speech
-- 😠 **Angry** - Frustrated, aggressive tone
-- 😨 **Fearful** - Anxious, frightened expression
-- 🤢 **Disgust** - Repulsed, contemptuous speech
-- 😲 **Surprised** - Astonished, amazed tone
+---
 
-## 🏗️ Architecture Overview
+## 🎯 Overview
 
-### Complete Data Processing Pipeline
+This repository contains a sophisticated deep learning model for speech emotion classification. The model is designed to detect and classify emotions from audio recordings with high accuracy using advanced neural network architectures. It combines acoustic features from both Mel-frequency cepstral coefficients (MFCCs) and mel-spectrograms to analyze emotional content in speech.
 
-```mermaid
-flowchart TD
-    %% Data Sources
-    A[RAVDESS Dataset] --> B[Data Loader]
-    C[User Audio Input] --> B
+## 🌟 Key Features
 
-    %% Preprocessing
-    B --> D[Audio Preprocessing]
-    D --> E[Feature Extraction]
+- **Multi-modal Architecture**: Combines CNN and MLP branches for comprehensive feature analysis
+- **Real-time Processing**: Capable of processing and analyzing speech in real-time
+- **High Accuracy**: State-of-the-art performance on emotion classification tasks
+- **Cross-platform Compatibility**: Runs seamlessly on Windows, macOS, and Linux
+- **Hugging Face Integration**: Easy model sharing and deployment via Hugging Face Hub
 
-    %% Multi-Modal Processing
-    E --> F[MFCC Branch]
-    E --> G[Spectrogram Branch]
+## 📊 Dataset
 
-    F --> H[Dense Layers<br/>MLP]
-    G --> I[CNN Layers<br/>Conv2D + Pooling]
+The model was trained on the **RAVDESS** (Ryerson Audio-Visual Database of Emotional Speech and Song) dataset, which contains high-quality recordings of professional actors expressing different emotions. The dataset includes 8 distinct emotions:
 
-    H --> J[Feature Fusion]
-    I --> J
+- 😌 **Neutral**: Emotionless speech
+- 😌 **Calm**: Calm and relaxed emotion
+- 😊 **Happy**: Joyful and cheerful emotion
+- 😢 **Sad**: Melancholic and sorrowful emotion
+- 😡 **Angry**: Irritated and mad emotion
+- 😱 **Fearful**: Scared and apprehensive emotion
+- 😤 **Disgust**: Revolted and repulsed emotion
+- 😮 **Surprised**: Astonished and amazed emotion
 
-    J --> K[Dense Fusion<br/>Layers]
-    K --> L[Emotion<br/>Classification]
+## 📈 Performance Metrics
 
-    L --> M[Prediction<br/>Output]
+| Metric | Value |
+|--------|-------|
+| **Test Accuracy** | ~42.13% |
+| **Precision (weighted)** | ~72.53% |
+| **Recall (weighted)** | ~42.13% |
+| **F1-Score (weighted)** | ~40.90% |
 
-    %% Model Management
-    N[Model Registry] --> O[Model Manager]
-    O --> P[Load/Save Models]
+## 🛠️ Installation
 
-    %% UI Components
-    M --> Q[Streamlit UI]
-    P --> Q
-    R[Analytics Dashboard] --> Q
+### Prerequisites
 
-    %% Styling
-    classDef dataClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef processClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef modelClass fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef uiClass fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+- Python 3.7 or higher
+- pip package manager
 
-    class A,B,C dataClass
-    class D,E,F,G,H,I,J,K,L processClass
-    class N,O,P modelClass
-    class Q,R uiClass
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/speech_emotion_classification.git
+cd speech_emotion_classification
 ```
 
-
-### Key Architectural Features
-
-- **Multi-Modal Input Processing**: Combines complementary MFCC and mel-spectrogram features
-- **Regularization**: L2 regularization (0.0001), Dropout (0.3), Batch Normalization
-- **Fusion Strategy**: Late fusion through concatenation followed by dense layers
-- **Class Balancing**: Weighted loss function to handle emotion class imbalance
-
-### Feature Extraction Details
-
-#### MFCC Features (13 coefficients)
-- **Purpose**: Captures spectral envelope and timbre information
-- **Parameters**: 40 MFCCs computed, first 13 used
-- **Normalization**: StandardScaler fitted on training data
-- **Shape**: (13,) per audio sample
-
-#### Mel-Spectrogram Features
-- **Purpose**: Time-frequency representation of audio
-- **Parameters**: 128 mel bins, fmax=8000Hz, power=2.0
-- **Shape**: (128, 165, 1) after normalization
-- **Normalization**: StandardScaler fitted on training data
-
-## 🚀 Quick Start
-
-### Installation
-
+2. Create a virtual environment (recommended):
 ```bash
-# Clone the repository
-git clone https://github.com/your-repo/speech-emotion-classification.git
-cd speech-emotion-classification
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# Install dependencies
+3. Install the required dependencies:
+```bash
 pip install -r requirements.txt
-
-# Install the package
-pip install -e .
 ```
 
-### Training
-
+Or install the dependencies manually:
 ```bash
-# Train the multi-modal model
-python auto_train.py
-
-# Or use the CLI
-speech-emotion-train --config config/training_config.yaml
+pip install tensorflow numpy librosa scikit-learn huggingface_hub pandas matplotlib seaborn
 ```
 
-### Web Interface
+## 🚀 Usage
 
-```bash
-# Launch Streamlit UI
-streamlit run app.py
-
-# Or use the CLI
-speech-emotion-ui
-```
-
-## 📈 Performance Analysis
-
-### Training History
-![Training History](results/cnn_training_history.png)
-*Figure 1: Training and validation accuracy/loss curves over epochs*
-
-### Confusion Matrix
-![Confusion Matrix](results/enhanced_confusion_matrix.png)
-*Figure 2: Multi-class confusion matrix showing prediction accuracy across all 8 emotions*
-
-### Per-Class Performance Metrics
-
-| Emotion | Precision | Recall | F1-Score | Support |
-|---------|-----------|--------|----------|---------|
-| Neutral | 0.714 | 0.357 | 0.476 | 14 |
-| Calm | 0.310 | 0.964 | 0.470 | 28 |
-| Happy | 1.000 | 0.069 | 0.129 | 29 |
-| Sad | 0.250 | 0.655 | 0.362 | 29 |
-| Angry | 0.857 | 0.414 | 0.558 | 29 |
-| Fearful | 0.727 | 0.276 | 0.400 | 29 |
-| Disgust | 1.000 | 0.207 | 0.343 | 29 |
-| Surprised | 0.923 | 0.414 | 0.571 | 29 |
-
-### Prediction Distribution
-![Prediction Distribution](results/cnn_prediction_distribution.png)
-*Figure 3: Distribution of predictions across emotion classes*
-
-### Feature Space Visualization
-![t-SNE Visualization](results/visualizations/tsne_visualization.png)
-*Figure 4: t-SNE projection of feature space showing emotion clusters*
-
-### Model Comparison
-
-#### CNN vs MLP Performance
-![CNN Training History](results/cnn_training_history.png)
-![MLP Training History](results/mlp_training_history.png)
-*Figure 8: Comparison of CNN and MLP model training histories*
-
-#### Model Evaluation Comparison
-![CNN Confusion Matrix](results/cnn_confusion_matrix.png)
-![MLP Confusion Matrix](results/mlp_confusion_matrix.png)
-*Figure 9: Confusion matrices comparison between CNN and MLP models*
-
-### Training Configuration
-
-- **Optimizer**: Adam with learning rate scheduling
-- **Loss Function**: Categorical Cross-Entropy with class weights
-- **Batch Size**: 32
-- **Early Stopping**: Patience of 15 epochs
-- **Validation Split**: Stratified 20%
-- **Data Augmentation**: None (real RAVDESS dataset)
-
-### Additional Visualizations
-
-#### Per-Class Metrics
-![CNN Per-Class Metrics](results/cnn_per_class_metrics.png)
-*Figure 10: Detailed per-class performance metrics for CNN model*
-
-#### Model Evaluation Summary
-![Model Evaluation](results/model_evaluation_cm.png)
-*Figure 11: Comprehensive model evaluation summary*
-
-#### Training History Details
-![Detailed Training History](results/visualizations/training_history_detailed.png)
-*Figure 12: Detailed training history with additional metrics*
-
-### Interactive Visualizations
-
-#### Training History Dashboard
-Interactive training history: [View Interactive Chart](results/visualizations/training_history_interactive.html)
-
-#### Misclassification Analysis
-Interactive misclassification analysis: [View Detailed Report](results/visualizations/misclassification_types.html)
-
-#### t-SNE Feature Exploration
-Interactive feature space exploration: [View t-SNE Analysis](results/visualizations/tsne_visualization.html)
-
-### Model Architecture Summary
-
-**Multi-Modal Fusion Model Parameters:**
-- **Total Parameters**: ~32.3M (CNN-based), ~10.8M trainable
-- **Input Shapes**: MFCC (13,), Spectrogram (128, 165, 1)
-- **Fusion Strategy**: Late fusion with concatenation
-- **Regularization**: L2 (0.0001), Dropout (0.3), BatchNorm
-
-Detailed model summary: [View Complete Architecture](results/visualizations/model_summary.txt)
-
-## 🔧 Technical Details
-
-### Dependencies
-
-```txt
-tensorflow>=2.12,<2.17
-librosa>=0.9.0
-numpy>=1.20.0
-pandas>=1.3.0
-scikit-learn>=1.0.0
-streamlit>=1.32.0
-matplotlib>=3.5.0
-seaborn>=0.11.0
-```
-
-### CUDA Support
-
-The system is optimized for CUDA acceleration:
+### 1. Load and Use the Model
 
 ```python
-def setup_cuda():
-    """Configure CUDA for optimal performance"""
-    physical_devices = tf.config.list_physical_devices('GPU')
-    if physical_devices:
-        for device in physical_devices:
-            tf.config.experimental.set_memory_growth(device, True)
-        print(f"CUDA enabled with {len(physical_devices)} GPU(s)")
-    else:
-        print("CUDA not available, using CPU")
+import librosa
+import numpy as np
+from tensorflow import keras
+
+# Load the pre-trained model
+model = keras.models.load_model('./path/to/model.keras')
+
+# Load an audio file
+audio_path = 'path/to/audio.wav'
+y, sr = librosa.load(audio_path, sr=None)
+
+# Extract features
+mfcc_features = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+spectrogram_features = librosa.feature.melspectrogram(y=y, sr=sr)
+
+# Normalize and reshape features according to your preprocessing pipeline
+# (Implementation depends on how the model was trained)
+
+# Make prediction
+# For multi-modal models, pass both feature arrays: [mfcc_features_reshaped, spec_features_reshaped]
+predictions = model.predict([mfcc_features_reshaped, spec_features_reshaped])
+
+# Get emotion with highest probability
+emotion_labels = ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised']
+predicted_emotion = emotion_labels[np.argmax(predictions)]
+
+print(f"Predicted emotion: {predicted_emotion}")
 ```
 
-### Model Persistence
-
-Models are saved in multiple formats:
-- **Keras Format** (`.keras`): Full model with architecture and weights
-- **H5 Format** (`.h5`): Legacy HDF5 format
-- **Architecture JSON**: Model configuration for reconstruction
-- **Feature Info JSON**: Feature extraction parameters and normalization
-
-## 🎨 Visualization Features
-
-### Training History
-- Loss and accuracy curves for train/validation sets
-- Real-time monitoring with TensorBoard integration
-- Interactive training history: [View Interactive Chart](results/visualizations/training_history_interactive.html)
-
-### Performance Analysis
-- Confusion matrix with emotion-wise breakdown
-- ROC curves for multi-class evaluation
-- Per-class precision, recall, and F1-score metrics
-- Prediction distribution histograms
-
-### Feature Visualization
-- MFCC coefficient plots
-- Mel-spectrogram heatmaps
-- t-SNE embeddings of feature space
-- Sample analysis with feature extraction details
-
-### Sample Analysis Examples
-
-#### Sample 103 Analysis
-![Sample 103 Features](results/sample_analysis/sample_103_features.png)
-![Sample 103 Prediction](results/sample_analysis/sample_103_prediction.png)
-*Figure 5: Feature extraction and prediction analysis for sample 103*
-
-#### Sample 149 Analysis
-![Sample 149 Features](results/sample_analysis/sample_149_features.png)
-![Sample 149 Prediction](results/sample_analysis/sample_149_prediction.png)
-*Figure 6: Feature extraction and prediction analysis for sample 149*
-
-### Misclassification Analysis
-![Misclassification Types](results/visualizations/misclassification_types.png)
-*Figure 7: Analysis of common misclassification patterns*
-
-Interactive misclassification analysis: [View Detailed Report](results/visualizations/misclassification_types.html)
-
-## 🧪 Testing & Validation
+### 2. Train Your Own Model
 
 ```bash
-# Run unit tests
-pytest tests/
-
-# Run specific test modules
-pytest tests/test_model_manager.py -v
-
-# Run integration tests
-pytest tests/test_app.py -v
+python auto_train.py
 ```
+
+### 3. Test the Model
+
+```bash
+python test_prediction_pipeline.py
+```
+
+## 🏗️ Architecture
+
+The model uses a sophisticated multi-modal architecture:
+
+1. **MFCC Branch**: Processes Mel-frequency cepstral coefficients using dense neural network layers
+2. **Spectrogram Branch**: Processes mel-spectrogram features using convolutional layers
+3. **Fusion Layer**: Combines both feature representations before final classification
+4. **Output Layer**: Softmax layer for emotion classification across 8 emotional states
 
 ## 📁 Project Structure
 
 ```
 speech_emotion_classification/
-├── app.py                          # Streamlit web interface
-├── auto_train.py                   # Automated training script
-├── setup.py                        # Package configuration
-├── requirements.txt                # Python dependencies
-├── Dockerfile                      # Container configuration
-├── README.md                       # This file
-├── src/
-│   ├── __init__.py
-│   ├── main.py                     # CLI entry point
-│   ├── api/
-│   │   └── server.py               # REST API server
-│   ├── core/
-│   │   ├── config.py               # Configuration management
-│   ├── data/
-│   │   └── data_loader.py          # Dataset loading & preprocessing
-│   ├── features/
-│   │   └── feature_extractor.py    # Audio feature extraction
-│   ├── models/
-│   │   ├── emotion_model.py        # Neural network architectures
-│   │   ├── model_manager.py        # Model loading & saving
-│   │   ├── trainer.py              # Training orchestration
-│   │   └── optimizer.py            # Hyperparameter optimization
-│   ├── ui/
-│   │   ├── app.py                  # Main UI application
-│   │   ├── dashboard.py            # Analytics dashboard
-│   │   └── streamlit_app.py        # Streamlit wrapper
-│   └── utils/
-│       ├── tf_utils.py             # TensorFlow utilities
-│       └── monkey_patch.py         # Compatibility fixes
-├── models/                         # Saved model files
-├── results/                        # Training results & visualizations
-├── logs/                           # Training logs
-├── tests/                          # Unit & integration tests
-└── demo_files/                     # Sample audio files
+├── app.py                 # Streamlit web application
+├── auto_train.py          # Automated training script
+├── debug_labels.py        # Label debugging utilities
+├── driver.py              # Main execution script
+├── push_to_hub.py         # Hugging Face model upload script
+├── split_model.py         # Model splitting utilities
+├── test_*.py              # Test files
+├── requirements.txt       # Project dependencies
+├── README.md              # This file
+└── ...
 ```
 
-## 🔬 Research & Development
+## 🧪 Evaluation
 
-### Key Innovations
+To evaluate the model on custom audio files:
 
-1. **Multi-Modal Fusion**: Combines MFCC and mel-spectrogram features for richer representation
-2. **Balanced Training**: Class-weighted loss to handle emotion imbalance
-3. **Robust Feature Extraction**: Comprehensive audio preprocessing pipeline
-4. **Real-time Inference**: Optimized for low-latency emotion detection
+```bash
+python test_prediction_pipeline.py
+```
 
-### Future Enhancements
+This will run the model on the test dataset and provide detailed performance metrics.
 
-- [ ] **Transformer Architecture**: Self-attention for temporal modeling
-- [ ] **Multi-Task Learning**: Joint emotion and speaker recognition
-- [ ] **Data Augmentation**: Synthetic emotion generation
-- [ ] **Edge Deployment**: TensorFlow Lite for mobile devices
-- [ ] **Multi-Language Support**: Cross-lingual emotion recognition
+## 🤗 Hugging Face Integration
+
+The model can be easily shared and deployed using Hugging Face Hub:
+
+```bash
+python push_to_hub.py
+```
+
+## 🚧 Limitations
+
+- Performance may vary with different accents and languages
+- Audio quality (noise, clarity) can significantly affect accuracy
+- Emotions expressed in speech can be culturally dependent
+- Requires clear audio with minimal background noise for best results
+- Shorter audio clips (5-10 seconds) typically work better than longer recordings
+
+## 🛡️ Ethical Considerations
+
+- This model should not be used to make critical decisions about individuals without their explicit consent
+- Results should be interpreted with caution and not treated as definitive psychological assessments
+- Consider privacy implications when processing audio of individuals
+- Use responsibly and ethically, with appropriate consent when analyzing personal speech
+- Be aware of potential bias in the training data and its impact on model predictions
+
+## 🧪 Reproducibility
+
+To ensure reproducible results:
+
+1. Set random seeds:
+```python
+import numpy as np
+import tensorflow as tf
+import random
+
+np.random.seed(42)
+tf.random.set_seed(42)
+random.seed(42)
+```
+
+2. Use the same training data and preprocessing pipeline
 
 ## 🤝 Contributing
 
+Contributions are welcome! Here's how you can contribute:
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+Please make sure to update tests as appropriate and follow the existing code style.
+
+### Development Setup
+
+```bash
+git clone https://github.com/your-username/speech_emotion_classification.git
+cd speech_emotion_classification
+pip install -r requirements.txt
+pip install -r requirements-dev.txt  # For development dependencies
+```
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 📚 Citation
+
+If you use this model in your research, please cite:
+
+```bibtex
+@software{speech_emotion_classification,
+  author = {AI Research Team},
+  title = {Speech Emotion Classification Model},
+  year = {2025},
+  url = {https://github.com/your-username/speech_emotion_classification}
+}
+```
+
+## 🆘 Support
+
+If you have any questions or encounter issues:
+
+1. Check the [Issues](https://github.com/your-username/speech_emotion_classification/issues) page
+2. Open a new issue if your problem hasn't been addressed
+3. For feature requests, please open an issue with the "enhancement" tag
+
 ## 🙏 Acknowledgments
 
-- **RAVDESS Dataset**: Ryerson Audio-Visual Database of Emotional Speech and Song
-- **TensorFlow/Keras**: Deep learning framework
-- **Librosa**: Audio processing library
-- **Streamlit**: Web application framework
-
-## 📞 Support
-
-For questions, issues, or contributions:
-- **GitHub Issues**: [Report bugs or request features](https://github.com/Rayyan9477/speech-emotion-classification/issues)
-- **Email**: [Contact the maintainers](mailto:rayyanahmed265@yahoo.com)
-
----
-
-**Built with ❤️ for emotion-aware AI applications**
+- The RAVDESS dataset creators for providing the high-quality emotional speech data
+- The TensorFlow team for providing an excellent deep learning framework
+- The Librosa team for audio processing capabilities
+- The Hugging Face team for model sharing capabilities
