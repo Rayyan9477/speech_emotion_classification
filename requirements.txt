@@ -1,6 +1,6 @@
 # Core libraries
-# Pin TensorFlow to a broadly stable range compatible with Keras model save/load
-tensorflow>=2.16.2,<2.18
+# Pin TensorFlow to exact version for deployment compatibility
+tensorflow==2.16.2
 tensorboard>=2.16.2
 numpy>=1.24.0
 pandas>=2.0.0
