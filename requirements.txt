@@ -1,14 +1,15 @@
 # Core libraries
-# TensorFlow 2.17.1 requires Python 3.12 or lower
-# Latest TensorFlow version that supports broader Python compatibility
-tensorflow>=2.17.0,<2.18.0
-tensorboard>=2.17.0
-numpy>=1.24.0,<2.0.0
+# TensorFlow 2.20.0 is required for Python 3.13+ compatibility
+# Older versions (2.17.x) only support Python <= 3.12
+tensorflow>=2.20.0
+tensorboard>=2.20.0
+numpy>=1.26.0
 pandas>=2.0.0
 scikit-learn>=1.3.0
 
 # Audio processing
-librosa>=0.10.0
+# librosa 0.11.0+ required for Python 3.13 (Numba compatibility)
+librosa>=0.11.0
 soundfile>=0.12.0
 
 # Dataset access
@@ -25,7 +26,8 @@ plotly>=5.15.0
 kaleido>=0.2.1  # Required for plotly static image export
 
 # UI
-streamlit>=1.28.0
+# Streamlit 1.51.0 supports Python 3.13
+streamlit>=1.51.0
 streamlit-extras>=0.4.0
 streamlit-option-menu>=0.3.6
 audio-recorder-streamlit>=0.0.8
@@ -45,7 +47,7 @@ h5py>=3.9.0
 portalocker>=2.7.0
 
 # Additional dependencies for compatibility
-protobuf>=3.20.3,<4.0.0  # Must be compatible with TensorFlow
+protobuf>=3.20.3  # Compatible with TensorFlow 2.20+
 packaging>=21.0
 requests>=2.28.0
 python-dateutil>=2.8.0
