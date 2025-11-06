@@ -213,6 +213,70 @@ class EmotionAnalyzer:
             st.error(f"Cannot create upload directory: {e}")
             raise
 
+    def _load_split_model_from_manifest(self, manifest_path):
+        """Load a model that has been split into multiple parts.
+        
+        Args:
+            manifest_path (str): Path to the manifest file
+            
+        Returns:
+            str: Path to the combined model file, or None if failed
+        """
+        try:
+            import tempfile
+            from pathlib import Path
+            
+            manifest_path = Path(manifest_path)
+            models_dir = manifest_path.parent
+            
+            logger.info(f"Loading split model from manifest: {manifest_path}")
+            
+            # Read manifest to get chunk information
+            with open(manifest_path, 'r') as f:
+                lines = f.readlines()
+            
+            # Parse manifest
+            original_filename = None
+            chunk_files = []
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('Original file:'):
+                    original_filename = line.split(':', 1)[1].strip()
+                elif line.startswith('- '):
+                    chunk_file = line[2:].strip()
+                    chunk_path = models_dir / chunk_file
+                    if chunk_path.exists():
+                        chunk_files.append(str(chunk_path))
+                    else:
+                        logger.warning(f"Chunk file not found: {chunk_path}")
+            
+            if not original_filename or not chunk_files:
+                logger.error("Invalid manifest file or missing chunks")
+                return None
+            
+            logger.info(f"Found {len(chunk_files)} chunks for {original_filename}")
+            
+            # Create temporary file to combine chunks
+            temp_dir = tempfile.gettempdir()
+            combined_path = os.path.join(temp_dir, original_filename)
+            
+            # Combine chunks
+            with open(combined_path, 'wb') as output_file:
+                for i, chunk_path in enumerate(chunk_files, 1):
+                    logger.info(f"Combining chunk {i}/{len(chunk_files)}: {chunk_path}")
+                    with open(chunk_path, 'rb') as chunk_file:
+                        output_file.write(chunk_file.read())
+            
+            file_size_mb = os.path.getsize(combined_path) / (1024 * 1024)
+            logger.info(f"Successfully combined model: {combined_path} ({file_size_mb:.1f} MB)")
+            
+            return combined_path
+            
+        except Exception as e:
+            logger.error(f"Error loading split model: {e}")
+            return None
+
     def load_model(self):
         """Load an existing model; if none exists, start a single guarded training run.
 
@@ -235,7 +299,26 @@ class EmotionAnalyzer:
                 latest = self.model_manager.get_latest_model(model_type="cnn") or self.model_manager.get_latest_model(None)
                 if latest and latest.get('path'):
                     model_path = latest['path']
-                    if os.path.exists(model_path):
+                    
+                    # Check if it's a split model (manifest file)
+                    if 'manifest' in model_path:
+                        logger.info(f"Detected split model manifest: {model_path}")
+                        combined_path = self._load_split_model_from_manifest(model_path)
+                        if combined_path and os.path.exists(combined_path):
+                            try:
+                                self.model = _cached_load(combined_path)
+                                self.model_path = combined_path
+                                self.loaded = True
+                                feature_info = self.model_manager.load_feature_info(model_path=combined_path) or {}
+                                norm_params = feature_info.get('normalization_params')
+                                if norm_params:
+                                    self.feature_extractor.set_normalization_params(norm_params)
+                                st.success("✅ Model loaded from split parts!")
+                                logger.info(f"Successfully loaded split model: {combined_path}")
+                                return True
+                            except Exception as e:
+                                logger.warning(f"Failed to load combined model: {e}")
+                    elif os.path.exists(model_path):
                         try:
                             self.model = _cached_load(model_path)
                             self.model_path = model_path
@@ -251,6 +334,31 @@ class EmotionAnalyzer:
                             logger.warning(f"Failed to load model from registry path {model_path}: {e}")
             except Exception as e:
                 logger.warning(f"Error accessing model registry: {e}")
+
+            # Step 1.5: Check for split models in models directory
+            models_dir = Path('models')
+            if models_dir.exists():
+                # Look for manifest files
+                manifest_files = list(models_dir.glob('*_manifest.txt'))
+                if manifest_files:
+                    logger.info(f"Found {len(manifest_files)} manifest files")
+                    for manifest_file in manifest_files:
+                        try:
+                            combined_path = self._load_split_model_from_manifest(str(manifest_file))
+                            if combined_path and os.path.exists(combined_path):
+                                self.model = _cached_load(combined_path)
+                                self.model_path = combined_path
+                                self.loaded = True
+                                feature_info = self.model_manager.load_feature_info(model_path=combined_path) or {}
+                                norm_params = feature_info.get('normalization_params')
+                                if norm_params:
+                                    self.feature_extractor.set_normalization_params(norm_params)
+                                st.success("✅ Model loaded from split parts!")
+                                logger.info(f"Successfully loaded split model from manifest: {manifest_file}")
+                                return True
+                        except Exception as e:
+                            logger.warning(f"Failed to load split model from {manifest_file}: {e}")
+                            continue
 
             # Step 2: Try known model paths (prioritizing corrected models)
             model_paths_to_try = [
